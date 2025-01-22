@@ -24,7 +24,9 @@ public:
 		wvinit.modsys = &modsys;
 
 		SK_File configFile;
-		configFile.loadFromDisk(SK_Path_Utils::paths["config"]);
+		if (!configFile.loadFromDisk(SK_Path_Utils::paths["config"])) {
+			throw std::runtime_error("[SK++] No config file found!");
+		}
 		sk_config = nlohmann::json::parse(std::string(configFile));
 
 		SK_Machine::init();

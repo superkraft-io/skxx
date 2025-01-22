@@ -115,7 +115,7 @@ public:
 class SK_CURL {
 public:
 
-    SK_CURL() : GET_and_POST_pool(8), download_pool(2) {
+    SK_CURL() {
     };
 
     nlohmann::json createRequest(const nlohmann::json&  opt) {//const String& url, String data, String& type = "GET", String mimeType);
@@ -139,9 +139,6 @@ public:
     };
 
 private:
-
-    SK_Thread_Pool GET_and_POST_pool;
-    SK_Thread_Pool download_pool;
 };
 
 END_SK_NAMESPACE

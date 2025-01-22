@@ -22,7 +22,7 @@ public:
 			}
 
 			for (const auto& entry : std::filesystem::directory_iterator(currentPath)) {
-				if (entry.is_directory() && choc::text::toLowerCase(entry.path().filename().string()) == choc::text::toLowerCase(neighbourName)) {
+				if (entry.is_directory() && SK_String(entry.path().filename().string()).toLowerCase() == SK_String(neighbourName).toLowerCase()) {
 					stop = true;
 					break;
 				}
@@ -32,14 +32,6 @@ public:
 		return currentPath.string();
 	}
 
-	static std::string getProjectRoot() {
-		std::filesystem::path mainPath(__FILE__);
-
-		std::string path = mainPath.string();
-		std::filesystem::path indexRelativePath = mainPath.parent_path() / "Resources" / "web" / "index.html";
-
-		return path;
-	}
 
 	static void add(const SK_String& id, const SK_String& path) {
 		paths[id] = path.replaceAll("\\", "/");
@@ -49,21 +41,21 @@ public:
 	static void init() {
 		#ifdef SK_MODE_DEBUG
 			//In DEBUG mode the projectRoot will be set to the root folder of your project.
-			SK_String projectRoot = SK_String(SK_Path_Utils::pathBackwardsUntilNeighbour("superkraft")).replaceAll("\\", "/");
+			SK_String projectRoot = SK_String(SK_Path_Utils::pathBackwardsUntilNeighbour("skxx")).replaceAll("\\", "/");
 		#else
 			//In RELEASE mode the projectRoot will be set to the virtual file system called Binary Data File Systtem
 			//When running in RELEASE mode, a pre-script will bundle all the files in "superkraft" and "SK_Project" and SK will access those files from memory instead.
 			SK_String projectRoot = "sk_bdfs:";
 		#endif
 
-		SK_String superkraftRoot = projectRoot + "/superkraft";
+		SK_String skxx = projectRoot + "/skxx";
 
-		add("superkraft", superkraftRoot);
-		add("global_js_core", superkraftRoot + "/sk_cpp/web/global_js_core");
-		add("module_system", superkraftRoot + "/sk_cpp/module_system/web");
-		add("soft_backend", superkraftRoot + "/sk_cpp/web/soft_backend");
-		add("sk_project", projectRoot + "/sk_project");
-		add("config", paths["sk_project"] + "/config.json");
+		add("skxx", skxx);
+		add("global_js_core", skxx + "/skxx/web/global_js_core");
+		add("module_system", skxx + "/skxx/module_system/web");
+		add("soft_backend", skxx + "/skxx/web/soft_backend");
+		add("project", projectRoot + "/project");
+		add("config", paths["project"] + "/config.json");
 		
 		//The paths below will be OS specific
 		add("home", getHomeFolder());

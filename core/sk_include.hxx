@@ -94,10 +94,6 @@
 #endif
 
 
-
-#include "../libs/general/choc/text/choc_StringUtilities.h"
-
-
 #include "utils/sk_string.hxx"
 #include "utils/sk_path_utils.hxx"
 #include "utils/sk_array.hxx"
@@ -175,7 +171,7 @@ END_SK_NAMESPACE
 
 
 
-#include "../../../sk_project_binarydata.hxx"
+#include "../../sk_project_binarydata.hxx"
 
 
 #include "../module_system/cpp/modules/sk/vfs/sk_ms_vfs_file.hxx"
