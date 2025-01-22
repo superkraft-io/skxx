@@ -91,8 +91,8 @@ var __start = async () => {
         }
     
         window.sk_start = sk_start
-    
-        //sk_start()
+   
+        sk_start()
     }
 
 

@@ -14,6 +14,7 @@ public:
 	SK_Window_Mngr* wndMngr;
 
 	SK_Communication::SK_Communication() {
+		int x = 0;
 		SK_Common::onCommunicationRequest = [&](SK_Communication_Config* config, SK_Communication_handlePacket_Response_IPC_CB ipcResponseCallback) {
 			SK_Communication_Packet* packet;
 			
@@ -121,7 +122,7 @@ public:
 			}
 
 			#if defined SK_MODE_DEBUG
-				SK_String filePath = SK::SK_Path_Utils::paths["sk_project"] + path;
+				SK_String filePath = SK::SK_Path_Utils::paths["project"] + path;
 				packet->response()->file(filePath);
 			#else
 
@@ -134,7 +135,7 @@ public:
 
 			SK_String viewID = path.replace("/", "");
 
-			SK_Module_vfs_file* vfile = modsys->vfs->findByPath("sk_vfs/sk_project/views/" + viewID + "/frontend/view.html");
+			SK_Module_vfs_file* vfile = modsys->vfs->findByPath("sk_vfs/project/views/" + viewID + "/frontend/view.html");
 
 			packet->response()->string(vfile->data, "text/html");
 		}
@@ -144,7 +145,7 @@ public:
 		else {
 			int x = 0;
 			#if defined SK_MODE_DEBUG
-				std::string filePath = SK::SK_Path_Utils::paths["sk_project"] + SK_String(packet->info["path"]);
+				std::string filePath = SK::SK_Path_Utils::paths["project"] + SK_String(packet->info["path"]);
 				packet->response()->file(filePath);
 			#else
 

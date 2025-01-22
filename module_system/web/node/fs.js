@@ -160,7 +160,6 @@ class SK_Module_fs extends SK_Module_Root {
                 return new Promise(async (resolve, reject) => {
                     try {
                         var res = await _this.async('readFile', { path: path })
-
                         resolve(atob(res.data))
                     } catch (err) {
                         reject(err)

@@ -176,17 +176,17 @@ END_SK_NAMESPACE
 
 #include "../module_system/cpp/modules/sk/vfs/sk_ms_vfs_file.hxx"
 
-#include "../module_system/cpp/modules/nodejs/os/sk_ms_nodejs_os.hxx"
-#include "../module_system/cpp/modules/sk/application/sk_ms_application.hxx"
+#include "../module_system/cpp/modules/nodejs/sk_ms_nodejs_os.hxx"
+#include "../module_system/cpp/modules/sk/sk_ms_application.hxx"
 #include "../module_system/cpp/modules/sk/vfs/sk_ms_vfs.hxx"
-#include "../module_system/cpp/modules/sk/bdfs/sk_ms_bdfs.hxx"
-#include "../module_system/cpp/modules/nodejs/fs/sk_ms_nodejs_fs.hxx"
-#include "../module_system/cpp/modules/sk/web/sk_ms_web.hxx"
+#include "../module_system/cpp/modules/sk/sk_ms_bdfs.hxx"
+#include "../module_system/cpp/modules/nodejs/sk_ms_nodejs_fs.hxx"
+#include "../module_system/cpp/modules/sk/sk_ms_web.hxx"
 
 #include "../module_system/cpp/modules/sk/nativeActions/sk_nativeAction_root.hxx"
 #include "../module_system/cpp/modules/sk/nativeActions/sk_ms_nativeActions.hxx"
 
-#include "../module_system/cpp/modules/sk/viewMngr/sk_ms_view/sk_ms_view.hxx"
+#include "../module_system/cpp/modules/sk/viewMngr/sk_ms_view.hxx"
 
 #include "../module_system/cpp/modules/sk/viewMngr/sk_ms_viewMngr.hxx"
 

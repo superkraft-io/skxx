@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../../../../core/sk_common.hxx"
+#include "../../../../core/sk_common.hxx"
 
 BEGIN_SK_NAMESPACE
 
@@ -36,7 +36,7 @@ public:
                     fullPath = SK_Path_Utils::paths["module_system"] + path.replace("sk.modsys:", "");
                 }
                 else {
-                    fullPath = SK_Path_Utils::paths["sk_project"] + path;
+                    fullPath = SK_Path_Utils::paths["project"] + path;
                 }
             }
         }
@@ -76,7 +76,10 @@ public:
 
     void readFile(const SK_String& path, SK_Communication_Response& respondWith) {
         SK_File file;
-        file.loadFromDisk(path);
+        if (!file.loadFromDisk(path)) {
+            respondWith.error(404, "ENOENT");
+            return;
+        }
 
         respondWith.JSON({ {"data", file.toBase64()} });
     };

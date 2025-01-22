@@ -51,9 +51,9 @@ public:
 		SK_String skxx = projectRoot + "/skxx";
 
 		add("skxx", skxx);
-		add("global_js_core", skxx + "/skxx/web/global_js_core");
-		add("module_system", skxx + "/skxx/module_system/web");
-		add("soft_backend", skxx + "/skxx/web/soft_backend");
+		add("global_js_core", skxx + "/web/global_js_core");
+		add("module_system", skxx + "/module_system/web");
+		add("soft_backend", skxx + "/web/soft_backend");
 		add("project", projectRoot + "/project");
 		add("config", paths["project"] + "/config.json");
 		

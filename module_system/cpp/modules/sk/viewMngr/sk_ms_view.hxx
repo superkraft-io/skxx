@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../../../../../core/sk_common.hxx"
+#include "../../../../../core/sk_common.hxx"
 
 BEGIN_SK_NAMESPACE
 

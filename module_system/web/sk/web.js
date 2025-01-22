@@ -2,14 +2,18 @@ console.log('sk:web')
 
 class SK_Module_web extends SK_Module_Root {
     async __call(func, payload = {}, onProgress){
+        if (!payload.url) {
+            throw '[sk:web] No URL has been set'
+        }
+
         var callbackTimer = undefined
         var progressCallbackID = undefined
 
         if (onProgress) {
-            var interval = opt.interval || 1000
+            var interval = payload.interval || 1000
             if (interval < 0)
 
-                var cbRes = await this.async('sk.web', 'createProgressCallback')
+            var cbRes = await this.async('sk.web', 'createProgressCallback')
             progressCallbackID = cbRes.progressCallbackID
 
             var again = true
