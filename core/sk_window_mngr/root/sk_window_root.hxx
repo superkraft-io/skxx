@@ -8,12 +8,11 @@ BEGIN_SK_NAMESPACE
 class SK_Window_Root {
 public:
 	unsigned int wndIdx;
-
 	SK_String tag;
-
 	SK_String title = "SK Window";
-
 	SK_IPC_v2 ipc;
+
+	nlohmann::json info;
 
 	bool visible = false;
 
@@ -21,6 +20,7 @@ public:
 	int height = 600;
 	int left = 0;
 	int top = 0;
+	float scale = 1.;
     
     std::optional<int> zIndex = NULL;
     bool transparent = false;

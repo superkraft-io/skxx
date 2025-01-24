@@ -12,6 +12,7 @@ class SK_Window;
 class SK_WebView {
 public:
     using SK_WebView_EvaluationComplete_Callback = std::function<void(const SK_String& result)>;
+    using SK_WebView_callResize_Callback = std::function<void()>;
 
     SK_WebViewResourceHandler* wvrh;
 
@@ -27,9 +28,9 @@ public:
     
 	SK_String currentURL = "";
 
-    
+    SK_WebView_callResize_Callback callResize;
 
-    void updateStyling() {
+    void updateStyling(RECT rect) {
         //  !!! IMPORTANT !!!
         //  The following code must be executed in the exact order, or it won't work!
 
@@ -58,11 +59,7 @@ public:
         SetLayeredWindowAttributes(webviewHwnd, RGB(255, 255, 255), 255, LWA_COLORKEY); //DO NOT TOUCH!
 
         //  7. Set bounds
-        RECT bounds; //DO NOT TOUCH!
-        GetClientRect(*parentHwnd, &bounds); //DO NOT TOUCH!
-        bounds.left = 32; //DO NOT TOUCH!
-        bounds.right = bounds.right - 32; //DO NOT TOUCH!
-        controller->put_Bounds(bounds); //DO NOT TOUCH!
+        controller->put_Bounds(rect); //DO NOT TOUCH!
     }
 
 	void create() {
@@ -133,7 +130,7 @@ public:
 
 
                             //----  Lets make the webview transparent  ----//
-                            updateStyling();
+                            callResize();
 
                             SK_Common::onWebViewReady(static_cast<void*>(webview.get()), false);
 

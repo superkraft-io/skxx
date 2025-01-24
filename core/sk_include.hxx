@@ -29,7 +29,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
-
+#include <cmath>
 
 
 #include "wdlstring.h"
@@ -158,6 +158,8 @@ public:
 	};
 
 	static inline SK_showSoftBackendDevTools showSoftBackendDevTools;
+
+	static inline SK_resizeAllMianWindowView resizeAllMianWindowView;
 };
 
 END_SK_NAMESPACE

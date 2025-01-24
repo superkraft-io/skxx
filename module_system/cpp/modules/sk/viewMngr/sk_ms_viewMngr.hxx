@@ -48,12 +48,15 @@ public:
             wnd->webview.navigate("https://sk.project/sk_vfs/sk_project/views/" + viewID + "/frontend/view.html");
 
             if (payload.contains("mainWindow") && payload["mainWindow"]) {
+                wnd->info["mainWindow"] = true;
+
                 wnd->hwnd = SK_Common::mainWindowHWND;
                 wnd->windowClassName = "SK_Window_1";
 
                 wnd->createWebView();
             }
             else {
+                wnd->info["mainWindow"] = false;
                 wnd->create();
             }
         });

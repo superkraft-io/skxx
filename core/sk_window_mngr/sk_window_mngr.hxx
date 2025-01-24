@@ -87,6 +87,27 @@ public:
 				return SK_Window_WebView_Counter::getWebViewForWindow(windowClassName);
 			};
 		#endif
+
+		SK_Common::resizeAllMianWindowView = [&](long x, long y, long w, long h, float scale) {
+			#if defined(SK_MODE_DEBUG)
+				for (auto it = list.begin(); it != list.end(); ++it) {
+					if (it->second) {
+						SK_Window* wnd = it->second;
+						if (wnd->webview.webview != nullptr) {
+							if (wnd->info["mainWindow"] == true) {
+								wnd->left = x;
+								wnd->top = y;
+								wnd->width = w;
+								wnd->height = h;
+								wnd->scale = scale;
+
+								wnd->update();
+							}
+						}
+					}
+				}
+			#endif
+		};
 	}
 
 	~SK_Window_Mngr() {
@@ -129,7 +150,7 @@ public:
 		for (auto it = list.begin(); it != list.end(); ++it) {
 			if (it->second) {
 				SK_Window* wnd = it->second;
-				if (wnd->webview.webview != nullptr) wnd->webview.updateStyling();
+				wnd->update();
 			}
 		}
 

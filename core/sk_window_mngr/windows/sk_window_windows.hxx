@@ -1,9 +1,39 @@
 #pragma once
 
 #include "../../sk_common.hxx"
-#include "../../sk_window_mngr/windows/sk_window_windows.hxx"
 
 BEGIN_SK_NAMESPACE
+
+
+inline UINT(WINAPI* sk__GetDpiForWindow)(HWND);
+
+static inline float getHWNDScale(HWND hwnd)
+{
+    if (!sk__GetDpiForWindow) {
+        HINSTANCE h = LoadLibraryW(L"user32.dll");
+        if (h) *(void**)&sk__GetDpiForWindow = GetProcAddress(h, "GetDpiForWindow");
+
+        if (!sk__GetDpiForWindow) return 1;
+    }
+
+    int dpi = sk__GetDpiForWindow(hwnd);
+
+    if (dpi != USER_DEFAULT_SCREEN_DPI) {
+        return static_cast<float>(dpi) / USER_DEFAULT_SCREEN_DPI;
+    }
+
+    return 1;
+}
+
+
+static inline RECT scaleRect(float x, float y, float w, float h, float scale) {
+    return {
+        static_cast<LONG>(std::ceil(x * scale)),
+        static_cast<LONG>(std::ceil(y * scale)),
+        static_cast<LONG>(std::ceil((x + w) * scale)) + 1,
+        static_cast<LONG>(std::ceil((y + h) * scale)) + 1
+    };
+}
 
 class SK_Window : public SK_Window_Root {
 public:
@@ -11,6 +41,7 @@ public:
     SK_String windowClassName = "SK_Window";
     HWND hwnd;
     WNDCLASS wc;
+
 
     SK_Window::~SK_Window() {
 		UnregisterClass(windowClassName.c_str(), wc.hInstance);
@@ -45,9 +76,48 @@ public:
                 return true;
             }
 
-            case WM_SIZE: {
-                wnd->webview.update();
+
+            case WM_DPICHANGED:
+            {
+                WORD dpi = HIWORD(wParam);
+                RECT* rect = (RECT*)lParam;
+                float scale = getHWNDScale(hwnd);
+
+                POINT diff;
+                RECT clientRect, wndRect;
+
+                GetClientRect(hwnd, &clientRect);
+                GetWindowRect(hwnd, &wndRect);
+
+                diff.x = (wndRect.right - wndRect.left) - clientRect.right;
+                diff.y = (wndRect.bottom - wndRect.top) - clientRect.bottom;
+
+
+                SetWindowPos(hwnd, 0, rect->left, rect->top, wnd->width + diff.x, wnd->height + diff.y, 0);
+
                 return 0;
+            }
+            case WM_SIZE: {
+                int returnVal = 0;
+                switch (LOWORD(wParam)) {
+                    case SIZE_RESTORED:
+                    case SIZE_MAXIMIZED: {
+                        returnVal = 1;
+                    }
+                    default:
+                        returnVal = 0;
+                }
+
+                RECT r;
+                GetClientRect(hwnd, &r);
+                wnd->left = r.left;
+                wnd->top = r.top;
+                wnd->width = r.right - r.left;
+                wnd->height = r.bottom - r.top;
+
+                wnd->webview.update();
+
+                return returnVal;
             }
 
             case WM_DESTROY: {
@@ -62,14 +132,13 @@ public:
 
 
             case WM_ACTIVATE: {
-                if (wParam == WA_INACTIVE)
-                {
+                if (wParam == WA_INACTIVE) {
                     SK_Common::onWindowFocusChanged(wnd, false);
                 }
-                else
-                {
+                else {
                     SK_Common::onWindowFocusChanged(wnd, true);
                 }
+
                 return 0;
             }
 
@@ -150,12 +219,23 @@ public:
     };
 
 	void createWebView() {
+        webview.callResize = [&]() {
+            update();
+        };
         webview.parentHwnd = &hwnd;
         webview.parentClassName = windowClassName;
         webview.create();
         SK_Common::updateWebViewHWNDListForView(windowClassName);
     };
 
+
+    void update() {
+        RECT rect = scaleRect(left, top, width, height, getHWNDScale(hwnd));
+        if (webview.webview != nullptr) {
+            webview.updateStyling(rect);
+            webview.controller->SetBoundsAndZoomFactor(rect, scale);
+        }
+    }
 private:
 
 };
