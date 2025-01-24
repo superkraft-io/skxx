@@ -105,6 +105,9 @@
 #include "sk_profiler/sk_profiler.hxx"
 
 
+#include "utils/sk_point.hxx"
+
+
 #include "sk_web/sk_web_utils.hxx"
 #include "utils/sk_file.hxx"
 
@@ -160,6 +163,9 @@ public:
 	static inline SK_showSoftBackendDevTools showSoftBackendDevTools;
 
 	static inline SK_resizeAllMianWindowView resizeAllMianWindowView;
+
+	static inline SK_getMainWindowSize getMainWindowSize;
+	static inline SK_setMainWindowSize setMainWindowSize;
 };
 
 END_SK_NAMESPACE

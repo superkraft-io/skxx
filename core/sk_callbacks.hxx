@@ -47,5 +47,9 @@ using SK_ThreadPool_ProcessMainThreadTasks = std::function<void()>;
 
 using SK_showSoftBackendDevTools = std::function<void()>;
 
-using SK_resizeAllMianWindowView = std::function<void(long x, long y, long w, long h, float scale)>;
+using SK_resizeAllMianWindowView = std::function<void(int x, int y, int w, int h, float scale)>;
+
+using SK_getMainWindowSize = std::function<SK_Point()>;
+using SK_setMainWindowSize = std::function<void(int w, int h)>;
+
 END_SK_NAMESPACE

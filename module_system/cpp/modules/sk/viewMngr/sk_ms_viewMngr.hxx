@@ -53,6 +53,9 @@ public:
                 wnd->hwnd = SK_Common::mainWindowHWND;
                 wnd->windowClassName = "SK_Window_1";
 
+                SK_Common::setMainWindowSize(payload["width"], payload["height"]);
+
+
                 wnd->createWebView();
             }
             else {

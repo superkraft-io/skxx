@@ -222,6 +222,7 @@ public:
         webview.callResize = [&]() {
             update();
         };
+
         webview.parentHwnd = &hwnd;
         webview.parentClassName = windowClassName;
         webview.create();
