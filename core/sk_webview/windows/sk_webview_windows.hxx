@@ -193,6 +193,11 @@ public:
             evaluateScript_mainThread(_webview, src, cb);
         });
     };
+
+    void showDevTools() {
+        webview->OpenDevToolsWindow();
+    };
+
 private:
 
 };

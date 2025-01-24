@@ -60,7 +60,7 @@ public:
 	}
 
 	void handlePacket(SK_Communication_Packet* packet) {
-		SK_Window* view = wndMngr->findByTag(packet->target);
+		SK_Window* view = wndMngr->findWindowByTag(packet->target);
 
 		if (view != nullptr) {
 			handleForwarding(packet);
@@ -158,7 +158,7 @@ public:
 			return sb_ipc;
 		}
 		else {
-			SK_Window* view = wndMngr->findByTag(id);
+			SK_Window* view = wndMngr->findWindowByTag(id);
 			return &view->ipc;
 		}
 	}
@@ -167,12 +167,14 @@ public:
 		SK_IPC_v2* sender = getIPCForID(packet->sender);
 		SK_IPC_v2* target = getIPCForID(packet->target);
 
-		if (sender->eventExists(SK_String(packet->info["event_id"])) != "") {
-			sender->handle_IPC_Msg(packet);
+		SK_String eventID = packet->info["event_id"];
+
+		if (sender->eventExists(eventID) != "") {
+			sender->handle_IPC_Msg(packet);	
 			return;
 		}
 		
-		if(packet->info["type"] == "response") {
+		if (packet->info["type"] == "response") {
 			sender->handle_IPC_Msg(packet);
 			return;
 		}

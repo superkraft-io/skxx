@@ -49,7 +49,7 @@ public:
 	
 	std::unordered_map<std::string, SK_Window*> list;
 
-	SK_Window* findByWindowClassName(const SK_String& windowClassName) {
+	SK_Window* findWindowByClassName(const SK_String& windowClassName) {
 		auto it = list.find(windowClassName);
 
 		if (it == list.end() || it->second == nullptr) {
@@ -66,8 +66,12 @@ public:
 			if (focused) updateAllWindows(); //This will fix the ussue
 		};
 
-		SK_Common::onFindByWindowClassName = [&](const SK_String& windowClassName) {
-			return findByWindowClassName(windowClassName);
+		SK_Common::onFindWindowByClassName = [&](const SK_String& windowClassName) {
+			return findWindowByClassName(windowClassName);
+		};
+
+		SK_Common::onFindWindowByTag = [&](const SK_String& windowTag) {
+			return findWindowByTag(windowTag);
 		};
 
 
@@ -108,7 +112,7 @@ public:
 		return nullptr;
 	};
 
-	SK_Window* findByTag(const SK_String& tag) {
+	SK_Window* findWindowByTag(const SK_String& tag) {
 		for (auto it = list.begin(); it != list.end(); ++it) {
 			if (it->second) {
 				SK_Window* wnd = it->second;

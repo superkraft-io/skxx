@@ -15,6 +15,7 @@ These modules can me imported/required with or without the `sk:` prefix, e.g `sk
 | `application`   | API for application information   |
 | `vfs`   | Virtual File System module for file manipulation directly to memory rather than disk   |
 | `web`   | Perform GET, POST and download files   |
+| `debugMngr`   | Perform various debug related operations, such as programmatically open the dev tools of e.g the soft backend or the view   |
 
 
 ## Node.js Core Modules

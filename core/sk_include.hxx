@@ -133,16 +133,19 @@ public:
 
 	static inline SK_Window_onWindowFocusChanged_Callback onWindowFocusChanged;
 
-	static inline SK_WindowMngr_onFindByWindowClassName onFindByWindowClassName;
+	static inline SK_WindowMngr_onFindWindowByString onFindWindowByClassName;
+	static inline SK_WindowMngr_onFindWindowByString onFindWindowByTag;
 	static inline SK_WindowMngr_updateWebViewHWNDListForView updateWebViewHWNDListForView;
-	static inline SK_WindowMngr_getWebview2HWNDForWindow getWebview2HWNDForWindow;
 
 	static inline SK_onMainWindowHWNDAcquired onMainWindowHWNDAcquired;
 
 	static inline SK_WebView_OnReady onWebViewReady;
 
 	static inline SK_Communication_onRequest onCommunicationRequest;
+
+
 #if defined(SK_OS_windows)
+	static inline SK_WindowMngr_getWebview2HWNDForWindow getWebview2HWNDForWindow;
 	static inline HWND mainWindowHWND;
 #endif
 
@@ -153,6 +156,8 @@ public:
 	static inline SK_ThreadPool_ProcessMainThreadTasks threadPool_processMainThreadTasks = []() {
 		threadPool->processMainThreadTasks();
 	};
+
+	static inline SK_showSoftBackendDevTools showSoftBackendDevTools;
 };
 
 END_SK_NAMESPACE
@@ -182,6 +187,7 @@ END_SK_NAMESPACE
 #include "../module_system/cpp/modules/sk/sk_ms_bdfs.hxx"
 #include "../module_system/cpp/modules/nodejs/sk_ms_nodejs_fs.hxx"
 #include "../module_system/cpp/modules/sk/sk_ms_web.hxx"
+#include "../module_system/cpp/modules/sk/sk_ms_debugMngr.hxx"
 
 #include "../module_system/cpp/modules/sk/nativeActions/sk_nativeAction_root.hxx"
 #include "../module_system/cpp/modules/sk/nativeActions/sk_ms_nativeActions.hxx"

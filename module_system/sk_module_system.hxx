@@ -14,6 +14,7 @@ public:
 	SK_Module_web web;
 	SK_Module_viewMngr viewMngr;
 	SK_Module_NativeActions nativeActions;
+	SK_Module_debugMngr debugMngr;
 
 	SK_Module_System() {
 		vfs = new SK_Module_vfs();
@@ -36,6 +37,7 @@ public:
 		else if (module == "web") web.handleOperation(operation, payload, respondWith);
 		else if (module == "viewMngr") viewMngr.handleOperation(operation, payload, respondWith);
 		else if (module == "nativeActions") nativeActions.handleOperation(operation, payload, respondWith);
+		else if (module == "debugMngr") debugMngr.handleOperation(operation, payload, respondWith);
 
 		else respondWith.error(404, "Module not found");
 	};

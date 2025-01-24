@@ -34,7 +34,7 @@ public:
     void createView(const nlohmann::json& payload, SK_Communication_Response& respondWith) {
         SK_String viewID = payload["id"];
 
-        SK_Window* existingView = wndMngr->findByTag(viewID);
+        SK_Window* existingView = wndMngr->findWindowByTag(viewID);
         if (existingView != nullptr) return;
 
         SK_String _payload = payload.dump(4);
