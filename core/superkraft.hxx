@@ -17,6 +17,7 @@ public:
 
 	Superkraft::Superkraft() {
 		SK_Path_Utils::init();
+		SK_Colors_Init();
 
 		modsys.bdfs->binaryData = &binaryData;
 		modsys.viewMngr.wndMngr = &wndMngr;

@@ -63,7 +63,12 @@ public:
     }
 
 	void create() {
-        CreateCoreWebView2EnvironmentWithOptions(nullptr, nullptr, nullptr,
+
+        auto options = Microsoft::WRL::Make<CoreWebView2EnvironmentOptions>();
+        //options->put_AdditionalBrowserArguments(L"--enable-features=EnableGPUAcceleration");
+        //options->put_AdditionalBrowserArguments(L"--disable-software-rasterizer");
+
+        CreateCoreWebView2EnvironmentWithOptions(nullptr, nullptr, options.Get(),
             Callback<ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>(
                 [this](HRESULT result, ICoreWebView2Environment* env) -> HRESULT {
                     if (FAILED(result)) {
@@ -73,7 +78,7 @@ public:
 
                     environment = env;
 
-
+                   
 
                     // Create a CoreWebView2Controller and get the associated CoreWebView2 whose parent is the main window hWnd
                     env->CreateCoreWebView2Controller(*parentHwnd, Callback<ICoreWebView2CreateCoreWebView2ControllerCompletedHandler>(
@@ -83,6 +88,7 @@ public:
                                 controller = _controller;
                                 controller->get_CoreWebView2(&webview);
                             }
+
 
                             if (webview == nullptr) {
                                 return S_OK;
@@ -147,14 +153,6 @@ public:
         );
 
     };
-
-	void update() {
-		if (controller != nullptr) {
-			RECT bounds;
-			GetClientRect(*parentHwnd, &bounds);
-			controller->put_Bounds(bounds);
-		}
-	};
 
 	void navigate(const SK_String& url){
 		currentURL = url;

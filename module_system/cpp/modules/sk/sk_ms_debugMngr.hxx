@@ -27,6 +27,7 @@ public:
 
         wnd->webview.showDevTools();
 
+        
         respondWith.JSON_OK();
     };
 };

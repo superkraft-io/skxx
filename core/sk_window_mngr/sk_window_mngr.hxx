@@ -94,12 +94,12 @@ public:
 					if (it->second) {
 						SK_Window* wnd = it->second;
 						
-						if (wnd->info["mainWindow"] == true) {
-							wnd->left = x;
-							wnd->top = y;
-							wnd->width = w;
-							wnd->height = h;
-							wnd->scale = scale;
+						if (wnd->config["mainWindow"] == true) {
+							wnd->config["left"] = x;
+							wnd->config["top"] = y;
+							wnd->config["width"] = w;
+							wnd->config["height"] = h;
+							wnd->config["scale"] = scale;
 
 							if (wnd->webview.webview != nullptr) {
 								wnd->update();
@@ -149,6 +149,7 @@ public:
 
 
 	void updateAllWindows() {
+		return;
 		// Iterate using iterators
 		for (auto it = list.begin(); it != list.end(); ++it) {
 			if (it->second) {
