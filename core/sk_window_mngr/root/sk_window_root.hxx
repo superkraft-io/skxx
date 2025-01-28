@@ -13,8 +13,13 @@ public:
 	SK_IPC_v2 ipc;
 
 	SK_JSON config {
-		{"mainWindow", false}, //ok
+		{"mainWindow", false},
 		{"scale", 1.}
+	};
+
+	nlohmann::json config_updateTracker {
+		{"mainWindow", false},
+		{"scale", false}
 	};
 
 	SK_Point maxSizeFull {-1, -1};
@@ -42,6 +47,21 @@ public:
 	virtual void configWithInfo(const nlohmann::json& _info) {
 		config.combineWith(_info);
 
+		config_updateTracker.update(_info);
+		for (auto& [key, value] : config_updateTracker.items()) {
+			value = true; // Set to boolean true
+		}
+
+	}
+
+	bool needsUpdate(const SK_String& attribute) {
+		return config_updateTracker[attribute];
+	}
+
+	bool checkNeedsUpdateAndReset(const SK_String& attribute) {
+		bool needsUpdate = config_updateTracker[attribute];
+		config_updateTracker[attribute] = false;
+		return needsUpdate;
 	}
 private:
 

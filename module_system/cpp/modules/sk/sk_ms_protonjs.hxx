@@ -56,9 +56,24 @@ public:
             return;
         }
 
-        wnd->config[attribute] = payload["value"];
+        if (payload["value"].is_object()) {
+            handleDetailedAttributeAssignment(wnd, attribute, payload["value"]);
+        }
+        else {
+            wnd->config_updateTracker[attribute] = true;
+            wnd->config[attribute] = payload["value"];
+            wnd->config_updateTracker[attribute] = false;
+        }
 
         respondWith.JSON_OK();
+    }
+
+    void handleDetailedAttributeAssignment(SK_Window* wnd, const SK_String& attribute, const nlohmann::json& value) {
+        if (attribute == "setAlwaysOnTop"){
+            wnd->setAlwaysOnTop(value["flag"], (value.contains("level") ? value["level"] : -1), (value.contains("relativeLevel") ? value["relativeLevel"] : -1));
+        }
+
+
     }
 };
 

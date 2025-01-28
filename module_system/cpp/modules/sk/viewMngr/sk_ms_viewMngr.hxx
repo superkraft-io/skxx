@@ -16,6 +16,11 @@ public:
     };
 
     void createView(const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+
+
+        respondWith.JSON_OK();
+        return;
+
         SK_String viewID = payload["id"];
 
         SK_Window* existingView = wndMngr->findWindowByTag(viewID);

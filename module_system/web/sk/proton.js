@@ -17,23 +17,23 @@ class BrowserWindow extends SK_Module_Root {
         this.__moduleInstanceConfig.__uuid = sk_api.__protonjs.next_window_uuid()
 
         this.defOpt = {
-            "width": 800, //== [OK] ==*/
-            "height": 600, //== [OK] ==*/
+            "width": 800, //== [OK] ==//
+            "height": 600, //== [OK] ==//
             "x": 0,
             "y": 0,
             "useContentSize": false,
             "center": true,
-            "minWidth": 0, //== [OK] ==*/
-            "minHeight": 0, //== [OK] ==*/
-            "maxWidth": Infinity, //== [OK] ==*/
-            "maxHeight": Infinity, //== [OK] ==*/
-            "resizable": true, //== [OK] ==*/
-            "movable": true, //== [OK] ==*/
+            "minWidth": 0, //== [OK] ==//
+            "minHeight": 0, //== [OK] ==//
+            "maxWidth": Infinity, //== [OK] ==//
+            "maxHeight": Infinity, //== [OK] ==//
+            "resizable": true, //== [OK] ==//
+            "movable": true, //== [OK] ==//
             "minimizable": true,
             "maximizable": true,
             "closable": true,
             "focusable": true,
-            "alwaysOnTop": false,
+            "alwaysOnTop": false, //== [OK] ==//
             "fullscreen": false,
             "fullscreenable": true,
             "simpleFullscreen": false, // macOS exclusive
@@ -262,21 +262,12 @@ class BrowserWindow extends SK_Module_Root {
         return;
     }
 
-    set minimizable(val) {
-
-    }
-
-    get minimizable() {
-        return;
-    }
+    set minimizable(val) { this.sync('configure', { attribute: 'minimizable', value: val }) }
+    get minimizable() { return this.sync('configure', { attribute: 'minimizable', read: true }) }
 
 
-    set maximizable(val) {
-
-    }
-    get maximizable() {
-        return;
-    }
+    set maximizable(val) { this.sync('configure', { attribute: 'maximizable', value: val }) }
+    get maximizable() { return this.sync('configure', { attribute: 'maximizable', read: true }) }
 
 
     set fullScreenable(val) {
@@ -288,16 +279,12 @@ class BrowserWindow extends SK_Module_Root {
     }
 
 
-    set resizable(val) { this.sync('configure', { attribute: 'resizable', value: val })}
+    set resizable(val) { this.sync('configure', { attribute: 'resizable', value: val }) }
     get resizable() { return this.sync('configure', { attribute: 'resizable', read: true }) }
 
 
-    set closable(val) {
-
-    }
-    get closable() {
-        return;
-    }
+    set closable(val) { this.sync('configure', { attribute: 'closable', value: val }) }
+    get closable() { return this.sync('configure', { attribute: 'closable', read: true }) }
 
 
     set movable(val) { this.sync('configure', { attribute: 'movable', value: val }) }
@@ -543,13 +530,9 @@ class BrowserWindow extends SK_Module_Root {
 
     }
 
-    setAlwaysOnTop(flag, level, relativeLevel) {
+    setAlwaysOnTop(flag, level, relativeLevel) { this.sync('configure', { attribute: 'setAlwaysOnTop', value: { flag: flag, level: level, relativeLevel: relativeLevel } }) } //== [OK] ==//
 
-    }
-
-    isAlwaysOnTop() {
-
-    }
+    isAlwaysOnTop() { return this.sync('configure', { attribute: 'alwaysOnTop', read: true }) } //== [OK] ==//
 
     moveAbove(mediaSourceId) {
 
@@ -559,7 +542,7 @@ class BrowserWindow extends SK_Module_Root {
 
     }
 
-    center() { this.sync('configure', { attribute: 'center', value: true }) } //== [OK] ==*/
+    center() { this.sync('configure', { attribute: 'center', value: true }) } //== [OK] ==//
 
     setPosition(x, y, animate) {
 

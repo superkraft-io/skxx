@@ -183,7 +183,7 @@ public:
             case WM_MOVING: {
                 if (wnd->resizing) return 0;
 
-                if (wnd->config["movable"] == false){
+                if (wnd->config.data["movable"] == false){
 
                     float scale = getHWNDScale(hwnd);
 
@@ -228,20 +228,33 @@ public:
 
 
             case WM_SIZE: {
-                int returnVal = 0;
                 switch (LOWORD(wParam)) {
-                    case SIZE_RESTORED:
-                    case SIZE_MAXIMIZED: {
-                        returnVal = 1;
+                    case SIZE_RESTORED: {
+                        int x = 0;
                     }
-                    default:
-                        returnVal = 0;
+
+                    case SIZE_MAXIMIZED: {
+                        /*
+                        
+                            OPTION 1
+                            set a flag to indicate that size has maximized
+                            use the flag inside updateWindowByConfig() to prevent size from being manipulated (maybe use SWP_NOSIZE or something?)
+                            (this option is probably best)
+                         
+                            OPTION 2
+                            get w and h
+                            check if maxWidth and maxHeight are set to above 0 in config
+                            if they are, clamp w and h to their maxes
+                            if they are not, apply screen size w and h in config
+                        */
+                        int y = 0;
+                    }
                 }
 
 
                 wnd->update(true);
 
-                return returnVal;
+                return 0;
             }
 
             case WM_SIZING: {
@@ -340,29 +353,18 @@ public:
             std::string errorMessage = "Failed to create window. Error: " + GetLastErrorAsString();
             MessageBox(nullptr, errorMessage.c_str(), "Error", MB_OK | MB_ICONERROR);
         }
-      
-        
 
-        float scale = getHWNDScale(hwnd);
-        SetWindowPos(hwnd, NULL, 0, 0, config["width"] * scale, config["height"] * scale, SWP_NOMOVE | SWP_NOZORDER);
-
-        // Show the window
-        ShowWindow(hwnd, (config["show"] ? SW_SHOW : 0));
+        updateWindowByConfig();
         UpdateWindow(hwnd);
-
         createWebView();
-
 
         SK_Common::updateWebViewHWNDListForView(windowClassName);
 
 
-        updateWindowByConfig();
     };
 
 	void createWebView() {
-        webview.callResize = [&]() {
-            update();
-        };
+        webview.callResize = [&]() { update(); };
 
         webview.parentHwnd = &hwnd;
         webview.parentClassName = windowClassName;
@@ -420,56 +422,79 @@ public:
             bottom * (cursor.y >= (window.bottom - border.y));
 
         switch (result) {
-        case left: return frameless_resize ? HTLEFT : drag;
-        case right: return frameless_resize ? HTRIGHT : drag;
-        case top: return frameless_resize ? HTTOP : drag;
-        case bottom: return frameless_resize ? HTBOTTOM : drag;
-        case top | left: return frameless_resize ? HTTOPLEFT : drag;
-        case top | right: return frameless_resize ? HTTOPRIGHT : drag;
-        case bottom | left: return frameless_resize ? HTBOTTOMLEFT : drag;
-        case bottom | right: return frameless_resize ? HTBOTTOMRIGHT : drag;
-        case client: return drag;
-        default: return HTNOWHERE;
+            case left: return frameless_resize ? HTLEFT : drag;
+            case right: return frameless_resize ? HTRIGHT : drag;
+            case top: return frameless_resize ? HTTOP : drag;
+            case bottom: return frameless_resize ? HTBOTTOM : drag;
+            case top | left: return frameless_resize ? HTTOPLEFT : drag;
+            case top | right: return frameless_resize ? HTTOPRIGHT : drag;
+            case bottom | left: return frameless_resize ? HTBOTTOMLEFT : drag;
+            case bottom | right: return frameless_resize ? HTBOTTOMRIGHT : drag;
+            case client: return drag;
+            default: return HTNOWHERE;
         }
+    }
+
+    void setStyle(DWORD style, bool activate) {
+        if (activate) SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) | style);
+        else SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) & ~style);
     }
 
     void updateWindowByConfig() {
         if (hwnd == NULL) return;
 
-        //movable
-        //handled in WindowProc
+        float scale = getHWNDScale(hwnd);
 
-        if (config["alwaysOnTop"] == true) {
-            SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-        }
-        else {
-            SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+        //movable: handled in WindowProc
+        if (checkNeedsUpdateAndReset("resizable")) setStyle(WS_SIZEBOX, config.data["resizable"]);
+        if (checkNeedsUpdateAndReset("alwaysOnTop")) setAlwaysOnTop(config.data["alwaysOnTop"]);
+        if (checkNeedsUpdateAndReset("maximizable")) setStyle(WS_MAXIMIZEBOX, config.data["maximizable"]);
+        if (checkNeedsUpdateAndReset("minimizable")) setStyle(WS_MINIMIZEBOX, config.data["minimizable"]);
+
+        if (checkNeedsUpdateAndReset("closable")) {
+            HMENU hMenu = GetSystemMenu(hwnd, FALSE);
+            if (hMenu) {
+                if (config.data["closable"] == false) EnableMenuItem(hMenu, SC_CLOSE, MF_BYCOMMAND | MF_GRAYED);
+                else EnableMenuItem(hMenu, SC_CLOSE, MF_BYCOMMAND | MF_ENABLED);
+                DrawMenuBar(hwnd);
+            }
         }
 
-        if (config["resizable"] == true) {
-            SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) | WS_SIZEBOX);
-        }
-        else {
-            SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) & ~WS_SIZEBOX);
-        }
 
-        if (config["center"] == true) {
-            config.data["center"] = "applied";
 
+        if (checkNeedsUpdateAndReset("center") && config.data["center"] == true) {
             RECT  wndRect;
             GetWindowRect(hwnd, &wndRect);
 
-            int wndWidth = wndRect.right - wndRect.left;
-            int wndHeight = wndRect.bottom - wndRect.top;
+            int wndWidth  = (wndRect.right - wndRect.left);
+            int wndHeight = (wndRect.bottom - wndRect.top);
+
+            if (config.data["minWidth"] > 0 && wndWidth > config.data["minWidth"]) wndWidth = config.data["minWidth"];
+            if (config.data["minHeight"] > 0 && wndHeight > config.data["minHeight"]) wndHeight = config.data["minHeight"];
+
+            if (config.data["maxWidth"] > 0 && wndWidth > config.data["maxWidth"]) wndWidth = config.data["maxWidth"];
+            if (config.data["maxHeight"] > 0 && wndHeight > config.data["maxHeight"]) wndHeight = config.data["maxHeight"];
+
+            wndWidth *= scale;
+            wndHeight *= scale;
 
             int posx = GetSystemMetrics(SM_CXSCREEN) / 2 - wndWidth / 2;
             int posy = GetSystemMetrics(SM_CYSCREEN) / 2 - wndHeight / 2;
 
             config.data["x"] = posx;
             config.data["y"] = posy;
-
-            MoveWindow(hwnd, posx, posy, wndWidth, wndHeight , TRUE);
         }
+
+
+        //everything below this comment should come last
+        if (checkNeedsUpdateAndReset("x") || checkNeedsUpdateAndReset("y") || checkNeedsUpdateAndReset("width") || checkNeedsUpdateAndReset("width")) SetWindowPos(hwnd, NULL, config.data["x"], config.data["y"], config["width"] * scale, config["height"] * scale, SWP_NOZORDER);
+        if (checkNeedsUpdateAndReset("show")) ShowWindow(hwnd, (config["show"] ? SW_SHOW : SW_HIDE));
+    }
+
+    void setAlwaysOnTop(bool flag, int level = 0, int relativeLevel = 0) {
+        config.data["alwaysOnTop"] = flag;
+        if (flag == true)  SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+        else SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
     }
 private:
 
