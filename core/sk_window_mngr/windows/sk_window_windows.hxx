@@ -216,10 +216,12 @@ public:
                     return 1;
                 }
 
-                int x = LOWORD(lParam);
-                int y = HIWORD(lParam);
-                wnd->config.data["x"] = x;
-                wnd->config.data["y"] = y;
+                //int x = LOWORD(lParam);
+                //int y = HIWORD(lParam);
+                RECT wndRect;
+                GetWindowRect(hwnd, &wndRect);
+                wnd->config.data["x"] = wndRect.left;
+                wnd->config.data["y"] = wndRect.top;
 
                 return 0;
             }
@@ -462,6 +464,9 @@ public:
 
             int posx = GetSystemMetrics(SM_CXSCREEN) / 2 - wndWidth / 2;
             int posy = GetSystemMetrics(SM_CYSCREEN) / 2 - wndHeight / 2;
+
+            config.data["x"] = posx;
+            config.data["y"] = posy;
 
             MoveWindow(hwnd, posx, posy, wndWidth, wndHeight , TRUE);
         }
