@@ -16,6 +16,8 @@ public:
 	SK_Module_NativeActions nativeActions;
 	SK_Module_debugMngr debugMngr;
 
+	SK_Module_ProtonJS proton;
+
 	SK_Module_System() {
 		vfs = new SK_Module_vfs();
 		fs.vfs = vfs;
@@ -29,7 +31,7 @@ public:
 	}
 
 	void performOperation(const SK_String& module, const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
-		if (module == "os") os.handleOperation(operation, payload, respondWith);
+		     if (module == "os") os.handleOperation(operation, payload, respondWith);
 		else if (module == "application") application.handleOperation(operation, payload, respondWith);
 		else if (module == "fs") fs.handleOperation(operation, payload, respondWith);
 		else if (module == "bdfs") bdfs->handleOperation(operation, payload, respondWith);
@@ -38,6 +40,7 @@ public:
 		else if (module == "viewMngr") viewMngr.handleOperation(operation, payload, respondWith);
 		else if (module == "nativeActions") nativeActions.handleOperation(operation, payload, respondWith);
 		else if (module == "debugMngr") debugMngr.handleOperation(operation, payload, respondWith);
+		else if (module == "proton") proton.handleOperation(operation, payload, respondWith);
 
 		else respondWith.error(404, "Module not found");
 	};

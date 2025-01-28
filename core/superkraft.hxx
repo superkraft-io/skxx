@@ -21,6 +21,7 @@ public:
 
 		modsys.bdfs->binaryData = &binaryData;
 		modsys.viewMngr.wndMngr = &wndMngr;
+		modsys.proton.wndMngr = &wndMngr;
 
 		wvinit.modsys = &modsys;
 

@@ -39,41 +39,13 @@ class SK_Window : public SK_Window_Root {
 public:
 
     SK_String windowClassName = "SK_Window";
-    HWND hwnd, hwndBackground;
+    HWND hwnd = NULL;
     WNDCLASS wc{};
     HINSTANCE hInstance;
 
     SK_Window() {
         config.onChanged = [&](const std::string& key) {
-            if (key == "minWidth" || key == "minHeight" || key == "maxWidth" || key == "maxHeight") {
-                this->updateSizeConstraints();
-            }
-            else if (key == "width" || key == "height") {
-
-            }
-            else if (key == "alwaysOnTop") {
-
-            }
-            else if (key == "skipTaskbar") {
-
-            }
-            else if (key == "noTitle") {
-
-            }
-            else if (key == "show") {
-
-            }
-            else if (key == "frame") {
-
-            }
-            else if (key == "reansparent") {
-
-            }
-            else if (key == "backgroundColor") {
-
-            }
-
-
+            updateWindowByConfig();
         };
 
     }
@@ -153,11 +125,13 @@ public:
                     if (wnd->maxSizeFull.x == -1) wnd->maxSizeFull.x = pMinMaxInfo->ptMaxSize.x;
                     if (wnd->maxSizeFull.y == -1) wnd->maxSizeFull.y = pMinMaxInfo->ptMaxSize.y;
 
+                    float scale = getHWNDScale(hwnd);
+
                     // Set the maximum size dynamically
-                    pMinMaxInfo->ptMinTrackSize.x = wnd->config["minWidth"];
-                    pMinMaxInfo->ptMinTrackSize.y = wnd->config["minHeight"];
-                    pMinMaxInfo->ptMaxTrackSize.x = (wnd->config["maxWidth"]  > 0 ? wnd->config["maxWidth"]  : wnd->maxSizeFull.x);
-                    pMinMaxInfo->ptMaxTrackSize.y = (wnd->config["maxHeight"] > 0 ? wnd->config["maxHeight"] : wnd->maxSizeFull.y);
+                    pMinMaxInfo->ptMinTrackSize.x = wnd->config["minWidth"] * scale;
+                    pMinMaxInfo->ptMinTrackSize.y = wnd->config["minHeight"] * scale;
+                    pMinMaxInfo->ptMaxTrackSize.x = (wnd->config["maxWidth"]  > 0 ? wnd->config["maxWidth"] * scale : wnd->maxSizeFull.x);
+                    pMinMaxInfo->ptMaxTrackSize.y = (wnd->config["maxHeight"] > 0 ? wnd->config["maxHeight"] * scale : wnd->maxSizeFull.y);
                 }
                 return 0;
             }
@@ -182,28 +156,7 @@ public:
                 return 0;
             }
 
-            case WM_SIZE: {
-                int returnVal = 0;
-                switch (LOWORD(wParam)) {
-                case SIZE_RESTORED:
-                case SIZE_MAXIMIZED: {
-                    returnVal = 1;
-                }
-                default:
-                    returnVal = 0;
-                }
-                returnVal = 0;
-
-                wnd->update(true);
-
-                return returnVal;
-            }
-
-            case WM_SIZING: {
-                wnd->update(true);
-                return 0;
-            }
-
+            
 
             case WM_DESTROY: {
                 PostQuitMessage(0);
@@ -224,6 +177,100 @@ public:
                     SK_Common::onWindowFocusChanged(wnd, true);
                 }
 
+                return 0;
+            }
+
+            case WM_MOVING: {
+                if (wnd->resizing) return 0;
+
+                if (wnd->config["movable"] == false){
+
+                    float scale = getHWNDScale(hwnd);
+
+                    // Prevent window from moving
+                    int right = wnd->config["x"];
+                    int width = wnd->config["width"];
+                    right = right + width * scale;
+
+                    int bottom = wnd->config["y"];
+                    int height = wnd->config["height"];
+                    bottom = bottom + height * scale;
+
+                    RECT* rect = reinterpret_cast<RECT*>(lParam);
+                    rect->left = wnd->config["x"];
+                    rect->top = wnd->config["y"];
+                    rect->right = right;
+                    rect->bottom = bottom;
+                    
+                    return 1; // Indicates we modified the rect
+                }
+
+                return 0;
+            }
+
+            case WM_MOVE: {
+                if (wnd->resizing) return 0;
+
+                if (wnd->config["movable"] == false) {
+                    SetWindowPos(hwnd, NULL, wnd->config["x"], wnd->config["y"], 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+                    return 1;
+                }
+
+                int x = LOWORD(lParam);
+                int y = HIWORD(lParam);
+                wnd->config.data["x"] = x;
+                wnd->config.data["y"] = y;
+
+                return 0;
+            }
+
+
+            case WM_SIZE: {
+                int returnVal = 0;
+                switch (LOWORD(wParam)) {
+                    case SIZE_RESTORED:
+                    case SIZE_MAXIMIZED: {
+                        returnVal = 1;
+                    }
+                    default:
+                        returnVal = 0;
+                }
+
+
+                wnd->update(true);
+
+                return returnVal;
+            }
+
+            case WM_SIZING: {
+                wnd->resizing = true;
+
+                RECT* rect = reinterpret_cast<RECT*>(lParam);
+
+                // Extract x, y, width, and height
+                int x = rect->left;
+                int y = rect->top;
+                int width = rect->right - rect->left;
+                int height = rect->bottom - rect->top;
+
+                float scale = getHWNDScale(hwnd);
+
+                float floatScaledWidth = width / scale;
+                float floatScaledHeight = height / scale;
+                int scaledWidth = (int)floatScaledWidth;
+                int scaledHeight = (int)floatScaledHeight;
+
+                wnd->config.data["x"] = x;
+                wnd->config.data["y"] = y;
+                wnd->config.data["width"] = scaledWidth;
+                wnd->config.data["height"] = scaledHeight;
+
+                wnd->update(true);
+                return 0;
+            }
+
+            case WM_EXITSIZEMOVE: {
+                wnd->resizing = false;
                 return 0;
             }
 
@@ -276,8 +323,8 @@ public:
 
             wndStyle,
 
-            config["left"],
-            config["top"],
+            config["x"],
+            config["y"],
             config["width"],
             config["height"],
 
@@ -292,16 +339,13 @@ public:
             MessageBox(nullptr, errorMessage.c_str(), "Error", MB_OK | MB_ICONERROR);
         }
       
-
-        if (config["alwaysOnTop"] == true) {
-            SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0,SWP_NOMOVE | SWP_NOSIZE);
-        }
+        
 
         float scale = getHWNDScale(hwnd);
         SetWindowPos(hwnd, NULL, 0, 0, config["width"] * scale, config["height"] * scale, SWP_NOMOVE | SWP_NOZORDER);
 
         // Show the window
-        ShowWindow(hwnd, (config["visible"] ? SW_SHOW : 0));
+        ShowWindow(hwnd, (config["show"] ? SW_SHOW : 0));
         UpdateWindow(hwnd);
 
         createWebView();
@@ -309,7 +353,8 @@ public:
 
         SK_Common::updateWebViewHWNDListForView(windowClassName);
 
-        updateSizeConstraints();
+
+        updateWindowByConfig();
     };
 
 	void createWebView() {
@@ -329,7 +374,7 @@ public:
         GetClientRect(hwnd, &clientRect);
 
 
-        RECT rect = scaleRect(config["left"], config["top"], clientRect.right, clientRect.bottom, config["scale"]);
+        RECT rect = scaleRect(config["x"], config["y"], clientRect.right, clientRect.bottom, config["scale"]);
         if (webview.webview != nullptr) {
             webview.updateStyling(rect);
             webview.controller->SetBoundsAndZoomFactor(rect, 1);
@@ -386,8 +431,40 @@ public:
         }
     }
 
-    void updateSizeConstraints() {
-        SetWindowPos(hwnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+    void updateWindowByConfig() {
+        if (hwnd == NULL) return;
+
+        //movable
+        //handled in WindowProc
+
+        if (config["alwaysOnTop"] == true) {
+            SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+        }
+        else {
+            SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+        }
+
+        if (config["resizable"] == true) {
+            SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) | WS_SIZEBOX);
+        }
+        else {
+            SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) & ~WS_SIZEBOX);
+        }
+
+        if (config["center"] == true) {
+            config.data["center"] = "applied";
+
+            RECT  wndRect;
+            GetWindowRect(hwnd, &wndRect);
+
+            int wndWidth = wndRect.right - wndRect.left;
+            int wndHeight = wndRect.bottom - wndRect.top;
+
+            int posx = GetSystemMetrics(SM_CXSCREEN) / 2 - wndWidth / 2;
+            int posy = GetSystemMetrics(SM_CYSCREEN) / 2 - wndHeight / 2;
+
+            MoveWindow(hwnd, posx, posy, wndWidth, wndHeight , TRUE);
+        }
     }
 private:
 

@@ -1,7 +1,143 @@
 console.log('sk:proton')
 
+sk_api.__protonjs = {
+    window_uuid_counter: "0",
+    next_window_uuid: () => {
+        var counterAsInt = parseInt(sk_api.__protonjs.window_uuid_counter)
+        counterAsInt++
+        sk_api.__protonjs.window_uuid_counter = counterAsInt.toString()
+        return sk_api.__protonjs.window_uuid_counter
+    }
+}
 
-class ProtonWindow {
+class BrowserWindow extends SK_Module_Root {
+    constructor(opt = {}) {
+        super('proton')
+
+        this.__moduleInstanceConfig.__uuid = sk_api.__protonjs.next_window_uuid()
+
+        this.defOpt = {
+            "width": 800, //== [OK] ==*/
+            "height": 600, //== [OK] ==*/
+            "x": 0,
+            "y": 0,
+            "useContentSize": false,
+            "center": true,
+            "minWidth": 0, //== [OK] ==*/
+            "minHeight": 0, //== [OK] ==*/
+            "maxWidth": Infinity, //== [OK] ==*/
+            "maxHeight": Infinity, //== [OK] ==*/
+            "resizable": true, //== [OK] ==*/
+            "movable": true, //== [OK] ==*/
+            "minimizable": true,
+            "maximizable": true,
+            "closable": true,
+            "focusable": true,
+            "alwaysOnTop": false,
+            "fullscreen": false,
+            "fullscreenable": true,
+            "simpleFullscreen": false, // macOS exclusive
+            "skipTaskbar": false,
+            "kiosk": false,
+            "title": "My SK Protom Window",
+            "icon": null,
+            "show": true,
+            "frame": true,
+            "parent": null,
+            "modal": false,
+            "acceptFirstMouse": false,
+            "disableAutoHideCursor": false,
+            "autoHideMenuBar": false,
+            "enableLargerThanScreen": false,
+            "backgroundColor": "#FFFFFF",
+            "hasShadow": true,
+            "opacity": 1.0,
+            "darkTheme": false,
+            "transparent": false,
+            "type": "normal",
+            "titleBarStyle": "default", // macOS exclusive (options: 'default', 'hidden', 'hiddenInset', 'customButtonsOnHover')
+            "thickFrame": true, // Windows exclusive
+            "vibrancy": "none", // macOS exclusive (options: 'appearance-based', 'light', 'dark', 'titlebar', 'selection', 'menu', 'popover', 'sidebar', 'medium-light', 'ultra-dark')
+            "zoomToPageWidth": false, // macOS exclusive
+            "tabbingIdentifier": null, // macOS exclusive
+            "webPreferences": {
+                "devTools": true,
+                "nodeIntegration": false,
+                "nodeIntegrationInWorker": false,
+                "nodeIntegrationInSubFrames": false,
+                "preload": null,
+                "sandbox": false,
+                "session": null,
+                "partition": null,
+                "zoomFactor": 1.0,
+                "javascript": true,
+                "webSecurity": true,
+                "allowRunningInsecureContent": false,
+                "images": true,
+                "imageAnimationPolicy": "animate",
+                "textAreasAreResizable": true,
+                "webgl": true,
+                "plugins": false,
+                "experimentalFeatures": false,
+                "scrollBounce": false, // macOS exclusive
+                "enableBlinkFeatures": "",
+                "disableBlinkFeatures": "",
+                "defaultFontFamily": {
+                    "standard": "Times New Roman",
+                    "serif": "Times New Roman",
+                    "sansSerif": "Arial",
+                    "monospace": "Courier New",
+                    "cursive": "Script",
+                    "fantasy": "Impact",
+                    "math": "Latin Modern Math"
+                },
+                "defaultFontSize": 16,
+                "defaultMonospaceFontSize": 13,
+                "minimumFontSize": 0,
+                "defaultEncoding": "ISO-8859-1",
+                "backgroundThrottling": true,
+                "offscreen": false,
+                "useSharedTexture": false,
+                "contextIsolation": true,
+                "webviewTag": false,
+                "additionalArguments": [],
+                "safeDialogs": false,
+                "safeDialogsMessage": null,
+                "disableDialogs": false,
+                "navigateOnDragDrop": false,
+                "autoplayPolicy": "no-user-gesture-required",
+                "disableHtmlFullscreenWindowResize": false,
+                "accessibleTitle": "",
+                "spellcheck": true,
+                "enableWebSQL": true,
+                "v8CacheOptions": "code",
+                "enablePreferredSizeMode": false,
+                "paintWhenInitiallyHidden": true
+            },
+            "paintWhenInitiallyHidden": true,
+            "throttleWhenBackground": true,
+            "trafficLightPosition": { "x": 10, "y": 10 }, // macOS exclusive (controls the position of the traffic light buttons in frameless windows)
+            "roundedCorners": true, // macOS exclusive
+            "hiddenInMissionControl": false, // macOS exclusive
+        }
+
+        this.defOpt = { ...this.defOpt, ...opt }
+            
+        this.sync('construct', { constructorOpts: this.defOpt })
+
+        /*const proxy = new Proxy(this, {
+            set(target, key, val) {
+                if (!this[key] && !this.defOpt[key]) return console.log('Invalid call')
+
+                if (this.defOpt[key]) {
+                    this.defOpt[key] = value
+                }
+            }
+        });*/
+    }
+
+
+
     static getAllWindows() {
         return this.async('getAllWindows')
     }
@@ -19,15 +155,15 @@ class ProtonWindow {
     }
 
     get webContents() {
-
+        return;
     }
 
     get ids() {
-
+        return;
     }
 
     get tabbingIdentifier() {
-
+        return;
     }
 
 
@@ -36,7 +172,7 @@ class ProtonWindow {
     }
 
     get autoHideMenuBar() {
-
+        return;
     }
 
 
@@ -44,7 +180,7 @@ class ProtonWindow {
 
     }
     get simpleFullScreen() {
-
+        return;
     }
 
 
@@ -52,7 +188,7 @@ class ProtonWindow {
 
     }
     get fullScreen() {
-
+        return;
     }
 
 
@@ -60,7 +196,7 @@ class ProtonWindow {
 
     }
     get focusable() {
-
+        return;
     }
 
 
@@ -72,6 +208,8 @@ class ProtonWindow {
         if (sk_api.staticInfo.machine.os == "win") return false //always returns false on windows
 
         //macos result here
+
+        return;
     }
 
 
@@ -79,7 +217,7 @@ class ProtonWindow {
 
     }
     get shadow() {
-
+        return;
     }
 
 
@@ -88,7 +226,7 @@ class ProtonWindow {
     }
 
     get menuBarVisible() {
-
+        return;
     }
 
 
@@ -96,7 +234,7 @@ class ProtonWindow {
 
     }
     get kiosk() {
-
+        return;
     }
 
 
@@ -104,7 +242,7 @@ class ProtonWindow {
 
     }
     get documentEdited() {
-
+        return;
     }
 
 
@@ -113,7 +251,7 @@ class ProtonWindow {
     }
 
     get representedFilenames() {
-
+        return;
     }
 
 
@@ -121,7 +259,7 @@ class ProtonWindow {
 
     }
     get title() {
-
+        return;
     }
 
     set minimizable(val) {
@@ -129,7 +267,7 @@ class ProtonWindow {
     }
 
     get minimizable() {
-
+        return;
     }
 
 
@@ -137,7 +275,7 @@ class ProtonWindow {
 
     }
     get maximizable() {
-
+        return;
     }
 
 
@@ -146,46 +284,37 @@ class ProtonWindow {
     }
 
     get fullScreenable() {
-
+        return;
     }
 
 
-    set resizable(val) {
-
-    }
-
-    get resizable() {
-
-    }
+    set resizable(val) { this.sync('configure', { attribute: 'resizable', value: val })}
+    get resizable() { return this.sync('configure', { attribute: 'resizable', read: true }) }
 
 
     set closable(val) {
 
     }
     get closable() {
-
+        return;
     }
 
 
-    get movable(val) {
-
-    }
-    get movable() {
-
-    }
+    set movable(val) { this.sync('configure', { attribute: 'movable', value: val }) }
+    get movable() { return this.sync('configure', { attribute: 'movable', read: true }) }
 
     set excludedFromShownWindowsMenu(val) {
 
     }
     get excludedFromShownWindowsMenu() {
-
+        return;
     }
 
     set accessibleTitle(val) {
 
     }
     get accessibleTitle() {
-
+        return;
     }
 
 
@@ -430,9 +559,7 @@ class ProtonWindow {
 
     }
 
-    center() {
-
-    }
+    center() { this.sync('configure', { attribute: 'center', value: true }) } //== [OK] ==*/
 
     setPosition(x, y, animate) {
 
@@ -630,7 +757,7 @@ class ProtonWindow {
 
     }
 
-    setIgnoreMouseEvents(ignore[, options]) {
+    setIgnoreMouseEvents(ignore, options) {
 
     }
 
@@ -716,9 +843,7 @@ class ProtonWindow {
 
 }
 
-class Proton extends SK_Module_Root {
-    
+
+module.exports = {
+    BrowserWindow
 }
-
-
-module.exports = new SK_Module_proton('proton')

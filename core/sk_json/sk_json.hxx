@@ -8,6 +8,9 @@ class SK_JSON {
 public:
     using SK_JSON_CB_onChanged = std::function<void(const SK_String& key)>;
     SK_JSON_CB_onChanged onChanged;
+    bool bypassCallback = false;
+
+    nlohmann::json data;
 
     SK_JSON() = default;
 
@@ -29,7 +32,7 @@ public:
         SK_JSON_Proxy& operator=(const nlohmann::json& value) {
             accessed = true; // Track that the key was accessed and modified
             parent.data[key] = value;
-            if (parent.onChanged) {
+            if (parent.bypassCallback == false && parent.onChanged) {
                 parent.onChanged(key); // Trigger callback on modification
             }
             return *this;
@@ -123,7 +126,7 @@ public:
         SK_JSON_Proxy& operator=(const SK_Number & value) {
             accessed = true; // Track that the key was accessed and modified
             parent.data[key] = value; // Assuming SK_Number can be directly assigned to nlohmann::json
-            if (parent.onChanged) {
+            if (parent.bypassCallback == false && parent.onChanged) {
                 parent.onChanged(key); // Trigger callback on modification
             }
             return *this;
@@ -165,6 +168,9 @@ public:
         bool operator==(bool value) const {
             if (parent.data.contains(key) && parent.data[key].is_boolean()) {
                 return parent.data[key].get<bool>() == value;
+                if (parent.bypassCallback == false && parent.onChanged) {
+                    parent.onChanged(key); // Trigger callback on modification
+                }
             }
             return false; // Default behavior if the key doesn't exist or isn't a boolean
         }
@@ -172,7 +178,7 @@ public:
         SK_JSON_Proxy& operator=(bool value) {
             accessed = true; // Track that the key was accessed and modified
             parent.data[key] = value; // Assign the bool value to the JSON key
-            if (parent.onChanged) {
+            if (parent.bypassCallback == false && parent.onChanged) {
                 parent.onChanged(key); // Trigger callback on modification
             }
             return *this;
@@ -190,11 +196,10 @@ public:
 
     void combineWith(const nlohmann::json& json) {
         data.update(json);
-        if (onChanged) onChanged("");
+        if (bypassCallback == false && onChanged) onChanged("");
     }
 
 private:
-    nlohmann::json data;
 };
 
 END_SK_NAMESPACE

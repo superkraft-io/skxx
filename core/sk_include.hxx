@@ -206,6 +206,8 @@ END_SK_NAMESPACE
 
 #include "../module_system/cpp/modules/sk/viewMngr/sk_ms_viewMngr.hxx"
 
+#include "../module_system/cpp/modules/sk/sk_ms_protonjs.hxx"
+
 #include "../module_system/sk_module_system.hxx"
 
 #include "sk_webview_initializer/os/sk_webview_initializer_windows.hxx"
