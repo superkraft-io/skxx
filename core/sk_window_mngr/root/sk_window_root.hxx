@@ -9,17 +9,18 @@ class SK_Window_Root {
 public:
 	unsigned int wndIdx;
 	SK_String tag;
-	SK_String title = "SK Window";
 	SK_IPC_v2 ipc;
 
 	SK_JSON config {
 		{"mainWindow", false},
-		{"scale", 1.}
+		{"scale", 1.},
+		{"title", "SK++ Window"}
 	};
 
 	nlohmann::json config_updateTracker {
-		{"mainWindow", false},
-		{"scale", false}
+		{"mainWindow", true},
+		{"scale", true},
+		{ "title", true}
 	};
 
 	SK_Point maxSizeFull {-1, -1};
@@ -28,6 +29,7 @@ public:
     std::optional<int> zIndex = NULL;
 
 	bool resizing = false;
+	bool isMaximized = false;
 
 	bool frameless_drag;
 	bool frameless_resize;

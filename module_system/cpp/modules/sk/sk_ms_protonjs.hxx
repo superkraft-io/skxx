@@ -60,9 +60,7 @@ public:
             handleDetailedAttributeAssignment(wnd, attribute, payload["value"]);
         }
         else {
-            wnd->config_updateTracker[attribute] = true;
             wnd->config[attribute] = payload["value"];
-            wnd->config_updateTracker[attribute] = false;
         }
 
         respondWith.JSON_OK();

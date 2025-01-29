@@ -45,6 +45,7 @@ public:
 
     SK_Window() {
         config.onChanged = [&](const std::string& key) {
+            config_updateTracker[key] = true;
             updateWindowByConfig();
         };
 
@@ -94,14 +95,15 @@ public:
         }
 
 
+
         switch (uMsg) {
             case WM_PAINT: {
 
-                if (!wnd->config["transparent"]){
+                if (!wnd->config.data["transparent"]){
                     PAINTSTRUCT ps;
                     HDC hdc = BeginPaint(hwnd, &ps);
 
-                    HBRUSH hBrush = CreateSolidBrush(RGB(255, 128, 0));
+                    HBRUSH hBrush = CreateSolidBrush(RGB(wnd->backgroundColor.r, wnd->backgroundColor.g, wnd->backgroundColor.b));
 
                     RECT clientRect;
                     GetClientRect(hwnd, &clientRect);
@@ -114,24 +116,29 @@ public:
 
                 }
 
+                wnd->update(true);
+
                 return true;
             }
 
             case WM_GETMINMAXINFO: {
+
                 // Get the MINMAXconfig structure
                 MINMAXINFO* pMinMaxInfo = (MINMAXINFO*)lParam;
 
                 if (wnd){
+                    if (wnd->config.data["fullscreen"]) return 0;
+
                     if (wnd->maxSizeFull.x == -1) wnd->maxSizeFull.x = pMinMaxInfo->ptMaxSize.x;
                     if (wnd->maxSizeFull.y == -1) wnd->maxSizeFull.y = pMinMaxInfo->ptMaxSize.y;
 
                     float scale = getHWNDScale(hwnd);
 
                     // Set the maximum size dynamically
-                    pMinMaxInfo->ptMinTrackSize.x = wnd->config["minWidth"] * scale;
-                    pMinMaxInfo->ptMinTrackSize.y = wnd->config["minHeight"] * scale;
-                    pMinMaxInfo->ptMaxTrackSize.x = (wnd->config["maxWidth"]  > 0 ? wnd->config["maxWidth"] * scale : wnd->maxSizeFull.x);
-                    pMinMaxInfo->ptMaxTrackSize.y = (wnd->config["maxHeight"] > 0 ? wnd->config["maxHeight"] * scale : wnd->maxSizeFull.y);
+                    pMinMaxInfo->ptMinTrackSize.x = wnd->config.data["minWidth"] * scale;
+                    pMinMaxInfo->ptMinTrackSize.y = wnd->config.data["minHeight"] * scale;
+                    pMinMaxInfo->ptMaxTrackSize.x = (wnd->config.data["maxWidth"]  > 0 ? wnd->config.data["maxWidth"] * scale : wnd->maxSizeFull.x);
+                    pMinMaxInfo->ptMaxTrackSize.y = (wnd->config.data["maxHeight"] > 0 ? wnd->config.data["maxHeight"] * scale : wnd->maxSizeFull.y);
                 }
                 return 0;
             }
@@ -151,7 +158,7 @@ public:
                 diff.y = (wndRect.bottom - wndRect.top) - clientRect.bottom;
 
 
-                SetWindowPos(hwnd, 0, rect->left, rect->top, wnd->config["width"] + diff.x, wnd->config["height"] + diff.y, 0);
+                SetWindowPos(hwnd, 0, rect->left, rect->top, wnd->config.data["width"] + diff.x, wnd->config.data["height"] + diff.y, 0);
 
                 return 0;
             }
@@ -181,6 +188,8 @@ public:
             }
 
             case WM_MOVING: {
+                if (wnd->config.data["fullscreen"]) return 0;
+                if (wnd->isMaximized) return 0;
                 if (wnd->resizing) return 0;
 
                 if (wnd->config.data["movable"] == false){
@@ -188,17 +197,17 @@ public:
                     float scale = getHWNDScale(hwnd);
 
                     // Prevent window from moving
-                    int right = wnd->config["x"];
-                    int width = wnd->config["width"];
+                    int right = wnd->config.data["x"];
+                    int width = wnd->config.data["width"];
                     right = right + width * scale;
 
-                    int bottom = wnd->config["y"];
-                    int height = wnd->config["height"];
+                    int bottom = wnd->config.data["y"];
+                    int height = wnd->config.data["height"];
                     bottom = bottom + height * scale;
 
                     RECT* rect = reinterpret_cast<RECT*>(lParam);
-                    rect->left = wnd->config["x"];
-                    rect->top = wnd->config["y"];
+                    rect->left = wnd->config.data["x"];
+                    rect->top = wnd->config.data["y"];
                     rect->right = right;
                     rect->bottom = bottom;
                     
@@ -209,10 +218,26 @@ public:
             }
 
             case WM_MOVE: {
+                if (wnd->config.data["fullscreen"]) return 0;
+
+                WINDOWPLACEMENT wp;
+                wp.length = sizeof(WINDOWPLACEMENT);
+                if (GetWindowPlacement(hwnd, &wp)) {
+                    if (wp.showCmd == SW_MAXIMIZE) {
+                        wnd->isMaximized = true;
+                        //if (wnd->config.data["fullscreenable"]) wnd->setFullscreen(true);
+                    }
+                    else {
+                        wnd->isMaximized = false;
+                        //if (wnd->config.data["fullscreenable"]) wnd->setFullscreen(false);
+                    }
+                }
+
+                if (wnd->isMaximized) return 0;
                 if (wnd->resizing) return 0;
 
-                if (wnd->config["movable"] == false) {
-                    SetWindowPos(hwnd, NULL, wnd->config["x"], wnd->config["y"], 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+                if (wnd->config.data["movable"] == false) {
+                    SetWindowPos(hwnd, NULL, wnd->config.data["x"], wnd->config.data["y"], 0, 0, SWP_NOSIZE | SWP_NOZORDER);
                     return 1;
                 }
 
@@ -228,12 +253,16 @@ public:
 
 
             case WM_SIZE: {
+                if (wnd->config.data["fullscreen"]) return 0;
+
                 switch (LOWORD(wParam)) {
                     case SIZE_RESTORED: {
-                        int x = 0;
+                        wnd->isMaximized = false;
+                        break;
                     }
 
                     case SIZE_MAXIMIZED: {
+                        wnd->isMaximized = true;
                         /*
                         
                             OPTION 1
@@ -248,6 +277,7 @@ public:
                             if they are not, apply screen size w and h in config
                         */
                         int y = 0;
+                        break;
                     }
                 }
 
@@ -258,6 +288,8 @@ public:
             }
 
             case WM_SIZING: {
+                if (wnd->isMaximized) return 0;
+
                 wnd->resizing = true;
 
                 RECT* rect = reinterpret_cast<RECT*>(lParam);
@@ -285,6 +317,8 @@ public:
             }
 
             case WM_EXITSIZEMOVE: {
+                if (wnd->config.data["fullscreen"]) return 0;
+
                 wnd->resizing = false;
                 return 0;
             }
@@ -324,17 +358,14 @@ public:
 
         DWORD wndStyle = WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU | WS_OVERLAPPEDWINDOW;
 
-        if (config["frame"] == false) {
-            wndStyle = WS_POPUP;
-        }
-
+        
 
         // Create the window
         hwnd = CreateWindowEx(
             0,
 
             windowClassName.c_str(),
-            title.c_str(),
+            SK_String(config["title"]).c_str(),
 
             wndStyle,
 
@@ -378,7 +409,7 @@ public:
         GetClientRect(hwnd, &clientRect);
 
 
-        RECT rect = scaleRect(config["x"], config["y"], clientRect.right, clientRect.bottom, config["scale"]);
+        RECT rect = scaleRect(config.data["x"], config.data["y"], clientRect.right, clientRect.bottom, config.data["scale"]);
         if (webview.webview != nullptr) {
             webview.updateStyling(rect);
             webview.controller->SetBoundsAndZoomFactor(rect, 1);
@@ -435,9 +466,18 @@ public:
         }
     }
 
-    void setStyle(DWORD style, bool activate) {
-        if (activate) SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) | style);
-        else SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) & ~style);
+
+    
+
+    void setStyle(DWORD style, bool activate, bool isEXStyle = false) {
+        if (!isEXStyle) {
+            if (activate) SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) | style);
+            else SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) & ~style);
+        }
+        else {
+            if (activate) SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | style);
+            else SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) & ~style);
+        }
     }
 
     void updateWindowByConfig() {
@@ -446,11 +486,19 @@ public:
         float scale = getHWNDScale(hwnd);
 
         //movable: handled in WindowProc
+        if (checkNeedsUpdateAndReset("title")) SetWindowText(hwnd, SK_String(config.data["title"]).c_str());
         if (checkNeedsUpdateAndReset("resizable")) setStyle(WS_SIZEBOX, config.data["resizable"]);
         if (checkNeedsUpdateAndReset("alwaysOnTop")) setAlwaysOnTop(config.data["alwaysOnTop"]);
         if (checkNeedsUpdateAndReset("maximizable")) setStyle(WS_MAXIMIZEBOX, config.data["maximizable"]);
         if (checkNeedsUpdateAndReset("minimizable")) setStyle(WS_MINIMIZEBOX, config.data["minimizable"]);
-
+        if (checkNeedsUpdateAndReset("backgroundColor")) backgroundColor = config.data["backgroundColor"];
+        /* WIP */ if (checkNeedsUpdateAndReset("focusable")) setStyle(WS_EX_NOACTIVATE, config.data["focusable"], true);
+        if (checkNeedsUpdateAndReset("skipTaskbar")) setStyle(WS_EX_APPWINDOW, config.data["skipTaskbar"], true);
+        if (checkNeedsUpdateAndReset("frame")) {
+            setStyle(WS_CAPTION | WS_SYSMENU | WS_OVERLAPPEDWINDOW, config.data["frame"]);
+            setStyle(WS_POPUP, !config.data["frame"]);
+        }
+        
         if (checkNeedsUpdateAndReset("closable")) {
             HMENU hMenu = GetSystemMenu(hwnd, FALSE);
             if (hMenu) {
@@ -460,41 +508,80 @@ public:
             }
         }
 
-
-
-        if (checkNeedsUpdateAndReset("center") && config.data["center"] == true) {
-            RECT  wndRect;
-            GetWindowRect(hwnd, &wndRect);
-
-            int wndWidth  = (wndRect.right - wndRect.left);
-            int wndHeight = (wndRect.bottom - wndRect.top);
-
-            if (config.data["minWidth"] > 0 && wndWidth > config.data["minWidth"]) wndWidth = config.data["minWidth"];
-            if (config.data["minHeight"] > 0 && wndHeight > config.data["minHeight"]) wndHeight = config.data["minHeight"];
-
-            if (config.data["maxWidth"] > 0 && wndWidth > config.data["maxWidth"]) wndWidth = config.data["maxWidth"];
-            if (config.data["maxHeight"] > 0 && wndHeight > config.data["maxHeight"]) wndHeight = config.data["maxHeight"];
-
-            wndWidth *= scale;
-            wndHeight *= scale;
-
-            int posx = GetSystemMetrics(SM_CXSCREEN) / 2 - wndWidth / 2;
-            int posy = GetSystemMetrics(SM_CYSCREEN) / 2 - wndHeight / 2;
-
-            config.data["x"] = posx;
-            config.data["y"] = posy;
+        if (checkNeedsUpdateAndReset("thickFrame")) {
+            setStyle(WS_THICKFRAME, config.data["thickFrame"]);
+            if (config.data["frame"]) {
+                
+            }
         }
 
 
         //everything below this comment should come last
-        if (checkNeedsUpdateAndReset("x") || checkNeedsUpdateAndReset("y") || checkNeedsUpdateAndReset("width") || checkNeedsUpdateAndReset("width")) SetWindowPos(hwnd, NULL, config.data["x"], config.data["y"], config["width"] * scale, config["height"] * scale, SWP_NOZORDER);
-        if (checkNeedsUpdateAndReset("show")) ShowWindow(hwnd, (config["show"] ? SW_SHOW : SW_HIDE));
+
+        if (!isMaximized) {
+            if (checkNeedsUpdateAndReset("center") && config.data["center"] == true) {
+                RECT  wndRect;
+                GetWindowRect(hwnd, &wndRect);
+
+                int wndWidth  = (wndRect.right - wndRect.left);
+                int wndHeight = (wndRect.bottom - wndRect.top);
+
+                if (config.data["minWidth"] > 0 && wndWidth > config.data["minWidth"]) wndWidth = config.data["minWidth"];
+                if (config.data["minHeight"] > 0 && wndHeight > config.data["minHeight"]) wndHeight = config.data["minHeight"];
+
+                if (config.data["maxWidth"] > 0 && wndWidth > config.data["maxWidth"]) wndWidth = config.data["maxWidth"];
+                if (config.data["maxHeight"] > 0 && wndHeight > config.data["maxHeight"]) wndHeight = config.data["maxHeight"];
+
+                wndWidth *= scale;
+                wndHeight *= scale;
+
+                int posx = GetSystemMetrics(SM_CXSCREEN) / 2 - wndWidth / 2;
+                int posy = GetSystemMetrics(SM_CYSCREEN) / 2 - wndHeight / 2;
+
+                config.data["x"] = posx;
+                config.data["y"] = posy;
+            }
+
+            if (checkNeedsUpdateAndReset("x") || checkNeedsUpdateAndReset("y") || checkNeedsUpdateAndReset("width") || checkNeedsUpdateAndReset("width")) SetWindowPos(hwnd, NULL, config.data["x"], config.data["y"], config["width"] * scale, config["height"] * scale, SWP_NOZORDER);
+
+            if (checkNeedsUpdateAndReset("show")) ShowWindow(hwnd, (config["show"] ? SW_SHOW : SW_HIDE));
+        }
+
+        InvalidateRect(hwnd, NULL, TRUE);
+        UpdateWindow(hwnd);
+
+        if (checkNeedsUpdateAndReset("fullscreen")) setFullscreen(config.data["fullscreen"]);
     }
 
     void setAlwaysOnTop(bool flag, int level = 0, int relativeLevel = 0) {
         config.data["alwaysOnTop"] = flag;
         if (flag == true)  SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
         else SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+    }
+
+    void setFullscreen(bool activate){
+        if (!activate) {
+            if (config["frame"] == true) config_updateTracker["frame"] = true;
+            config_updateTracker["x"] = true;
+            config_updateTracker["y"] = true;
+            config_updateTracker["width"] = true;
+            config_updateTracker["height"] = true;
+            updateWindowByConfig();
+            return;
+        }
+
+        // Get the screen dimensions
+        RECT screenRect;
+        SystemParametersInfo(SPI_GETWORKAREA, 0, &screenRect, 0);
+
+        // Get current window style and remove borders
+        LONG style = GetWindowLong(hwnd, GWL_STYLE);
+        style &= ~(WS_OVERLAPPEDWINDOW);
+        style |= WS_POPUP;  // Use WS_POPUP for fullscreen, which removes borders and title bar
+        SetWindowLong(hwnd, GWL_STYLE, style);
+
+        // Set the window position and size to fill the screen
+        SetWindowPos(hwnd, HWND_TOP, screenRect.left, screenRect.top, screenRect.right - screenRect.left, screenRect.bottom - screenRect.top, SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
     }
 private:
 

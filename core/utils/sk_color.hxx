@@ -82,25 +82,25 @@ public:
         }
 
         // RGB color detection
-        std::regex rgbRegex("^rgb\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*\\)$");
+        std::regex rgbRegex("^rgb\\(\\s*(\\d+)\\s*,?\\s*(\\d+)\\s*,?\\s*(\\d+)\\s*\\)$");
         if (std::regex_match(color, rgbRegex)) {
             return SK_Color_Format::rgb;
         }
 
         // RGBA color detection
-        std::regex rgbaRegex("^rgba\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*([\\d.]+)\\s*\\)$");
+        std::regex rgbaRegex("^rgba\\(\\s*(\\d+)\\s*,?\\s*(\\d+)\\s*,?\\s*(\\d+)\\s*,?\\s*([\\d.]+)\\s*\\)$");
         if (std::regex_match(color, rgbaRegex)) {
             return SK_Color_Format::rgba;
         }
 
         // HSL color detection
-        std::regex hslRegex("^hsl\\(\\s*(-?[\\d.]+)\\s*,\\s*([\\d.]+)%\\s*,\\s*([\\d.]+)%\\s*\\)$");
+        std::regex hslRegex("^hsl\\(\\s*(-?[\\d.]+)\\s*(?:deg)?\\s*,?\\s*([\\d.]+)%\\s*,?\\s*([\\d.]+)%\\s*\\)$");
         if (std::regex_match(color, hslRegex)) {
             return SK_Color_Format::hsl;
         }
 
         // HSLA color detection
-        std::regex hslaRegex("^hsla\\(\\s*(-?[\\d.]+)\\s*,\\s*([\\d.]+)%\\s*,\\s*([\\d.]+)%\\s*,\\s*([\\d.]+)\\s*\\)$");
+        std::regex hslaRegex("^hsla\\(\\s*(-?[\\d.]+)\\s*(?:deg)?\\s*,?\\s*([\\d.]+)%\\s*,?\\s*([\\d.]+)%\\s*,?\\s*([\\d.]+)\\s*\\)$");
         if (std::regex_match(color, hslaRegex)) {
             return SK_Color_Format::hsla;
         }
@@ -134,9 +134,12 @@ public:
     }
 
     static inline std::optional<SK_Color> parseRGB(const std::string& color) {
-        std::regex rgbRegex("^rgb\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*\\)$");
+        std::regex rgbRegex("^rgb\\(\\s*(\\d+)\\s*,?\\s*(\\d+)\\s*,?\\s*(\\d+)\\s*\\)$");
         std::smatch match;
-        if (!std::regex_match(color, match, rgbRegex)) return std::nullopt;
+    
+        if (!std::regex_match(color, match, rgbRegex)) {
+            return std::nullopt;
+        }
 
         int r = std::stoi(match[1]);
         int g = std::stoi(match[2]);
@@ -146,9 +149,12 @@ public:
     }
 
     static inline std::optional<SK_Color> parseRGBA(const std::string& color) {
-        std::regex rgbaRegex("^rgba\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*([\\d.]+)\\s*\\)$");
+        std::regex rgbaRegex("^rgba\\(\\s*(\\d+)\\s*,?\\s*(\\d+)\\s*,?\\s*(\\d+)\\s*,?\\s*([\\d.]+)\\s*\\)$");
         std::smatch match;
-        if (!std::regex_match(color, match, rgbaRegex)) return std::nullopt;
+
+        if (!std::regex_match(color, match, rgbaRegex)) {
+            return std::nullopt;
+        }
 
         int r = std::stoi(match[1]);
         int g = std::stoi(match[2]);
@@ -159,7 +165,7 @@ public:
     }
 
     static inline std::optional<SK_Color> parseHSL(const std::string& color) {
-        std::regex hslRegex("^hsl\\(\\s*(-?[\\d.]+)\\s*,\\s*([\\d.]+)%\\s*,\\s*([\\d.]+)%\\s*\\)$");
+        std::regex hslRegex("^hsl\\(\\s*(-?[\\d.]+)\\s*(?:deg)?\\s*,?\\s*([\\d.]+)%\\s*,?\\s*([\\d.]+)%\\s*\\)$");
         std::smatch match;
         if (!std::regex_match(color, match, hslRegex)) return std::nullopt;
 
@@ -200,7 +206,7 @@ public:
     }
 
     static inline std::optional<SK_Color> parseHSLA(const std::string& color) {
-        std::regex hslaRegex("^hsla\\(\\s*(-?[\\d.]+)\\s*,\\s*([\\d.]+)%\\s*,\\s*([\\d.]+)%\\s*,\\s*([\\d.]+)\\s*\\)$");
+        std::regex hslaRegex("^hsla\\(\\s*(-?[\\d.]+)\\s*(?:deg)?\\s*,?\\s*([\\d.]+)%\\s*,?\\s*([\\d.]+)%\\s*,?\\s*([\\d.]+)\\s*\\)$");
         std::smatch match;
         if (!std::regex_match(color, match, hslaRegex)) return std::nullopt;
 

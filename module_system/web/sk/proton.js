@@ -19,47 +19,65 @@ class BrowserWindow extends SK_Module_Root {
         this.defOpt = {
             "width": 800, //== [OK] ==//
             "height": 600, //== [OK] ==//
-            "x": 0,
-            "y": 0,
-            "useContentSize": false,
-            "center": true,
+            "x": 0, //== [OK] ==//
+            "y": 0, //== [OK] ==//
+            "center": true, //== [OK] ==//
             "minWidth": 0, //== [OK] ==//
             "minHeight": 0, //== [OK] ==//
             "maxWidth": Infinity, //== [OK] ==//
             "maxHeight": Infinity, //== [OK] ==//
             "resizable": true, //== [OK] ==//
             "movable": true, //== [OK] ==//
-            "minimizable": true,
-            "maximizable": true,
-            "closable": true,
-            "focusable": true,
+            "minimizable": true, //== [OK] ==//
+            "maximizable": true, //== [OK] ==//
+            "closable": true, //== [OK] ==//
             "alwaysOnTop": false, //== [OK] ==//
-            "fullscreen": false,
-            "fullscreenable": true,
-            "simpleFullscreen": false, // macOS exclusive
-            "skipTaskbar": false,
-            "kiosk": false,
-            "title": "My SK Protom Window",
+            "skipTaskbar": false, //== [OK] ==//
+            "show": true, //== [OK] ==//
+            "frame": true, //== [OK] ==//
+            "title": "My SK++ Proton Window", //== [OK] ==//
+            "backgroundColor": "#FFFFFF", //== [OK] ==//
+            "transparent": false, //== [OK] ==//
+            "thickFrame": true, // Windows exclusive //== [OK] ==//
+            "fullscreen": false, //== [OK] ==//
+
+            /*
+            Sseems to do nothing on windows.
+            ElectronJS docs claim that when fullscreenable=true the maximize button will put the window in fullscreen mode.
+            That doesn't happen on Windows.
+            On Windows, the window is maximized normally.
+            */
+            "fullscreenable": true, 
+
+
+            "opacity": 1.0,
             "icon": null,
-            "show": true,
-            "frame": true,
+
+            
+            "useContentSize": false,
+            "focusable": true,
+            "kiosk": false,
             "parent": null,
             "modal": false,
             "acceptFirstMouse": false,
             "disableAutoHideCursor": false,
             "autoHideMenuBar": false,
             "enableLargerThanScreen": false,
-            "backgroundColor": "#FFFFFF",
             "hasShadow": true,
-            "opacity": 1.0,
             "darkTheme": false,
-            "transparent": false,
             "type": "normal",
+            "paintWhenInitiallyHidden": true,
+            "throttleWhenBackground": true,
+
+            "simpleFullscreen": false, // macOS exclusive
             "titleBarStyle": "default", // macOS exclusive (options: 'default', 'hidden', 'hiddenInset', 'customButtonsOnHover')
-            "thickFrame": true, // Windows exclusive
-            "vibrancy": "none", // macOS exclusive (options: 'appearance-based', 'light', 'dark', 'titlebar', 'selection', 'menu', 'popover', 'sidebar', 'medium-light', 'ultra-dark')
             "zoomToPageWidth": false, // macOS exclusive
             "tabbingIdentifier": null, // macOS exclusive
+            "trafficLightPosition": { "x": 10, "y": 10 }, // macOS exclusive (controls the position of the traffic light buttons in frameless windows)
+            "vibrancy": "none", // macOS exclusive (options: 'appearance-based', 'light', 'dark', 'titlebar', 'selection', 'menu', 'popover', 'sidebar', 'medium-light', 'ultra-dark')
+            "roundedCorners": true, // macOS exclusive
+            "hiddenInMissionControl": false, // macOS exclusive
+
             "webPreferences": {
                 "devTools": true,
                 "nodeIntegration": false,
@@ -114,11 +132,6 @@ class BrowserWindow extends SK_Module_Root {
                 "enablePreferredSizeMode": false,
                 "paintWhenInitiallyHidden": true
             },
-            "paintWhenInitiallyHidden": true,
-            "throttleWhenBackground": true,
-            "trafficLightPosition": { "x": 10, "y": 10 }, // macOS exclusive (controls the position of the traffic light buttons in frameless windows)
-            "roundedCorners": true, // macOS exclusive
-            "hiddenInMissionControl": false, // macOS exclusive
         }
 
         this.defOpt = { ...this.defOpt, ...opt }
@@ -136,7 +149,8 @@ class BrowserWindow extends SK_Module_Root {
         });*/
     }
 
-
+    setAttrSync(attribute, value) { this.sync('configure', { attribute: attribute, value: value }) }
+    getAttrSync(attribute, value) { return this.sync('configure', { attribute: attribute, read: true }) }
 
     static getAllWindows() {
         return this.async('getAllWindows')
@@ -184,20 +198,13 @@ class BrowserWindow extends SK_Module_Root {
     }
 
 
-    set fullScreen(val) {
-
-    }
-    get fullScreen() {
-        return;
-    }
+    set fullscreen(val) { this.setAttrSync('fullscreen', val) }
+    get fullscreen() { return this.getAttrSync('fullscreen') }
 
 
-    set focusable(val) {
 
-    }
-    get focusable() {
-        return;
-    }
+    set focusable(val) { this.setAttrSync('focusable', val) }
+    get focusable() { return this.getAttrSync('focusable') }
 
 
     set visibleOnAllWorkspaces(val) {
@@ -255,40 +262,40 @@ class BrowserWindow extends SK_Module_Root {
     }
 
 
-    set title(val) {
-
-    }
-    get title() {
-        return;
-    }
-
-    set minimizable(val) { this.sync('configure', { attribute: 'minimizable', value: val }) }
-    get minimizable() { return this.sync('configure', { attribute: 'minimizable', read: true }) }
+    set title(val) { this.setAttrSync('title', val) }
+    get title() { return this.getAttrSync('title') }
 
 
-    set maximizable(val) { this.sync('configure', { attribute: 'maximizable', value: val }) }
-    get maximizable() { return this.sync('configure', { attribute: 'maximizable', read: true }) }
+    set minimizable(val) { this.setAttrSync('minimizable', val) }
+    get minimizable() { return this.getAttrSync('minimizable') }
 
 
-    set fullScreenable(val) {
+    set maximizable(val) { this.setAttrSync('maximizable', val) }
+    get maximizable() { return this.getAttrSync('maximizable') }
 
-    }
-
-    get fullScreenable() {
-        return;
-    }
+    set fullscreenable(val) { this.setAttrSync('fullscreenable', val) }
+    get fullscreenable() { return this.getAttrSync('fullscreenable') }
 
 
-    set resizable(val) { this.sync('configure', { attribute: 'resizable', value: val }) }
-    get resizable() { return this.sync('configure', { attribute: 'resizable', read: true }) }
+    set resizable(val) { this.setAttrSync('resizable', val) }
+    get resizable() { return this.getAttrSync('resizable') }
 
 
-    set closable(val) { this.sync('configure', { attribute: 'closable', value: val }) }
-    get closable() { return this.sync('configure', { attribute: 'closable', read: true }) }
+    set closable(val) { this.setAttrSync('closable', val) }
+    get closable() { return this.getAttrSync('closable') }
 
 
-    set movable(val) { this.sync('configure', { attribute: 'movable', value: val }) }
-    get movable() { return this.sync('configure', { attribute: 'movable', read: true }) }
+    set movable(val) { this.setAttrSync('movable', val) }
+    get movable() { return this.getAttrSync('movable') }
+
+    set backgroundColor(val) { this.setAttrSync('backgroundColor', val) }
+    get backgroundColor() { return this.getAttrSync('backgroundColor') }
+
+    set skipTaskbar(val) { this.setAttrSync('skipTaskbar', val) }
+    get skipTaskbar() { return this.getAttrSync('skipTaskbar') }
+
+    set thickFrame(val) { this.setAttrSync('thickFrame', val) }
+    get thickFrame() { return this.getAttrSync('thickFrame') }
 
     set excludedFromShownWindowsMenu(val) {
 
@@ -375,7 +382,7 @@ class BrowserWindow extends SK_Module_Root {
     }
 
     setFullScreen(flag) {
-
+        fullscreen = flag
     }
 
     isFullScreen() {
@@ -398,8 +405,8 @@ class BrowserWindow extends SK_Module_Root {
 
     }
 
-    setBackgroundColor(backgroundColor) {
-
+    setBackgroundColor(val) {
+        this.backgroundColor = val
     }
 
     previewFile(path, displayName) {
@@ -506,13 +513,8 @@ class BrowserWindow extends SK_Module_Root {
 
     }
 
-    setFullScreenable(fullscreenable) {
-
-    }
-
-    isFullScreenable() {
-
-    }
+    setFullScreenable(val) { fullscreenable = val }
+    isFullScreenable() { return fullscreenable }
 
     setClosable(closable) {
 
@@ -530,9 +532,9 @@ class BrowserWindow extends SK_Module_Root {
 
     }
 
-    setAlwaysOnTop(flag, level, relativeLevel) { this.sync('configure', { attribute: 'setAlwaysOnTop', value: { flag: flag, level: level, relativeLevel: relativeLevel } }) } //== [OK] ==//
+    setAlwaysOnTop(flag, level, relativeLevel) { this.setAttrSync('setAlwaysOnTop', { flag: flag, level: level, relativeLevel: relativeLevel }) } //== [OK] ==//
 
-    isAlwaysOnTop() { return this.sync('configure', { attribute: 'alwaysOnTop', read: true }) } //== [OK] ==//
+    isAlwaysOnTop() { return this.getAttrSync('alwaysOnTop') } //== [OK] ==//
 
     moveAbove(mediaSourceId) {
 
@@ -542,7 +544,7 @@ class BrowserWindow extends SK_Module_Root {
 
     }
 
-    center() { this.sync('configure', { attribute: 'center', value: true }) } //== [OK] ==//
+    center() { this.setAttrSync('center', true) } //== [OK] ==//
 
     setPosition(x, y, animate) {
 
@@ -569,7 +571,7 @@ class BrowserWindow extends SK_Module_Root {
     }
 
     setSkipTaskbar(skip) {
-
+        skipTaskbar = skip
     }
 
     setKiosk(flag) {
