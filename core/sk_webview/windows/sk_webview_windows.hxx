@@ -90,6 +90,28 @@ public:
                             }
 
 
+
+                            controller->add_AcceleratorKeyPressed(Callback<ICoreWebView2AcceleratorKeyPressedEventHandler>([&](ICoreWebView2Controller* sender, ICoreWebView2AcceleratorKeyPressedEventArgs* args) -> HRESULT {
+                                COREWEBVIEW2_KEY_EVENT_KIND keyEventKind;
+                                args->get_KeyEventKind(&keyEventKind);
+
+                                // Only process key down events
+                                if (keyEventKind == COREWEBVIEW2_KEY_EVENT_KIND_KEY_DOWN ||
+                                    keyEventKind == COREWEBVIEW2_KEY_EVENT_KIND_SYSTEM_KEY_DOWN) {
+
+                                    UINT key;
+                                    args->get_VirtualKey(&key);
+
+                                    // Send the key event to the parent window
+                                    PostWindowMessage(WM_KEYDOWN, key, 0);
+
+                                    // Mark the event as handled
+                                    args->put_Handled(TRUE);
+                                }
+
+                                return S_OK;
+                                }).Get(), nullptr);
+
                             if (webview == nullptr) {
                                 return S_OK;
                             }
@@ -121,7 +143,9 @@ public:
                                 if (SUCCEEDED(args->get_WebMessageAsJson(&jsonPStr))) {
                                     jsonStr = jsonPStr.get();
                                 }
-                                
+
+                                simdjson::dom::parser parser;
+                                auto doc = parser.parse(jsonStr.data);
                                 nlohmann::json payload = nlohmann::json::parse(jsonStr.data);
 
                                 SK_Communication_Config config { "sk.view", SK_Communication_Packet_Type::sk_comm_pt_ipc, &payload };
@@ -133,6 +157,9 @@ public:
 
                                 return S_OK;
                             }).Get(), &mWebMessageReceivedToken);
+
+
+                            
 
 
                             //----  Lets make the webview transparent  ----//
@@ -152,6 +179,10 @@ public:
             ).Get()
         );
 
+    };
+
+    void PostWindowMessage(_In_ UINT Msg, _In_ WPARAM wParam, _In_ LPARAM lParam) {
+        PostMessage(*parentHwnd, Msg, wParam, lParam);
     };
 
 	void navigate(const SK_String& url){

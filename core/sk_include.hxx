@@ -103,7 +103,13 @@
 #include "utils/sk_color.hxx"
 #include "utils/sk_machine.hxx"
 
-#include "sk_json/sk_json.hxx"
+#include "sk_json/sk_json_callback.hxx"
+
+//#include "../libs/general/glaze/glaze.hpp"
+//#include "sk_json/sk_json_glaze.hxx"
+
+#include "../libs/general/simdjson/simdjson.h"
+
 #include "sk_profiler/sk_profiler.hxx"
 
 
@@ -116,6 +122,7 @@
 #include "sk_callbacks.hxx"
 
 #include "sk_threads/sk_thread_pool.hxx"
+
 
 #include "../libs/general/curl/curl.h"
 #include "sk_web/sk_curl.hxx"
@@ -206,7 +213,8 @@ END_SK_NAMESPACE
 
 #include "../module_system/cpp/modules/sk/viewMngr/sk_ms_viewMngr.hxx"
 
-#include "../module_system/cpp/modules/sk/sk_ms_protonjs.hxx"
+#include "../module_system/cpp/modules/sk/protonjs/sk_ms_protonjs_native_image.hxx"
+#include "../module_system/cpp/modules/sk/protonjs/sk_ms_protonjs.hxx"
 
 #include "../module_system/sk_module_system.hxx"
 

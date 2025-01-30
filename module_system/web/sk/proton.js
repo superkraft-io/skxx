@@ -10,6 +10,103 @@ sk_api.__protonjs = {
     }
 }
 
+class NatoveImage {
+    createEmpty() {
+
+    }
+
+    createThumbnailFromPath() {
+
+    }
+
+    createFromPath() {
+
+    }
+
+    createFromBitmap() {
+
+    }
+
+    createFromBuffer() {
+
+    }
+
+    createFromDataURL() {
+
+    }
+
+    createFromNamedImage() {
+
+    }
+
+    toPNG(opt) {
+
+    }
+
+    toJPEG(opt) {
+
+    }
+
+    toBitmap(opt) {
+
+    }
+
+    toDataURL(opt) {
+
+    }
+
+    getBitmap(opt) {
+
+    }
+
+    getNativeHandle() {
+
+    }
+
+    isEmpty() {
+
+    }
+
+    getSize() {
+
+    }
+
+    setTemplateImage() {
+
+    }
+
+    isTemplateImage() {
+
+    }
+
+    crop() {
+
+    }
+
+    resize() {
+
+    }
+
+    getAspectRatio(scale) {
+
+    }
+
+    getScaleFactors() {
+
+    }
+
+    addRepresentation(opt) {
+
+    }
+
+    set isMacTemplateImage(val) {
+
+    }
+
+    get isMacTemplateImage() {
+        return 0
+    }
+}
 class BrowserWindow extends SK_Module_Root {
     constructor(opt = {}) {
         super('proton')
@@ -17,6 +114,10 @@ class BrowserWindow extends SK_Module_Root {
         this.__moduleInstanceConfig.__uuid = sk_api.__protonjs.next_window_uuid()
 
         this.defOpt = {
+            //SK Added features
+            "oldStyle": false, //== [OK] ==//
+
+            //ElectronJS compatible features
             "width": 800, //== [OK] ==//
             "height": 600, //== [OK] ==//
             "x": 0, //== [OK] ==//
@@ -39,36 +140,33 @@ class BrowserWindow extends SK_Module_Root {
             "backgroundColor": "#FFFFFF", //== [OK] ==//
             "transparent": false, //== [OK] ==//
             "thickFrame": true, // Windows exclusive //== [OK] ==//
+            "opacity": 1.0, //== [OK] ==//
+            "kiosk": false, //== [OK] ==//
+
+            "fullscreenable": true, //== [OK] ==//
             "fullscreen": false, //== [OK] ==//
 
-            /*
-            Sseems to do nothing on windows.
-            ElectronJS docs claim that when fullscreenable=true the maximize button will put the window in fullscreen mode.
-            That doesn't happen on Windows.
-            On Windows, the window is maximized normally.
-            */
-            "fullscreenable": true, 
 
 
-            "opacity": 1.0,
             "icon": null,
-
-            
             "useContentSize": false,
             "focusable": true,
-            "kiosk": false,
             "parent": null,
             "modal": false,
-            "acceptFirstMouse": false,
             "disableAutoHideCursor": false,
             "autoHideMenuBar": false,
-            "enableLargerThanScreen": false,
-            "hasShadow": true,
-            "darkTheme": false,
             "type": "normal",
-            "paintWhenInitiallyHidden": true,
-            "throttleWhenBackground": true,
+            "paintWhenInitiallyHidden": true, 
 
+
+            "hasShadow": true,//Seems to do nothing on Windows 11
+            "darkTheme": false, //Seems to do nothing on Windows 11
+            "throttleWhenBackground": true, //not documented?
+
+
+
+            "acceptFirstMouse": false, //macos only
+            "enableLargerThanScreen": false, //macos only
             "simpleFullscreen": false, // macOS exclusive
             "titleBarStyle": "default", // macOS exclusive (options: 'default', 'hidden', 'hiddenInset', 'customButtonsOnHover')
             "zoomToPageWidth": false, // macOS exclusive
@@ -297,6 +395,9 @@ class BrowserWindow extends SK_Module_Root {
     set thickFrame(val) { this.setAttrSync('thickFrame', val) }
     get thickFrame() { return this.getAttrSync('thickFrame') }
 
+    set opacity(val) { this.setAttrSync('opacity', val) }
+    get opacity() { return this.getAttrSync('opacity') }
+
     set excludedFromShownWindowsMenu(val) {
 
     }
@@ -382,7 +483,7 @@ class BrowserWindow extends SK_Module_Root {
     }
 
     setFullScreen(flag) {
-        fullscreen = flag
+        this.fullscreen = flag
     }
 
     isFullScreen() {
@@ -678,13 +779,8 @@ class BrowserWindow extends SK_Module_Root {
 
     }
 
-    setOpacity(opacity) {
-
-    }
-
-    getOpacity() {
-
-    }
+    setOpacity(val) { this.opacity = val }
+    getOpacity() { return this.opacity }
 
     setShape(rects) {
 

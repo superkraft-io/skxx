@@ -97,6 +97,26 @@ public:
 
 
         switch (uMsg) {
+            case WM_KEYDOWN: {
+                if (!wnd) return 0;
+
+                if (!wnd->config.data["kiosk"] && wnd->config.data["fullscreenable"]){
+                    if (wParam == VK_F11) {
+                        wnd->config["fullscreen"] = !wnd->config.data["fullscreen"];
+                        return 0;
+                    }
+
+                    /*
+                    //ESC key not used in ElectronJS to exit fullscreen in windows
+                    if (wParam == VK_ESCAPE && wnd) {
+                        if (wnd->config.data["fullscreen"]) wnd->config["fullscreen"] = false;
+                        return 0;
+                    }*/
+                }
+                break;
+            }
+
+
             case WM_PAINT: {
 
                 if (!wnd->config.data["transparent"]){
@@ -115,8 +135,6 @@ public:
                 else {
 
                 }
-
-                wnd->update(true);
 
                 return true;
             }
@@ -408,8 +426,15 @@ public:
         RECT clientRect;
         GetClientRect(hwnd, &clientRect);
 
+        int x = 0;
+        int y = 0;
 
-        RECT rect = scaleRect(config.data["x"], config.data["y"], clientRect.right, clientRect.bottom, config.data["scale"]);
+        if (config.data["mainWindow"]) {
+            x = config.data["x"];
+            y = config.data["y"];
+        }
+
+        RECT rect = scaleRect(x, y, clientRect.right, clientRect.bottom, config.data["scale"]);
         if (webview.webview != nullptr) {
             webview.updateStyling(rect);
             webview.controller->SetBoundsAndZoomFactor(rect, 1);
@@ -483,6 +508,7 @@ public:
     void updateWindowByConfig() {
         if (hwnd == NULL) return;
 
+       
         float scale = getHWNDScale(hwnd);
 
         //movable: handled in WindowProc
@@ -492,13 +518,24 @@ public:
         if (checkNeedsUpdateAndReset("maximizable")) setStyle(WS_MAXIMIZEBOX, config.data["maximizable"]);
         if (checkNeedsUpdateAndReset("minimizable")) setStyle(WS_MINIMIZEBOX, config.data["minimizable"]);
         if (checkNeedsUpdateAndReset("backgroundColor")) backgroundColor = config.data["backgroundColor"];
-        /* WIP */ if (checkNeedsUpdateAndReset("focusable")) setStyle(WS_EX_NOACTIVATE, config.data["focusable"], true);
+ /* WIP */ if (checkNeedsUpdateAndReset("focusable")) setStyle(WS_EX_NOACTIVATE, !config.data["focusable"], true);
         if (checkNeedsUpdateAndReset("skipTaskbar")) setStyle(WS_EX_APPWINDOW, config.data["skipTaskbar"], true);
-        if (checkNeedsUpdateAndReset("frame")) {
-            setStyle(WS_CAPTION | WS_SYSMENU | WS_OVERLAPPEDWINDOW, config.data["frame"]);
-            setStyle(WS_POPUP, !config.data["frame"]);
-        }
         
+        if (checkNeedsUpdateAndReset("frame")) {
+            bool hasFrame = config.data["frame"];
+            setStyle(WS_CAPTION, hasFrame);
+            setStyle(WS_SYSMENU, hasFrame);
+            setStyle(WS_OVERLAPPEDWINDOW, hasFrame);
+            setStyle(WS_POPUP, !hasFrame);
+        }
+
+        if (checkNeedsUpdateAndReset("opacity")) {
+            SK_Number clamped = SK_Number::clamp(config.data["opacity"], .0, 1.);
+            SK_Number opacity = SK_Number::map(clamped, .0, 1., .0, 255.);
+            BYTE opacityInt = opacity;
+            SetLayeredWindowAttributes(hwnd, 0, opacity, LWA_ALPHA);
+        }
+
         if (checkNeedsUpdateAndReset("closable")) {
             HMENU hMenu = GetSystemMenu(hwnd, FALSE);
             if (hMenu) {
@@ -510,10 +547,13 @@ public:
 
         if (checkNeedsUpdateAndReset("thickFrame")) {
             setStyle(WS_THICKFRAME, config.data["thickFrame"]);
-            if (config.data["frame"]) {
-                
-            }
         }
+
+        if (checkNeedsUpdateAndReset("oldStyle")) {
+            int policy = (config.data["oldStyle"] ? DWMNCRP_DISABLED : DWMNCRP_ENABLED);
+            DwmSetWindowAttribute(hwnd, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
+        }
+
 
 
         //everything below this comment should come last
@@ -542,24 +582,38 @@ public:
                 config.data["y"] = posy;
             }
 
-            if (checkNeedsUpdateAndReset("x") || checkNeedsUpdateAndReset("y") || checkNeedsUpdateAndReset("width") || checkNeedsUpdateAndReset("width")) SetWindowPos(hwnd, NULL, config.data["x"], config.data["y"], config["width"] * scale, config["height"] * scale, SWP_NOZORDER);
+            bool needsReposition = false;
+            bool needsResize = false;
+            if (checkNeedsUpdateAndReset("x") || checkNeedsUpdateAndReset("y")) needsReposition = true;
+            if (checkNeedsUpdateAndReset("width") || checkNeedsUpdateAndReset("width")) needsResize = true;
+            
+            if (needsReposition || needsResize) SetWindowPos(hwnd, NULL, config.data["x"], config.data["y"], config["width"] * scale, config["height"] * scale, SWP_NOZORDER);
+
+            if (needsResize) update();
 
             if (checkNeedsUpdateAndReset("show")) ShowWindow(hwnd, (config["show"] ? SW_SHOW : SW_HIDE));
+
+            
         }
 
-        InvalidateRect(hwnd, NULL, TRUE);
-        UpdateWindow(hwnd);
+        if (needsWindowUpdate()) {
+            InvalidateRect(hwnd, NULL, TRUE);
+            UpdateWindow(hwnd);
+        }
 
         if (checkNeedsUpdateAndReset("fullscreen")) setFullscreen(config.data["fullscreen"]);
+        if (checkNeedsUpdateAndReset("kiosk")) setFullscreen(config.data["kiosk"]);
     }
 
     void setAlwaysOnTop(bool flag, int level = 0, int relativeLevel = 0) {
         config.data["alwaysOnTop"] = flag;
-        if (flag == true)  SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+        if (flag == true) SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
         else SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
     }
 
-    void setFullscreen(bool activate){
+    void setFullscreen(bool activate) {
+        if (!config.data["fullscreenable"]) return;
+
         if (!activate) {
             if (config["frame"] == true) config_updateTracker["frame"] = true;
             config_updateTracker["x"] = true;
@@ -570,18 +624,18 @@ public:
             return;
         }
 
-        // Get the screen dimensions
-        RECT screenRect;
-        SystemParametersInfo(SPI_GETWORKAREA, 0, &screenRect, 0);
 
-        // Get current window style and remove borders
-        LONG style = GetWindowLong(hwnd, GWL_STYLE);
-        style &= ~(WS_OVERLAPPEDWINDOW);
-        style |= WS_POPUP;  // Use WS_POPUP for fullscreen, which removes borders and title bar
-        SetWindowLong(hwnd, GWL_STYLE, style);
-
-        // Set the window position and size to fill the screen
-        SetWindowPos(hwnd, HWND_TOP, screenRect.left, screenRect.top, screenRect.right - screenRect.left, screenRect.bottom - screenRect.top, SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+        DWORD style = GetWindowLong(hwnd, GWL_STYLE);
+        MONITORINFO monitor_info = { sizeof(monitor_info) };
+        RECT wndRect;
+        if (GetWindowRect(hwnd, &wndRect) && GetMonitorInfo(MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY), &monitor_info)) {
+            SetWindowLong(hwnd, GWL_STYLE, style & ~WS_OVERLAPPEDWINDOW);
+            SetWindowPos(
+                hwnd, HWND_TOP, monitor_info.rcMonitor.left, monitor_info.rcMonitor.top,
+                monitor_info.rcMonitor.right - monitor_info.rcMonitor.left,
+                monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top,
+                SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+        }
     }
 private:
 

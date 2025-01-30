@@ -4,7 +4,7 @@
 
 BEGIN_SK_NAMESPACE
 
-class SK_JSON {
+class SK_JSON_Callback {
 public:
     using SK_JSON_CB_onChanged = std::function<void(const SK_String& key)>;
     SK_JSON_CB_onChanged onChanged;
@@ -12,12 +12,12 @@ public:
 
     nlohmann::json data;
 
-    SK_JSON() = default;
+    SK_JSON_Callback() = default;
 
-    SK_JSON(const nlohmann::json& json) : data(json) {}
+    SK_JSON_Callback(const nlohmann::json& json) : data(json) {}
 
     // Constructor for initializing from an initializer list
-    SK_JSON(std::initializer_list<std::pair<SK_String, nlohmann::json>> initList) {
+    SK_JSON_Callback(std::initializer_list<std::pair<SK_String, nlohmann::json>> initList) {
         for (const auto& pair : initList) {
             data[pair.first] = pair.second;
         }
@@ -25,7 +25,7 @@ public:
 
     class SK_JSON_Proxy {
     public:
-        SK_JSON_Proxy(SK_JSON& parent, const std::string& key)
+        SK_JSON_Proxy(SK_JSON_Callback& parent, const std::string& key)
             : parent(parent), key(key), accessed(false) {}
 
         // Assignment operator
@@ -184,7 +184,7 @@ public:
             return *this;
         }
     private:
-        SK_JSON& parent;
+        SK_JSON_Callback& parent;
         std::string key;
         mutable bool accessed;
     };

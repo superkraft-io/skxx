@@ -153,6 +153,49 @@ public:
         return std::holds_alternative<T>(value);
     }
 
+    operator float() const {
+        if (std::holds_alternative<int>(value)) {
+            return static_cast<float>(std::get<int>(value));
+        }
+        else if (std::holds_alternative<long>(value)) {
+            return static_cast<float>(std::get<long>(value));
+        }
+        else if (std::holds_alternative<int64_t>(value)) {
+            return static_cast<float>(std::get<int64_t>(value));
+        }
+        else if (std::holds_alternative<uint64_t>(value)) {
+            return static_cast<float>(std::get<uint64_t>(value));
+        }
+        else if (std::holds_alternative<float>(value)) {
+            return static_cast<float>(std::get<float>(value));
+        }
+        else if (std::holds_alternative<double>(value)) {
+            return static_cast<float>(std::get<double>(value));
+        }
+        return 0; // Default value if no valid type is found
+    }
+
+    operator int() const {
+        if (std::holds_alternative<int>(value)) {
+            return static_cast<int>(std::get<int>(value));
+        }
+        else if (std::holds_alternative<long>(value)) {
+            return static_cast<int>(std::get<long>(value));
+        }
+        else if (std::holds_alternative<int64_t>(value)) {
+            return static_cast<int>(std::get<int64_t>(value));
+        }
+        else if (std::holds_alternative<uint64_t>(value)) {
+            return static_cast<int>(std::get<uint64_t>(value));
+        }
+        else if (std::holds_alternative<float>(value)) {
+            return static_cast<int>(std::get<float>(value));
+        }
+        else if (std::holds_alternative<double>(value)) {
+            return static_cast<int>(std::get<double>(value));
+        }
+        return 0; // Default value if no valid type is found
+    }
 
     operator LONG() const {
         if (std::holds_alternative<int>(value)) {
@@ -174,6 +217,42 @@ public:
             return static_cast<LONG>(std::get<double>(value));
         }
         return 0; // Default value if no valid type is found
+    }
+
+    operator BYTE() const {
+        if (std::holds_alternative<int>(value)) {
+            return static_cast<BYTE>(std::get<int>(value));
+        }
+        else if (std::holds_alternative<long>(value)) {
+            return static_cast<BYTE>(std::get<long>(value));
+        }
+        else if (std::holds_alternative<int64_t>(value)) {
+            return static_cast<BYTE>(std::get<int64_t>(value));
+        }
+        else if (std::holds_alternative<uint64_t>(value)) {
+            return static_cast<BYTE>(std::get<uint64_t>(value));
+        }
+        else if (std::holds_alternative<float>(value)) {
+            return static_cast<BYTE>(std::get<float>(value));
+        }
+        else if (std::holds_alternative<double>(value)) {
+            return static_cast<BYTE>(std::get<double>(value));
+        }
+        return 0; // Default value if no valid type is found
+    }
+    
+
+
+
+    static inline SK_Number map(float value, float aMin, float aMax, float bMin, float bMax) {
+        return (value - aMin) * (bMax - bMin) / (aMax - aMin) + bMin;
+    }
+
+    static inline SK_Number clamp(float value, float min, float max) {
+        float clamped = value;
+        if (clamped < min) clamped = min;
+        if (clamped > max) clamped = max;
+        return clamped;
     }
 private:
     std::variant<int, unsigned int, long, float, int64_t, uint64_t, double> value;

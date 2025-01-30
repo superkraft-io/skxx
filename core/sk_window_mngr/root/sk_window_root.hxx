@@ -11,7 +11,7 @@ public:
 	SK_String tag;
 	SK_IPC_v2 ipc;
 
-	SK_JSON config {
+	SK_JSON_Callback config {
 		{"mainWindow", false},
 		{"scale", 1.},
 		{"title", "SK++ Window"}
@@ -30,7 +30,6 @@ public:
 
 	bool resizing = false;
 	bool isMaximized = false;
-
 	bool frameless_drag;
 	bool frameless_resize;
 
@@ -54,6 +53,14 @@ public:
 			value = true; // Set to boolean true
 		}
 
+	}
+
+	bool needsWindowUpdate() {
+		bool value = false;
+
+		if (config_updateTracker["backgroundColor"]) value = true;
+
+		return value;
 	}
 
 	bool needsUpdate(const SK_String& attribute) {
