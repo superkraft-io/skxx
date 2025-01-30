@@ -18,7 +18,7 @@ public:
     long long msg_id = 0;
 
 
-    using SK_IPC_v2_FrontendCallback = std::function<void(nlohmann::json data, SK_Communication_Packet* packet)>;
+    using SK_IPC_v2_FrontendCallback = std::function<void(SK_JSON_YY data, SK_Communication_Packet* packet)>;
     using SK_IPC_v2_sendToFrontend_CB = std::function<void(const SK_String& target, const SK_String& data)>;
     using SK_IPC_v2_BackendCallback = std::function<void(const SK_String& target, SK_Communication_Packet* packet)>;
 
@@ -62,10 +62,10 @@ public:
 
     void handle_IPC_Msg(SK_Communication_Packet* packet) {
         SK_String msg_id = packet->id;
-        SK_String type = SK_String(packet->info["type"]);
+        SK_String type = packet->info["type"];
         SK_String sender = packet->sender;
         SK_String target = packet->target;
-        SK_String event_id = SK_String(packet->info["event_id"]);
+        SK_String event_id = packet->info["event_id"];
 
         
         if (type == "request") {
@@ -204,7 +204,7 @@ public:
     }
 
     void forwardPacket(SK_Communication_Packet* packet, SK_IPC_v2_BackendCallback cb) {
-        nlohmann::json req;
+        SK_JSON_YY req;
 
         req["msg_id"] = packet->id;
         req["type"] = packet->info["type"];

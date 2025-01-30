@@ -6,7 +6,7 @@ BEGIN_SK_NAMESPACE
 
 class SK_Communication_Packet {
 public:
-	nlohmann::json originalData;
+	SK_JSON_YY originalData;
 
 	SK_Communication_Packet_Type type = SK_Communication_Packet_Type::sk_comm_pt_ipc;
 
@@ -15,12 +15,15 @@ public:
 	SK_String sender;
 	SK_String target;
 
-	nlohmann::json info;
-	nlohmann::json data;
+	SK_JSON_YY info;
+	SK_JSON_YY data;
 
 	void* responseObj;
 
 	//SK_Profiler_Event* pEvent;
+
+	SK_Communication_Packet() {
+	}	
 
 	SK_Communication_Packet::~SK_Communication_Packet() {
 		if (response()->config->type == SK_Communication_Packet_Type::sk_comm_pt_ipc) delete static_cast<SK_Communication_Response_IPC*>(responseObj);
@@ -29,7 +32,7 @@ public:
 		//if (pEvent != NULL) pEvent->stop();
 	}
 
-	static inline SK_Communication_Packet* packetFromIPCMessage(const nlohmann::json& payload) {
+	static inline SK_Communication_Packet* packetFromIPCMessage(const SK_JSON_YY& payload) {
 		SK_Communication_Packet* packet = new SK_Communication_Packet();
 		//packet->pEvent = SK_Profiler::snap("", "packetFromIPCMessage", NULL);
 
@@ -37,24 +40,23 @@ public:
 
 		packet->responseObj = new SK_Communication_Response_IPC();
 
-		packet->response()->packageIPCResponse = [&, packet](const nlohmann::json& data) -> SK_String {
-			nlohmann::json results{
-				{"sender", packet->target},
-				{"target", packet->sender},
-				{"msg_id", packet->id},
-				{"event_id",packet->info["event_id"]},
-				{"type", "response"},
-				{"data", data}
-			};
+		packet->response()->packageIPCResponse = [&, packet](const SK_JSON_YY& data) -> SK_String {
+			SK_JSON_YY results;
+			results["sender"] = packet->target;
+			results["target"] = packet->sender;
+			results["msg_id"] = packet->id;
+			results["event_id"] = packet->info["event_id"];
+			results["type"] = "response";
+			results["data"] = data;
 
 			SK_String dumpStr = results.dump();
 
 			return dumpStr;
 		};
 
-		SK_String msg_id = payload["msg_id"];
-		SK_String sender = payload["sender"];
-		SK_String target = payload["target"];
+		SK_String msg_id = payload["msg_id"].get_c_str();
+		SK_String sender = payload["sender"].get_c_str();
+		SK_String target = payload["target"].get_c_str();
 
 		packet->id = msg_id;
 		packet->sender = sender;

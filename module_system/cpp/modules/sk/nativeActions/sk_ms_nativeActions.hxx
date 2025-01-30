@@ -13,7 +13,7 @@ public:
     
     SK_App_NativeActions appActions;
 
-    void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+    void handleOperation(const SK_String& operation, const SK_JSON_YY& payload, SK_Communication_Response& respondWith) {
         if (appActions.handleOperation(operation, payload, respondWith)) return;
 
         if (operation == "handleParamComponentMouseEvent") handleParamComponentMouseEvent.handleOperation(payload, respondWith);

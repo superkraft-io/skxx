@@ -6,7 +6,7 @@ BEGIN_SK_NAMESPACE
 
 class SK_Module_os {
 public:
-    void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+    void handleOperation(const SK_String& operation, const SK_JSON_YY& payload, SK_Communication_Response& respondWith) {
              if (operation == "getCPUInfo"    ) getCPUInfo(respondWith);
         else if (operation == "getMemoryInfo" ) getMemoryInfo(respondWith);
         else if (operation == "getMachineTime") getMachineTime(respondWith);

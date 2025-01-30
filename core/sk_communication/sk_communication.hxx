@@ -28,7 +28,7 @@ public:
 
 
 			if (config->type == SK_Communication_Packet_Type::sk_comm_pt_ipc) {
-				packet = SK_Communication_Packet::packetFromIPCMessage((*static_cast<nlohmann::json*>(config->objPtr)));
+				packet = SK_Communication_Packet::packetFromIPCMessage((*static_cast<simdjson::dom::element*>(config->objPtr)));
 			}
 			else if (config->type == SK_Communication_Packet_Type::sk_comm_pt_web) {
 				#if defined(SK_OS_windows)
@@ -73,7 +73,7 @@ public:
 			}
 			else {
 				#if defined SK_MODE_DEBUG
-					SK_String filePath = SK::SK_Path_Utils::paths["soft_backend"] + SK_String(packet->info["path"]);
+					SK_String filePath = SK::SK_Path_Utils::paths["soft_backend"] + SK_String(packet->info["path"]));
 					packet->response()->file(filePath);
 				#else
 
@@ -90,7 +90,7 @@ public:
 			
 		}
 		else if (packet->target == "sk.modop") {
-			nlohmann::json payload;
+			SK_JSON_YY payload;
 
 			SK_String path;
 
@@ -98,14 +98,14 @@ public:
 				payload = packet->data;
 			}
 			else {
-				path = SK_String(packet->info["path"]);
+				path = packet->info["path"];
 				SK_String data = path.substring(2, path.length()).fromBase64();
 				payload = nlohmann::json::parse(data.data);
 			}
 
 			modsys->performOperation(
-				payload["module"].get<std::string>(),
-				payload["operation"].get<std::string>(),
+				payload["module"],
+				payload["operation"],
 				payload["payload"],
 				(*packet->response())
 			);
@@ -167,14 +167,14 @@ public:
 		SK_IPC_v2* sender = getIPCForID(packet->sender);
 		SK_IPC_v2* target = getIPCForID(packet->target);
 
-		SK_String eventID = packet->info["event_id"];
+		SK_String eventID = packet->info["event_id"].get_c_str();
 
 		if (sender->eventExists(eventID) != "") {
 			sender->handle_IPC_Msg(packet);	
 			return;
 		}
 		
-		if (packet->info["type"] == "response") {
+		if (packet->info["type"].get_c_str() == "response") {
 			sender->handle_IPC_Msg(packet);
 			return;
 		}

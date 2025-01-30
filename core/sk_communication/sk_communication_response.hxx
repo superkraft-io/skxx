@@ -8,7 +8,7 @@ class SK_Communication_Response;
 
 
 
-using SK_Communication_Response_CB_packageIPCResponse = std::function<SK_String(const nlohmann::json& data)>;
+using SK_Communication_Response_CB_packageIPCResponse = std::function<SK_String(const SK_JSON_YY& data)>;
 
 using SK_Communication_Response_CB_onHandleResponse = std::function<void(SK_Communication_Response* response)>;
 
@@ -20,7 +20,7 @@ public:
 	SK_Communication_Config* config;
 
 	using SK_Communication_Response_CB_setAsOK = std::function<void()>;
-	using SK_Communication_Response_CB_JSON = std::function<bool(const nlohmann::json& json)>;
+	using SK_Communication_Response_CB_JSON = std::function<bool(const SK_JSON_YY& json)>;
 	using SK_Communication_Response_CB_JSON_OK = std::function<bool()>;
 	using SK_Communication_Response_CB_string = std::function<bool(const SK_String& str, const SK_String& mimeType)>;
 	using SK_Communication_Response_CB_file = std::function<bool(const SK_String& path, const SK_String& mimeType)>;
@@ -56,7 +56,7 @@ public:
 		CB_setAsOK();
 	}
 
-	bool JSON(const nlohmann::json& json) {
+	bool JSON(const SK_JSON_YY& json) {
 		bool res = CB_JSON(json);
 		onHandleResponse(this);
 		return res;
@@ -104,13 +104,13 @@ public:
 
 class SK_Communication_Response_IPC : public SK_Communication_Response {
 public:
-	nlohmann::json data;
+	SK_JSON_YY data;
 
 	SK_Communication_Response_IPC::SK_Communication_Response_IPC() {
 		type = SK_Communication_Packet_Type::sk_comm_pt_ipc;
 
 		CB_setAsOK = [&]() { setAsOK(); };
-		CB_JSON = [&](nlohmann::json json) { return JSON(json); };
+		CB_JSON = [&](SK_JSON_YY json) { return JSON(json); };
 		CB_JSON_OK = [&]() { return JSON_OK(); };
 		CB_string = [&](SK_String str, SK_String mimeType) { return string(str, mimeType); };
 		CB_file = [&](SK_String path, SK_String mimeType) { return file(path, mimeType); };
@@ -122,10 +122,10 @@ public:
 	}
 
 	void setAsOK() {
-		data = nlohmann::json{};
+		data = SK_JSON_YY{};
 	}
 
-	bool JSON(const nlohmann::json& json) {
+	bool JSON(const SK_JSON_YY& json) {
 		data = json;
 		return true;
 	}
@@ -135,7 +135,7 @@ public:
 	}
 
 	bool string(const SK_String& str, const SK_String& mimeType = "plain/text") {
-		data = nlohmann::json{
+		data = SK_JSON_YY{
 				{"string", str}
 		};
 
@@ -148,7 +148,7 @@ public:
 		SK_File file;
 		if (file.loadFromDisk(path.replaceAll("\\", "/").c_str())) {
 			fileData = std::vector<BYTE>(file.data.begin(), file.data.end());
-			data = nlohmann::json {
+			data = SK_JSON_YY {
 				{"data", fileData}
 			};
 
@@ -161,7 +161,7 @@ public:
 	}
 
 	bool error(int code = 404, SK_String msg = "Not Found") {
-		data = nlohmann::json{ {"error", code}, {"message", msg} };
+		data = SK_JSON_YY{ {"error", code}, {"message", msg} };
 		return this;
 	}
 
@@ -174,7 +174,7 @@ public:
 		SK_String errorType = "plain/text";
 		int statusCode = 404;
 		SK_String statusMessage = "Not found";
-		nlohmann::json headers{ {"Content-Type", "application/json"} };
+		SK_JSON_YY headers{ {"Content-Type", "application/json"} };
 		std::vector<BYTE> data;
 
 
@@ -187,7 +187,7 @@ public:
 			data = std::vector<BYTE>(defaultData.data.begin(), defaultData.data.end());
 
 			CB_setAsOK = [&]() { setAsOK(); };
-			CB_JSON = [&](nlohmann::json json) { return JSON(json); };
+			CB_JSON = [&](SK_JSON_YY json) { return JSON(json); };
 			CB_JSON_OK = [&]() { return JSON_OK(); };
 			CB_string = [&](SK_String str, SK_String mimeType) { return string(str, mimeType); };
 			CB_file = [&](SK_String path, SK_String mimeType) { return file(path, mimeType); };
@@ -206,8 +206,8 @@ public:
 			statusMessage = "OK";
 		}
 
-		bool JSON(const nlohmann::json& json) {
-			SK_String resAsString = std::any_cast<nlohmann::json>(json).dump(0);
+		bool JSON(const SK_JSON_YY& json) {
+			SK_String resAsString = std::any_cast<SK_JSON_YY>(json).dump(0);
 			if (resAsString == "null") {
 				resAsString = "{}";
 			}
@@ -256,10 +256,12 @@ public:
 
 
 			if (errorType == "json") {
-				JSON({
+				SK_JSON_YY res {
 					{"error", code},
 					{ "message", msg }
-				});
+				};
+
+				JSON(res);
 			}
 			else {
 				string("");

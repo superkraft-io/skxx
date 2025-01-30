@@ -10,12 +10,12 @@ public:
 
     
 
-    void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+    void handleOperation(const SK_String& operation, const SK_JSON_YY& payload, SK_Communication_Response& respondWith) {
              if (operation == "create") createView(payload, respondWith);
         //else if (operation == "setBGClr") setBGClr(payload, respondWith);
     };
 
-    void createView(const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+    void createView(const SK_JSON_YY& payload, SK_Communication_Response& respondWith) {
         SK_String viewID = payload["id"];
 
         SK_Window* existingView = wndMngr->findWindowByTag(viewID);

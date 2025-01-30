@@ -30,7 +30,7 @@ static std::wstring stringToWString(const std::string& str)
 }
 
 
-static std::string jsonToDelimitedString(const nlohmann::json& jsonObject, const std::string& pairDelimiter = "; ", const std::string& keyValueSeparator = ": ")
+static std::string jsonToDelimitedString(const SK_JSON_YY& jsonObject, const std::string& pairDelimiter = "; ", const std::string& keyValueSeparator = ": ")
 {
     if (jsonObject.empty())
     {

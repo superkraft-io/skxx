@@ -144,9 +144,9 @@ public:
                                     jsonStr = jsonPStr.get();
                                 }
 
-                                simdjson::dom::parser parser;
-                                auto doc = parser.parse(jsonStr.data);
-                                nlohmann::json payload = nlohmann::json::parse(jsonStr.data);
+                                SK_JSON_YY payload = SK_JSON_YY::parse(jsonStr.data);
+
+                                //nlohmann::json payload = nlohmann::json::parse(jsonStr.data);
 
                                 SK_Communication_Config config { "sk.view", SK_Communication_Packet_Type::sk_comm_pt_ipc, &payload };
                                 SK_Common::onCommunicationRequest(&config, [&](const SK_String& ipcResponseData) {

@@ -8,7 +8,7 @@ class SK_Module_bdfs {
 public:
     SK_Project_BinaryData* binaryData;
 
-    void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+    void handleOperation(const SK_String& operation, const SK_JSON_YY& payload, SK_Communication_Response& respondWith) {
         SK_String path = payload["path"];
         SK_String data = payload["data"];
 

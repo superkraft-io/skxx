@@ -6,8 +6,8 @@ BEGIN_SK_NAMESPACE
 
 typedef struct {
     unsigned long id;
-    nlohmann::json opt;
-    nlohmann::json response;
+    SK_JSON_YY opt;
+    SK_JSON_YY response;
 } SK_WebRequestTask;
 
 class SK_Module_web {
@@ -21,7 +21,7 @@ public:
 
     };
 
-    void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+    void handleOperation(const SK_String& operation, const SK_JSON_YY& payload, SK_Communication_Response& respondWith) {
        // if (operation == "createProgressCallback") createProgressCallback(payload, respondWith);
         //else if (operation == "getProgress") getProgress(payload, respondWith);
         
@@ -30,7 +30,7 @@ public:
         else if (operation == "download") download(payload, respondWith);
     };
 
-    void request(const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+    void request(const SK_JSON_YY& payload, SK_Communication_Response& respondWith) {
         respondWith.async = true;
 
         SK_String url = payload["url"];
@@ -41,7 +41,7 @@ public:
             return;
         }
 
-        nlohmann::json body;
+        SK_JSON_YY body;
         if (!payload["body"].is_null()) body = payload["body"];
 
         SK_String mimeType = payload["mimeType"];
@@ -68,15 +68,15 @@ public:
         });
     };
 
-    void get(const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+    void get(const SK_JSON_YY& payload, SK_Communication_Response& respondWith) {
     
     };
 
-    void post(const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+    void post(const SK_JSON_YY& payload, SK_Communication_Response& respondWith) {
         request(payload, respondWith);
     };
 
-    void download(const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+    void download(const SK_JSON_YY& payload, SK_Communication_Response& respondWith) {
 
     };
 };

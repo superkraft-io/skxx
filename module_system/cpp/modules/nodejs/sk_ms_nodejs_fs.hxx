@@ -8,7 +8,7 @@ class SK_Module_fs {
 public:
     SK_Module_vfs* vfs;
 
-    void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+    void handleOperation(const SK_String& operation, const SK_JSON_YY& payload, SK_Communication_Response& respondWith) {
         SK_String path = payload["path"];
 
         //If path starts with sk_vfs/, we route the operation to the VFS module
@@ -55,7 +55,7 @@ public:
 
     
     void access(const SK_String& path, SK_Communication_Response& respondWith) {
-        respondWith.JSON(nlohmann::json{ {"access", SK_String(SK_File::exists(path) ? "true" : "false")} });
+        respondWith.JSON(SK_JSON_YY{ {"access", SK_String(SK_File::exists(path) ? "true" : "false")} });
     };
 
     void writeFile(const SK_String& path, const SK_String& data, SK_Communication_Response& respondWith) {
@@ -85,20 +85,20 @@ public:
     };
 
     void readdir(const SK_String& path, SK_Communication_Response& respondWith) {
-        nlohmann::json list = SK_File::list(path);
+        SK_JSON_YY list = SK_File::list(path);
 
         if (list == false) {
             respondWith.error(404, "ENOENT");
             return;
         }
 
-        nlohmann::json fileList = nlohmann::json::array();
+        SK_JSON_YY fileList = SK_JSON_YY::array();
 
         unsigned int size = list.size();
         if (size > 0) {
             for (unsigned int i = 0; i < size; i++) {
-                nlohmann::json file = list[i];
-                fileList.push_back(nlohmann::json{
+                SK_JSON_YY file = list[i];
+                fileList.push_back(SK_JSON_YY{
                     {"type", file["type"]},
                     {"name", file["name"]}
                 });
@@ -138,7 +138,7 @@ public:
     };
     
     void stat(const SK_String& path, SK_Communication_Response& respondWith) {
-        nlohmann::json statInfo = SK_File::getFileInfo(path);
+        SK_JSON_YY statInfo = SK_File::getFileInfo(path);
 
         if (statInfo.contains("error")) {
             respondWith.error(404, "ENOENT");

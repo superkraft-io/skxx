@@ -6,11 +6,11 @@ BEGIN_SK_NAMESPACE
 
 class SK_Module_debugMngr {
 public:
-    void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+    void handleOperation(const SK_String& operation, const SK_JSON_YY& payload, SK_Communication_Response& respondWith) {
              if (operation == "showDevTools") showDevTools(payload, respondWith);
     };
 
-    void showDevTools(const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+    void showDevTools(const SK_JSON_YY& payload, SK_Communication_Response& respondWith) {
         SK_String target = payload["target"];
 
         if (target == "sb") {

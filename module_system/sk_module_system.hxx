@@ -30,7 +30,7 @@ public:
 		delete vfs;
 	}
 
-	void performOperation(const SK_String& module, const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+	void performOperation(const SK_String& module, const SK_String& operation, const SK_JSON_YY& payload, SK_Communication_Response& respondWith) {
 		     if (module == "os") os.handleOperation(operation, payload, respondWith);
 		else if (module == "application") application.handleOperation(operation, payload, respondWith);
 		else if (module == "fs") fs.handleOperation(operation, payload, respondWith);

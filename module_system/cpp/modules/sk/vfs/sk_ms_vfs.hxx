@@ -12,7 +12,7 @@ public:
         for (int i = 0; i < entries.size(); i++) delete entries[i];
     }
 
-    void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+    void handleOperation(const SK_String& operation, const SK_JSON_YY& payload, SK_Communication_Response& respondWith) {
         SK_String path = payload["path"];
         SK_String data = payload["data"];
 
@@ -42,7 +42,7 @@ public:
     void access(const SK_String& path, SK_Communication_Response& respondWith) {
         SK_Module_vfs_file* file = findByPath(path);
 
-        respondWith.JSON(nlohmann::json{
+        respondWith.JSON(SK_JSON_YY{
             {"data", (file != nullptr ? true : false)}
         });
     }
@@ -56,7 +56,7 @@ public:
         }
 
 
-        auto statInfo = nlohmann::json {
+        auto statInfo = SK_JSON_YY {
             {"type", "file"},
             {"dev", -1},
             {"mode", -1},
@@ -99,7 +99,7 @@ public:
             return;
         }
 
-        respondWith.JSON(nlohmann::json{
+        respondWith.JSON(SK_JSON_YY{
             {"data", file->data}
         });
     };

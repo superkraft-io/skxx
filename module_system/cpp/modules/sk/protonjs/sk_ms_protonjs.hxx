@@ -8,12 +8,12 @@ class SK_Module_ProtonJS {
 public:
     SK_Window_Mngr* wndMngr;
 
-    void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+    void handleOperation(const SK_String& operation, const SK_JSON_YY& payload, SK_Communication_Response& respondWith) {
              if (operation == "construct") construct(payload, respondWith);
         else if (operation == "configure") configure(payload, respondWith);
     };
 
-    void construct(const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+    void construct(const SK_JSON_YY& payload, SK_Communication_Response& respondWith) {
         SK_String uuid = payload["__moduleInstanceConfig"]["__uuid"];
 
         SK_Window* existingView = wndMngr->findWindowByTag(uuid);
@@ -43,7 +43,7 @@ public:
         respondWith.JSON_OK();
     }
 
-    void configure(const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+    void configure(const SK_JSON_YY& payload, SK_Communication_Response& respondWith) {
         SK_String uuid = payload["__moduleInstanceConfig"]["__uuid"];
 
         SK_Window* wnd = wndMngr->findWindowByTag(uuid);
@@ -51,7 +51,7 @@ public:
         SK_String attribute = payload["attribute"];
 
         if (payload.contains("read") && payload["read"] == true) {
-            auto value = wnd->config.data[attribute];
+            SK_JSON_YY value = wnd->config.data[attribute];
             respondWith.JSON(value);
             return;
         }
@@ -66,7 +66,7 @@ public:
         respondWith.JSON_OK();
     }
 
-    void handleDetailedAttributeAssignment(SK_Window* wnd, const SK_String& attribute, const nlohmann::json& value) {
+    void handleDetailedAttributeAssignment(SK_Window* wnd, const SK_String& attribute, const SK_JSON_YY& value) {
         if (attribute == "setAlwaysOnTop"){
             wnd->setAlwaysOnTop(value["flag"], (value.contains("level") ? value["level"] : -1), (value.contains("relativeLevel") ? value["relativeLevel"] : -1));
         }
