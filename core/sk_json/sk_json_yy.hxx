@@ -18,7 +18,9 @@ public:
 
     // Dereference operator
     std::pair<std::string, yyjson_mut_val*> operator*() const {
-        yyjson_mut_val* key = yyjson_mut_obj_iter_get(&iter); // Get current key
+        yyjson_mut_obj_iter _iter = iter;
+        char* _key;
+        yyjson_mut_val* key = yyjson_mut_obj_iter_get(&_iter, _key); // Get current key
         yyjson_mut_val* val = yyjson_mut_obj_iter_get_val(key); // Get current value
         return { yyjson_mut_get_str(key), val };
     }
