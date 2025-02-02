@@ -30,6 +30,63 @@ public:
 
     SK_WebView_callResize_Callback callResize;
 
+    std::string ipcTestStr = "{\"L1_obj1\":{\"L2_str1\":\"another string - level 2 object of obj 1 at level 1 - but this is much longer\",\"L2_obj1\":{\"string\":\"another string but not as long\"}},\"L1_obj2\":{\"L2_str1ng\":\"short string\",\"L2_str1\":\"this is a very long string - this is a very long string - this is a very long string - this is a very long string - this is a very long string\",\"L2_obj1\":{\"string\":\"kind of a lonigsh string - this is a story all about how mynlife got flipped upside down\"}}}";
+
+
+
+    nlohmann::json yyjsonToNlohmann(yyjson_mut_val* node) {
+        if (!node) return nullptr;
+
+        if (yyjson_mut_is_obj(node)) {
+            // If the node is an object, iterate over its key-value pairs
+            nlohmann::json obj = nlohmann::json::object();
+            yyjson_mut_obj_iter iter;
+            yyjson_mut_obj_iter_init(node, &iter);
+            yyjson_mut_val* key;
+            while ((key = yyjson_mut_obj_iter_next(&iter))) {
+                yyjson_mut_val* val = yyjson_mut_obj_iter_get_val(key);
+                std::string key_str = yyjson_mut_get_str(key);
+                obj[key_str] = yyjsonToNlohmann(val); // Recursively convert value
+            }
+            return obj;
+        }
+        else if (yyjson_mut_is_arr(node)) {
+            // If the node is an array, iterate over its elements
+            nlohmann::json arr = nlohmann::json::array();
+            size_t idx, max;
+            yyjson_mut_val* val;
+            yyjson_mut_arr_foreach(node, idx, max, val) {
+                arr.push_back(yyjsonToNlohmann(val)); // Recursively convert element
+            }
+            return arr;
+        }
+        else if (yyjson_mut_is_str(node)) {
+            // If the node is a string, return its value
+            return yyjson_mut_get_str(node);
+        }
+        else if (yyjson_mut_is_int(node)) {
+            // If the node is an integer, return its value
+            return yyjson_mut_get_int(node);
+        }
+        else if (yyjson_mut_is_real(node)) {
+            // If the node is a floating-point number, return its value
+            return yyjson_mut_get_real(node);
+        }
+        else if (yyjson_mut_is_bool(node)) {
+            // If the node is a boolean, return its value
+            return yyjson_mut_get_bool(node);
+        }
+        else if (yyjson_mut_is_null(node)) {
+            // If the node is null, return nullptr
+            return nullptr;
+        }
+
+        // If the node type is unknown, return nullptr
+        return nullptr;
+    }
+
+
+
     void updateStyling(RECT rect) {
         //  !!! IMPORTANT !!!
         //  The following code must be executed in the exact order, or it won't work!
@@ -138,14 +195,49 @@ public:
                             }).Get(), nullptr);
 
                             webview->add_WebMessageReceived(Callback<ICoreWebView2WebMessageReceivedEventHandler>([this](ICoreWebView2* sender, ICoreWebView2WebMessageReceivedEventArgs* args) -> HRESULT {
+                                wil::unique_cotaskmem_string strPtr;
+                                SK_String str;
+                                if (SUCCEEDED(args->TryGetWebMessageAsString(&strPtr))) {
+                                    str = strPtr.get();
+                                }
+
+
+                                if (str.data.size() > 0 && str.data[0] == '@') {
+                                    std::string msg_id;
+                                    if (str.data.substr(1, 4) == "none") {
+                                        msg_id = str.data.substr(5, str.data.size() - 5);
+                                    }
+                                    else if (str.data.substr(1, 6) == "yyjson") {
+                                        msg_id = str.data.substr(7, str.data.size() - 7);
+                                        
+                                        yyjson_doc* read_doc = yyjson_read(ipcTestStr.c_str(), ipcTestStr.size(), 0);
+                                        if (!read_doc) { throw std::runtime_error("Failed to parse JSON string"); }
+
+                                        yyjson_mut_doc* doc = yyjson_mut_doc_new(nullptr);
+                                        yyjson_mut_val* root = yyjson_val_mut_copy(doc, yyjson_doc_get_root(read_doc));
+                                        yyjson_mut_doc_set_root(doc, root);
+                                       
+
+                                        yyjson_doc_free(read_doc);
+                                    }
+                                    else if (str.data.substr(1, 8) == "nlohmann") {
+                                        msg_id = str.data.substr(9, str.data.size() - 9);
+
+                                        nlohmann::json payload = nlohmann::json::parse(ipcTestStr);
+                                    }
+
+                                    SK_String data = "sk_api.ipc.handleIncoming({type: \"ipcTestResponse\", msg_id: \"" + msg_id + "\"})";
+                                    evaluateScript(data, NULL);
+                                    return S_OK;
+                                }
+
+
                                 wil::unique_cotaskmem_string jsonPStr;
                                 SK_String jsonStr;
                                 if (SUCCEEDED(args->get_WebMessageAsJson(&jsonPStr))) {
                                     jsonStr = jsonPStr.get();
                                 }
 
-                                simdjson::dom::parser parser;
-                                auto doc = parser.parse(jsonStr.data);
                                 nlohmann::json payload = nlohmann::json::parse(jsonStr.data);
 
                                 SK_Communication_Config config { "sk.view", SK_Communication_Packet_Type::sk_comm_pt_ipc, &payload };

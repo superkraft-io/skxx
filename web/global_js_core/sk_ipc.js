@@ -91,6 +91,7 @@ class SK_IPC {
         if (res.type === "response") this.handleResponse(res)
         else if (res.type === "request") this.handleRequest(res)
         else if (res.type === "message") this.handleMessage(res)
+        else if (res.type === "ipcTestResponse") this.handleIPCTestResponse(res)
         else throw `[SK IPC.handleIncoming] Invalid incoming IPC message type`
     }
 
@@ -171,6 +172,44 @@ class SK_IPC {
 
         var promises = []
         for (var i = 0; i < calls; i++) promises.push(sk_api.ipc.request('valid_event_id', { key: 'value' }))
+
+        await Promise.all(promises)
+
+        var endMS = Date.now()
+
+        var elapsed = endMS - startMS
+
+        console.log('IPC test completed in ' + elapsed + 'ms')
+    }
+
+    async testSingle(type = 'nlohmann') {
+        return new Promise((resolve, reject) => {
+            this.msg_id++
+            var msg_id = this.msg_id
+
+            this.awaitList[msg_id] = {
+                resolve: resolve,
+                reject: reject
+            }
+
+
+            var msg = `@${type}${msg_id}`
+            window.chrome.webview.postMessage(msg);
+        })
+    }
+
+    handleIPCTestResponse(res) {
+        //console.log('handling ' + res.msg_id)
+        var awaiter = this.awaitList[res.msg_id]
+        delete this.awaitList[res.msg_id]
+        awaiter.resolve(res.data)
+    }
+
+    async testIPC(type = 'nlohmann', calls = 100) {
+        var startMS = Date.now()
+
+        var promises = []
+        for (var i = 0; i < calls; i++) promises.push(this.testSingle(type))
 
         await Promise.all(promises)
 

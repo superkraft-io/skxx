@@ -37,7 +37,6 @@
 #include "sk_var.hxx"
 
 #include "json.hpp"
-//#include "../libs/general/yyjson/src/yyjson.h"
 
 
 #if defined(SK_OS_windows)
@@ -105,10 +104,10 @@
 
 #include "sk_json/sk_json_callback.hxx"
 
+#include "../libs/general/yyjson/yyjson.h"
+
 //#include "../libs/general/glaze/glaze.hpp"
 //#include "sk_json/sk_json_glaze.hxx"
-
-#include "../libs/general/simdjson/simdjson.h"
 
 #include "sk_profiler/sk_profiler.hxx"
 
