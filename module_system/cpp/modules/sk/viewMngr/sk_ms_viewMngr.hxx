@@ -31,7 +31,11 @@ public:
 
             if (wnd->config.data.contains("mainWindow") && wnd->config.data["mainWindow"] == true) {
 
-                wnd->hwnd = SK_Common::mainWindowHWND;
+                #if defined(SK_OS_windows)
+                    wnd->hwnd = SK_Common::mainWindowHWND;
+                #elif defined(SK_OS_macos)
+                #endif
+                
                 wnd->windowClassName = "SK_Window_1";
 
                 SK_Common::setMainWindowSize(wnd->config["width"], wnd->config["height"]);

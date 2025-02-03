@@ -27,7 +27,11 @@ public:
 
             if (wnd->config.data.contains("mainWindow") && wnd->config.data["mainWindow"] == true) {
 
-                wnd->hwnd = SK_Common::mainWindowHWND;
+                #if defined(SK_OS_windows)
+                    wnd->hwnd = SK_Common::mainWindowHWND;
+                #elif defined(SK_OS_macos)
+                #endif
+                
                 wnd->windowClassName = "SK_Window_1";
 
                 SK_Common::setMainWindowSize(wnd->config["width"], wnd->config["height"]);
@@ -68,7 +72,8 @@ public:
 
     void handleDetailedAttributeAssignment(SK_Window* wnd, const SK_String& attribute, const nlohmann::json& value) {
         if (attribute == "setAlwaysOnTop"){
-            wnd->setAlwaysOnTop(value["flag"], (value.contains("level") ? value["level"] : -1), (value.contains("relativeLevel") ? value["relativeLevel"] : -1));
+            /*wnd->setAlwaysOnTop(value["flag"], (value.contains("level") ? value["level"] : -1), (value.contains("relativeLevel") ? value["relativeLevel"] : -1));
+             */
         }
 
 

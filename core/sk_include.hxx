@@ -1,6 +1,5 @@
 #pragma once
 
-#include <vld.h>
 
 #include <unordered_map>
 #include <optional>
@@ -34,7 +33,14 @@
 
 #include "wdlstring.h"
 
+
+#include "../libs/general/debugbreak.h"
 #include "sk_var.hxx"
+
+
+#if defined(SK_OS_windows)
+    #include <vld.h>
+#endif
 
 #include "json.hpp"
 
@@ -85,8 +91,9 @@
 
 	#if defined (SK_OS_macos) || defined (SK_OS_ios)
 		#include <TargetConditionals.h>
-		#include <sys/stat.h>
-		#include <unistd.h>
+        #import <Foundation/Foundation.h>
+        #import <Cocoa/Cocoa.h>
+        #import <WebKit/WebKit.h>
 	#elif defined (SK_OS_linux) || defined (SK_OS_android)
 		// Linux specific includes
 	#endif
@@ -146,19 +153,19 @@ public:
 
 	static inline SK_WindowMngr_onFindWindowByString onFindWindowByClassName;
 	static inline SK_WindowMngr_onFindWindowByString onFindWindowByTag;
-	static inline SK_WindowMngr_updateWebViewHWNDListForView updateWebViewHWNDListForView;
-
-	static inline SK_onMainWindowHWNDAcquired onMainWindowHWNDAcquired;
+	
 
 	static inline SK_WebView_OnReady onWebViewReady;
 
 	static inline SK_Communication_onRequest onCommunicationRequest;
 
 
-#if defined(SK_OS_windows)
-	static inline SK_WindowMngr_getWebview2HWNDForWindow getWebview2HWNDForWindow;
-	static inline HWND mainWindowHWND;
-#endif
+    #if defined(SK_OS_windows)
+        static inline SK_WindowMngr_updateWebViewHWNDListForView updateWebViewHWNDListForView;
+        static inline SK_onMainWindowHWNDAcquired onMainWindowHWNDAcquired;
+        static inline SK_WindowMngr_getWebview2HWNDForWindow getWebview2HWNDForWindow;
+        static inline HWND mainWindowHWND;
+    #endif
 
 	static inline SK_IPC_v2* sb_ipc;
 
@@ -181,13 +188,15 @@ END_SK_NAMESPACE
 
 
 #include "sk_webview/sk_webview.h"
-#if defined(SK_FRAMEWORK_iPlug2)
-	#include "sk_window_mngr/root/sk_window_root.hxx"
-#else
-	#include "../root/sk_window_root.h"
-#endif
+#include "sk_window_mngr/root/sk_window_root.hxx"
 
-#include "sk_window_mngr/windows/sk_window_windows.hxx"
+
+
+#if defined(SK_OS_windows)
+    #include "sk_window_mngr/windows/sk_window_windows.hxx"
+#elif defined(SK_OS_macos) || defined(SK_OS_ios)
+    #include "sk_window_mngr/macos/sk_window_macos.hxx"
+#endif
 #include "sk_window_mngr/sk_window_mngr.hxx"
 
 
@@ -217,6 +226,8 @@ END_SK_NAMESPACE
 
 #include "../module_system/sk_module_system.hxx"
 
-#include "sk_webview_initializer/os/sk_webview_initializer_windows.hxx"
+
+#include "sk_webview_initializer/sk_webview_initializer.hxx"
+
 
 #include "sk_communication/sk_communication.hxx"

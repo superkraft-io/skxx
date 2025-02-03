@@ -9,8 +9,9 @@ class SK_Window;
 using SK_Window_onWindowFocusChanged_Callback = std::function<void(SK_Window* wnd, const bool& focused)>;
 
 using SK_WindowMngr_onFindWindowByString = std::function<SK_Window* (const SK_String& string)>;
-using SK_WindowMngr_getWebview2HWNDForWindow = std::function<HWND(const SK_String& windowClassName)>;
+
 #if defined(SK_OS_windows)
+    using SK_WindowMngr_getWebview2HWNDForWindow = std::function<HWND(const SK_String& windowClassName)>;
 	using SK_WindowMngr_updateWebViewHWNDListForView = std::function<void(const SK_String& windowClassName)>;
 	using SK_onMainWindowHWNDAcquired = std::function<void(HWND hwnd)>;
 #endif

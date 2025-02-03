@@ -13,7 +13,7 @@ public:
 	SK_Module_System* modsys;
 	SK_Window_Mngr* wndMngr;
 
-	SK_Communication::SK_Communication() {
+	SK_Communication() {
 		int x = 0;
 		SK_Common::onCommunicationRequest = [&](SK_Communication_Config* config, SK_Communication_handlePacket_Response_IPC_CB ipcResponseCallback) {
 			SK_Communication_Packet* packet;
@@ -21,9 +21,9 @@ public:
 			#if defined(SK_OS_windows)
 				ICoreWebView2WebResourceRequestedEventArgs* webPayload;
 			#elif defined(SK_OS_macos) || defined(SK_OS_ios)
-						//for apple
+                WKURLSchemeTask* webPayload;
 			#elif defined(SK_OS_linux) || defined(SK_OS_android)
-						//for linux and android
+				//for linux and android
 			#endif
 
 
@@ -35,7 +35,8 @@ public:
 					webPayload = static_cast<ICoreWebView2WebResourceRequestedEventArgs*>(config->objPtr);
 					packet = SK_Communication_Packet::packetFromWebRequest(webPayload, config->sender);
 				#elif defined(SK_OS_macos) || defined(SK_OS_ios)
-					//for apple
+                    webPayload = static_cast<WKURLSchemeTask*>(config->objPtr);
+                    packet = SK_Communication_Packet::packetFromWebRequest(webPayload, config->sender);
 				#elif defined(SK_OS_linux) || defined(SK_OS_android)
 					//for linux and android
 				#endif
@@ -48,7 +49,14 @@ public:
 					ipcResponseCallback(response->getForIPC());
 				}
 				else if (response->type == SK_Communication_Packet_Type::sk_comm_pt_web) {
-					webPayload->put_Response(response->getForWeb().get());
+                    #if defined(SK_OS_windows)
+                        webPayload->put_Response(response->getForWeb().get());
+                    #elif defined(SK_OS_macos) || defined(SK_OS_ios)
+                        //for apple
+                    #elif defined(SK_OS_linux) || defined(SK_OS_android)
+                        //for linux and android
+                    #endif
+					
 				}
 
 				delete packet;
@@ -111,8 +119,6 @@ public:
 			);
 		}
 		else if (packet->target == "sk.project") {
-			int x = 0;
-
 			SK_String path = SK_String(packet->info["path"]);
 
 			if (path.substring(0, 7) == "/sk_vfs") {
@@ -129,8 +135,6 @@ public:
 			#endif
 		}
 		else if (packet->target == "sk.view") {
-			int x = 0;
-
 			SK_String path = SK_String(packet->info["path"]);
 
 			SK_String viewID = path.replace("/", "");
@@ -143,7 +147,6 @@ public:
 			packet->response()->JSON(SK_Profiler::serialize());
 		}
 		else {
-			int x = 0;
 			#if defined SK_MODE_DEBUG
 				std::string filePath = SK::SK_Path_Utils::paths["project"] + SK_String(packet->info["path"]);
 				packet->response()->file(filePath);

@@ -72,6 +72,22 @@ public:
             }
             return ""; // Default value if the key doesn't exist or isn't an int
         }
+        
+        operator SK_String() const {
+            if (parent.data.contains(key) && parent.data[key].is_string()) {
+                return SK_String(parent.data[key].get<std::string>());
+            }
+            return ""; // Default value if the key doesn't exist or isn't an int
+        }
+        
+        #if defined(SK_OS_macos) || defined(SK_OS_ios)
+            operator NSString*() const {
+                if (parent.data.contains(key) && parent.data[key].is_string()) {
+                    return [NSString stringWithUTF8String:parent.data[key].get<std::string>().c_str()];
+                }
+                return @""; // Default value if the key doesn't exist or isn't an int
+            }
+        #endif
 
         operator nlohmann::json() const {
             if (parent.data.contains(key) && parent.data[key].is_object()) {

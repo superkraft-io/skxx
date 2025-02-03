@@ -8,7 +8,7 @@ class SK_Module_vfs {
 public:
     std::vector<SK_Module_vfs_file*> entries;
 
-    SK_Module_vfs::~SK_Module_vfs() {
+    ~SK_Module_vfs() {
         for (int i = 0; i < entries.size(); i++) delete entries[i];
     }
 

@@ -1,11 +1,15 @@
 #pragma once
 
-#if defined(_WIN32) || defined(_WIN64)
-
 #include "../sk_common.hxx"
 
-
 BEGIN_SK_NAMESPACE
+
+#if defined(SK_OS_windows)
+
+
+
+
+
 
 static std::string wstringToString(const std::wstring& wstr)
 {
@@ -76,7 +80,8 @@ static wil::unique_cotaskmem_string stringToUniqueCoTaskMemString(const std::str
     // Transfer ownership to wil::unique_cotaskmem_string
     return wil::unique_cotaskmem_string(wideString);
 }
-#elif defined(__APPLE__)
+
+#elif defined(SK_OS_macos) || defined(SK_OS_ios)
 
 static NSString* StringToNSString(const std::string& str){
     return [NSString stringWithUTF8String:str.c_str()];

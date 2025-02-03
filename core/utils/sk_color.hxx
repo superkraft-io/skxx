@@ -35,6 +35,10 @@ public:
     SK_Color(const std::string& clrStr) {
         *this = clrStr; // Use the assignment operator
     }
+    
+    SK_Color(char* clrStr) {
+        *this = std::string(clrStr);
+    }
 
     // Assignment operator for std::string
     SK_Color& operator=(const std::string& clrStr) {
@@ -53,6 +57,18 @@ public:
         return *this; // Return the current object for chaining
     }
 
+    #if defined(SK_OS_windows)
+        //for windows
+    #elif defined(SK_OS_macos) || defined(SK_OS_ios)
+        operator NSColor*(){
+            return [NSColor
+                colorWithRed:r
+                       green:g
+                        blue:b
+                       alpha:a
+            ];
+        }
+    #endif
 
 
     int getAlphaAs255() {

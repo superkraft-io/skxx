@@ -15,6 +15,8 @@ public:
     SK_String(const char *s) : data(s) {}
     SK_String(const std::string& s) : data(s) {}
     SK_String(const SK_String& s) : data(s) {}
+    SK_String(const nlohmann::json& json) : data(json.get<std::string>()) {}
+    SK_String(const std::vector<char>& chars) : data(chars.data(), chars.size()) {}
 
     #if defined(SK_OS_windows)
         SK_String(LPCWSTR wideStr) {
@@ -37,6 +39,14 @@ public:
 
                     data = result; // Assign to the `data` member
                 }
+            }
+        }
+    #elif defined(SK_OS_macos) || defined(SK_OS_ios)
+        SK_String(NSString* nsStr) {
+            if (nsStr) {
+                data = std::string([nsStr UTF8String]);  // Convert NSString* to std::string
+            } else {
+                data.clear();
             }
         }
     #endif
@@ -184,7 +194,7 @@ public:
         std::vector<std::string> result;
         std::string token;
         std::stringstream ss(data);
-        char _delimiter = delimiter[0];
+        char _delimiter = delimiter.data[0];
         while (std::getline(ss, token, _delimiter)) {
             result.push_back(SK_String(token));
         }
@@ -262,6 +272,18 @@ public:
             wideString.resize(sizeNeeded - 1); // Exclude null terminator
             MultiByteToWideChar(CP_UTF8, 0, data.c_str(), -1, &wideString[0], sizeNeeded);
             return wideString.c_str();
+        }
+    #elif defined(SK_OS_macos) || defined(SK_OS_ios)
+        operator NSString* () const {
+            return [NSString stringWithUTF8String:data.c_str()];
+        }
+    
+        operator NSURL* () const {
+            return [NSURL URLWithString:[NSString stringWithUTF8String:data.c_str()]];
+        }
+        
+        operator NSData* () const {
+            return [(NSString*)*this dataUsingEncoding:NSUTF8StringEncoding];
         }
     #endif
 
@@ -371,6 +393,12 @@ public:
         return lhs != rhs.data;
     }
 
+
+    
+    friend std::ostream& operator<<(std::ostream& os, const SK_String& skStr) {
+        os << skStr.data;
+        return os;
+    }
 
 
 

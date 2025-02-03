@@ -47,6 +47,7 @@
 
 #if __has_include("../../../iPlug2_SK/IPlug/IPlugConstants.h")
 	#include "config.h"
+    #undef SK_FRAMEWORK_Superkraft
 	#define SK_FRAMEWORK "iPlug2"
 	#define SK_FRAMEWORK_iPlug2
 	#undef SK_FRAMEWORK_Superkraft

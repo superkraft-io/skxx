@@ -98,7 +98,7 @@ public:
 		std::ofstream outFile(path.data, std::ios::app);
 
 		if (outFile.is_open()) {
-			outFile << data;
+			outFile << data.data;
 			return true;
 		}
 		else {
@@ -179,11 +179,15 @@ public:
 		}
 
 	#elif defined(SK_OS_macos) || defined(SK_OS_ios)
-		std::chrono::system_clock::time_point timespecToChrono(const struct timespec& ts) {
-			return std::chrono::system_clock::time_point(
-				std::chrono::seconds(ts.tv_sec) + std::chrono::nanoseconds(ts.tv_nsec)
-			);
-		}
+        std::chrono::system_clock::time_point timespecToChrono(const struct timespec& ts) {
+            // Convert seconds and nanoseconds to a duration
+            auto duration = std::chrono::seconds(ts.tv_sec) + std::chrono::nanoseconds(ts.tv_nsec);
+
+            // Construct a time_point by adding the duration to the system clock's epoch
+            return std::chrono::system_clock::time_point(
+                std::chrono::duration_cast<std::chrono::system_clock::duration>(duration)
+            );
+        }
 	#endif
 
 	static uint64_t timePointToUint64(const std::chrono::system_clock::time_point& timePoint) {
@@ -215,13 +219,12 @@ public:
 				__debugbreak();
 			}
 
-		#elif SK_OS == macos || SK_OS == ios
+		#elif defined(SK_OS_macos) || defined(SK_OS_ios)
 			struct stat fileStat;
-			if (stat(filePath.c_str(), &fileStat) == 0) {
-				auto timespecToChrono = [](const struct timespec& ts) {
-					return std::chrono::system_clock::time_point(
-						std::chrono::seconds(ts.tv_sec) + std::chrono::nanoseconds(ts.tv_nsec));
-					};
+			if (stat(path.data.c_str(), &fileStat) == 0) {
+                auto timespecToChrono = [](const struct timespec& ts) {
+                    return std::chrono::system_clock::time_point{std::chrono::duration_cast<std::chrono::system_clock::duration>(std::chrono::seconds(ts.tv_sec) + std::chrono::nanoseconds(ts.tv_nsec))};
+                };
 
 				auto creation = timespecToChrono(fileStat.st_ctimespec);
 				auto access = timespecToChrono(fileStat.st_atimespec);
@@ -250,7 +253,7 @@ public:
 			return std::filesystem::exists(std::filesystem::path(path));
 		}
 		catch (const std::filesystem::filesystem_error& e) {
-			__debugbreak();
+			debug_break();
 		}
 
 		return false;
@@ -318,14 +321,14 @@ public:
 				fileInfo.numberOfLinks = (uint64_t)_fileInfo.nNumberOfLinks;
 				fileInfo.ino = ((uint64_t)_fileInfo.nFileIndexHigh << 32) | _fileInfo.nFileIndexLow;
 
-			#elif SK_OS == macos || SK_OS == ios
+			#elif defined(SK_OS_macos) || defined(SK_OS_ios)
 
 				struct stat fileStat;
 
 				// Get file statistics
-				if (stat(filePath.c_str(), &fileStat) != 0) {
-					std::cerr << "Failed to get file stats for " << filePath << std::endl;
-					return fileInfo;
+				if (stat(path.data.c_str(), &fileStat) != 0) {
+					std::cerr << "Failed to get file stats for " << path.data.c_str() << std::endl;
+					return statInfo;
 				}
 
 				// Print file size

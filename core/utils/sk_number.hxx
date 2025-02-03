@@ -197,6 +197,7 @@ public:
         return 0; // Default value if no valid type is found
     }
 
+#if defined(SK_OS_windows)
     operator LONG() const {
         if (std::holds_alternative<int>(value)) {
             return static_cast<LONG>(std::get<int>(value));
@@ -219,6 +220,7 @@ public:
         return 0; // Default value if no valid type is found
     }
 
+
     operator BYTE() const {
         if (std::holds_alternative<int>(value)) {
             return static_cast<BYTE>(std::get<int>(value));
@@ -240,7 +242,7 @@ public:
         }
         return 0; // Default value if no valid type is found
     }
-    
+#endif
 
 
 

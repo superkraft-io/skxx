@@ -22,10 +22,13 @@ public:
 
 	//SK_Profiler_Event* pEvent;
 
-	SK_Communication_Packet::~SK_Communication_Packet() {
-		if (response()->config->type == SK_Communication_Packet_Type::sk_comm_pt_ipc) delete static_cast<SK_Communication_Response_IPC*>(responseObj);
-		else if (response()->config->type == SK_Communication_Packet_Type::sk_comm_pt_web) delete static_cast<SK_Communication_Response_Web*>(responseObj);
-
+	~SK_Communication_Packet() {
+        if (response()->config->type == SK_Communication_Packet_Type::sk_comm_pt_ipc) {
+            delete static_cast<SK_Communication_Response_IPC*>(responseObj);
+        }
+        else if (response()->config->type == SK_Communication_Packet_Type::sk_comm_pt_web) {
+            //delete static_cast<SK_Communication_Response_Web*>(responseObj);
+        }
 		//if (pEvent != NULL) pEvent->stop();
 	}
 
@@ -79,8 +82,6 @@ public:
 		SK_Communication_Packet* packet = new SK_Communication_Packet();
 		//packet->pEvent = SK_Profiler::snap("", "packetFromWebRequest", NULL);
 
-		packet->responseObj = new SK_Communication_Response_Web();
-
 		packet->type = SK_Communication_Packet_Type::sk_comm_pt_web;
 
 		packet->id = "-1";
@@ -91,6 +92,8 @@ public:
 			packet->info["url"] = wstringToString(_url.get()); //this is based on the host in the URL, e.g "sk.be"
 			packet->parseURLParameters_v2(wstringToString(_url.get()), packet);
 		}
+        
+        packet->responseObj = new SK_Communication_Response_Web(SK_String(packet->info["url"]));
 
 		wil::unique_cotaskmem_string _method;
 		if (SUCCEEDED(request->get_Method(&_method))) {
@@ -191,7 +194,107 @@ public:
 	}
 
 #elif defined(SK_OS_macos) || defined(SK_OS_ios)
-	//for apple
+    static inline SK_Communication_Packet* packetFromWebRequest(WKURLSchemeTask* request, const SK_String& sender) {
+        SK_Communication_Packet* packet = new SK_Communication_Packet();
+        //packet->pEvent = SK_Profiler::snap("", "packetFromWebRequest", NULL);
+
+
+        packet->type = SK_Communication_Packet_Type::sk_comm_pt_web;
+
+        packet->id = "-1";
+        packet->sender = sender;
+
+        
+        // Full URL
+        packet->info["url"] = SK_String(request.URL.absoluteString);
+        packet->parseURLParameters_v2(SK_String(request.URL.absoluteString), packet);
+        
+        packet->responseObj = new SK_Communication_Response_Web(SK_String(request.URL.absoluteString));
+        
+        // HTTP Method (GET, POST, etc.)
+        packet->info["method"] = SK_String(request.HTTPMethod);
+
+        // Request Headers
+        packet->info["headers"] = packet->ExtractHeadersToJson(request.allHTTPHeaderFields);
+
+        // Request Body (if POST)
+        if (packet->info["method"] == "POST") {
+            NSData *bodyData = request.HTTPBody;
+            if (bodyData) {
+                NSString *bodyString = [[NSString alloc] initWithData:bodyData encoding:NSUTF8StringEncoding];
+                NSLog(@"Request Body: %@", bodyString);
+            } else {
+                NSLog(@"No body in the POST request.");
+            }
+        }
+
+        return packet;
+    };
+
+
+    bool parseURLParameters_v2(const SK_String& url, SK_Communication_Packet* packet) {
+        // Parse protocol
+        size_t protocolEnd = url.data.find("://");
+        if (protocolEnd != std::string::npos) {
+            packet->info["protocol"] = url.data.substr(0, protocolEnd + 3); // Include "://"
+        }
+
+        // Parse host and path
+        size_t hostStart = protocolEnd == std::string::npos ? 0 : protocolEnd + 3;
+        size_t pathStart = url.data.find('/', hostStart);
+        size_t queryStart = url.data.find('?', pathStart);
+
+        if (pathStart != std::string::npos) {
+            std::string host = url.data.substr(hostStart, pathStart - hostStart);
+            packet->info["host"] = host;
+            packet->target = host;
+            packet->info["path"] = (queryStart != std::string::npos)
+                ? url.data.substr(pathStart, queryStart - pathStart)
+                : url.data.substr(pathStart);
+        }
+        else {
+            std::string host = (queryStart != std::string::npos)
+                ? url.data.substr(hostStart, queryStart - hostStart)
+                : url.data.substr(hostStart);
+            packet->info["host"] = host;
+            packet->target = host;
+            packet->info["path"] = "/";
+        }
+
+        // Parse query parameters
+        if (queryStart != std::string::npos) {
+            size_t paramStart = queryStart + 1; // Skip '?'
+            while (paramStart < url.data.size()) {
+                size_t eqPos = url.data.find('=', paramStart);
+                size_t ampPos = url.data.find('&', paramStart);
+
+                if (eqPos == std::string::npos) break; // No more parameters
+
+                std::string key = url.data.substr(paramStart, eqPos - paramStart);
+                std::string value = (ampPos != std::string::npos)
+                    ? url.data.substr(eqPos + 1, ampPos - eqPos - 1)
+                    : url.data.substr(eqPos + 1);
+
+                packet->info["parameters"][key] = value;
+
+                if (ampPos == std::string::npos) break; // No more '&'
+                paramStart = ampPos + 1;
+            }
+        }
+
+        return true;
+    }
+
+    nlohmann::json ExtractHeadersToJson(NSDictionary* headers) {
+        nlohmann::json headersJson;
+
+        for (NSString *key in headers) {
+            NSString *value = headers[key];
+            headersJson[SK_String(key)] = SK_String(value);
+        }
+            
+        return headersJson;
+    }
 #elif defined(SK_OS_linux) || defined(SK_OS_android)
 	//for linux and android
 #endif

@@ -316,8 +316,6 @@ public:
         webview->OpenDevToolsWindow();
     };
 
-private:
-
 };
 
 END_SK_NAMESPACE

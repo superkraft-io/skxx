@@ -42,7 +42,7 @@ public:
                 return "Invalid time";  // If conversion fails
             }
         }
-    #elif SK_OS == macos || SK_OS == ios
+    #elif defined(SK_OS_macos) || defined(SK_OS_ios)
     #endif
 };
 

@@ -10,37 +10,41 @@ class SK_WebViewResourceHandler;
 
 class SK_Window_WebView_Counter {
 public:
-	static inline std::unordered_map<std::string, std::vector<HWND>> list;
+    #if defined(SK_OS_windows)
+        static inline std::unordered_map<std::string, std::vector<HWND>> list;
+   
 
+        static inline bool addWebviewToCounterList(const SK_String& windowClassName, HWND hwnd) {
+            auto it = list.find(windowClassName);
 
-	static inline bool addWebviewToCounterList(const SK_String& windowClassName, HWND hwnd) {
-		auto it = list.find(windowClassName);
+            if (it == list.end()) {
+                list[windowClassName] = { hwnd };
+                return true;
+            }
+            else {
+                auto& hwnd_list = it->second;
+                if (std::find(hwnd_list.begin(), hwnd_list.end(), hwnd) == hwnd_list.end()) {
+                    hwnd_list.push_back(hwnd);
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
 
-		if (it == list.end()) {
-			list[windowClassName] = { hwnd };
-			return true;
-		}
-		else {
-			auto& hwnd_list = it->second;
-			if (std::find(hwnd_list.begin(), hwnd_list.end(), hwnd) == hwnd_list.end()) {
-				hwnd_list.push_back(hwnd);
-				return true;
-			}
-			else {
-				return false;
-			}
-		}
-	}
+        static inline HWND getWebViewForWindow(const SK_String& windowClassName) {
+            auto it = list.find(windowClassName);
 
-	static inline HWND getWebViewForWindow(const SK_String& windowClassName) {
-		auto it = list.find(windowClassName);
+            if (it == list.end() || it->second.empty()) {
+                return nullptr;
+            }
 
-		if (it == list.end() || it->second.empty()) {
-			return nullptr;
-		}
+            return it->second[it->second.size() - 1];
+        }
+#elif defined(SK_OS_macos) || defined(SK_OS_ios)
+#endif
 
-		return it->second[it->second.size() - 1];
-	}
 };
 
 class SK_Window_Mngr {

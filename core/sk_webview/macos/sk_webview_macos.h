@@ -1,21 +1,27 @@
+// SK_WebView.hxx
 #pragma once
 
-#include <iostream>
+#include "../../sk_common.hxx"
 
-#import <Cocoa/Cocoa.h>
-#import <WebKit/WebKit.h>
+@class SK_WebView_URLSchemeHandler;
+
+BEGIN_SK_NAMESPACE
 
 class SK_WebView {
 public:
-    NSWindow *parentWnd;
+    using SK_WebView_EvaluationComplete_Callback = std::function<void(const SK_String& result)>;
     
+    NSWindow *parentWnd;
     WKWebView *webview;
+    
+    std::string currentURL = "";
     
     void create();
     void update();
-
-    std::string currentURL = "";
     void navigate(std::string url);
-private:
-
+    void evaluateScript_mainThread(WKWebView* _webview, const SK_String& src, SK_WebView_EvaluationComplete_Callback cb);
+    void evaluateScript(const SK_String& src, SK_WebView_EvaluationComplete_Callback cb);
+    void showDevTools();
 };
+
+END_SK_NAMESPACE

@@ -37,11 +37,11 @@ public:
 
 	SK_WebView webview;
 
-	SK_Window_Root::SK_Window_Root() {
+	SK_Window_Root() {
 		
 	}
 
-	virtual void SK_Window_Root::initialize(const unsigned int& _wndIdx) {
+	virtual void initialize(const unsigned int& _wndIdx) {
         wndIdx = _wndIdx;
     }
 

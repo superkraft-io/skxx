@@ -15,7 +15,7 @@ public:
 
 	SK_Communication comm;
 
-	Superkraft::Superkraft() {
+	Superkraft() {
 		SK_Path_Utils::init();
 		SK_Colors_Init();
 
@@ -38,7 +38,7 @@ public:
 		comm.wndMngr = &wndMngr;
 	}
 
-	Superkraft::~Superkraft() {
+	~Superkraft() {
 	}
 };
 

@@ -136,8 +136,7 @@ public:
                 return "Unknown";
             }
 
-        #elif
-        // macOS platform
+        #elif defined(SK_OS_macos) || defined(SK_OS_ios)
             struct utsname buffer;
             if (uname(&buffer) == 0) {
                 return buffer.sysname;
@@ -508,7 +507,7 @@ public:
             if (sysctlbyname("hw.cpufrequency", &cpuSpeed, &size, nullptr, 0) == 0) {
                 return stoi(std::to_string(cpuSpeed / 1000000));  // Convert to MHz
             }
-            return "Unknown CPU speed";
+            return -1;
         #elif defined(SK_OS_linux) || defined(SK_OS_android)
             // Linux: Read /proc/cpuinfo or use /sys to get CPU speed
             std::ifstream cpuInfoFile("/proc/cpuinfo");
