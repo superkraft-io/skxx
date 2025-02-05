@@ -1,22 +1,35 @@
 #pragma once
 
-#include "sk_webview_macos.h"
+#include "sk_webview_macos_v2.hpp"
 
-BEGIN_SK_NAMESPACE
+NS_ASSUME_NONNULL_BEGIN
 
-@interface SK_WebView_URLSchemeHandler : NSObject <WKURLSchemeHandler>
+@interface SK_WebView_URLSchemeHandler : NSObject <WKURLSchemeHandler, WKScriptMessageHandler>
+@property (nonatomic, assign) SK::SK_WebView* webView;
 @end
 
 @implementation SK_WebView_URLSchemeHandler
 - (void)webView:(WKWebView *)webView startURLSchemeTask:(id <WKURLSchemeTask>)urlSchemeTask {
-    SK_Communication_Config config{ "sk.sb", SK_Communication_Packet_Type::sk_comm_pt_web, urlSchemeTask.request };
-    SK_Common::onCommunicationRequest(&config, NULL);
+    SK::SK_Communication_Config config{ "sk.sb", SK::SK_Communication_Packet_Type::sk_comm_pt_web, urlSchemeTask.request };
+    SK::SK_Common::onCommunicationRequest(&config, NULL);
 }
 
-- (void)webView:(WKWebView *)webView stopURLSchemeTask:(id <WKURLSchemeTask>)urlSchemeTask {
-    // Stop handling custom URL scheme requests
+- (void)webView:(nonnull WKWebView *)webView stopURLSchemeTask:(nonnull id<WKURLSchemeTask>)urlSchemeTask { 
+
 }
+
+
+- (void)userContentController:(WKUserContentController *)userContentController didReceiveScriptMessage:(WKScriptMessage *)message {
+    if (self.webView) {
+        self.webView->handleScriptMessage(message);
+    }
+}
+
 @end
+
+NS_ASSUME_NONNULL_END
+
+BEGIN_SK_NAMESPACE
 
 void SK_WebView::create() {
     NSRect frame = parentWnd.contentView.frame;
@@ -34,12 +47,16 @@ void SK_WebView::create() {
 
     config.preferences = preferences;
 
+    // Create an instance of the Objective-C message handler
+    SK_WebView_URLSchemeHandler* messageHandler = [[SK_WebView_URLSchemeHandler alloc] init];
+    messageHandler.webView = this; // Bridge the C++ class
+
     // Enable WebKit message handler for JavaScript communication
-    [config.userContentController addScriptMessageHandler:self name:@"myMessageHandler"];
+    [config.userContentController addScriptMessageHandler:messageHandler name:@"myMessageHandler"];
 
     // Register a custom URL scheme handler (for request interception)
     SK_WebView_URLSchemeHandler* urlHandler = [[SK_WebView_URLSchemeHandler alloc] init];
-    [config setURLSchemeHandler:urlHandler forURLScheme:@"*"];
+    //[config setURLSchemeHandler:urlHandler forURLScheme:@"*"];
 
     // Create the WKWebView
     webview = [[WKWebView alloc] initWithFrame:frame configuration:config];
@@ -63,6 +80,11 @@ void SK_WebView::create() {
 
     // Navigate to the initial URL
     navigate(currentURL);
+}
+
+void SK_WebView::handleScriptMessage(WKScriptMessage* message) {
+    // Handle the script message here
+    NSLog(@"Received script message: %@", message.body);
 }
 
 void SK_WebView::update() {

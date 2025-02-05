@@ -1,9 +1,9 @@
 #pragma once
 
 #if defined(SK_OS_windows)
-    #include "windows/sk_webview_windows.hxx"
+    #include "windows/sk_webview_windows.hpp"
 #elif defined(SK_OS_macos)
-    #include "macos/sk_webview_macos.h"
+    #include "macos/sk_webview_macos.hpp"
 #elif defined(SK_OS_ios)
     #include "ios/sk_webview_ios.h"
 #elif defined(SK_OS_linux)
