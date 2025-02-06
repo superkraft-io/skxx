@@ -96,7 +96,7 @@
 		#include <TargetConditionals.h>
         
      
-        #include "utils/sk_string/sk_string_apple.hpp"
+        #include "utils/sk_string/sk_string_apple.h"
         
         
     
