@@ -368,11 +368,69 @@ public:
             pLoc->Release();
             pEnumerator->Release();
             CoUninitialize();
+        #elif defined(SK_OS_macos) || defined(SK_OS_ios)
+            // Retrieve the CPU model string.
+            std::string model;
+            #if defined(SK_OS_macos)
+                // On macOS, use "machdep.cpu.brand_string"
+                size_t size = 0;
+                sysctlbyname("machdep.cpu.brand_string", NULL, &size, NULL, 0);
+                if (size > 0) {
+                    char* brand = new char[size];
+                    if (sysctlbyname("machdep.cpu.brand_string", brand, &size, NULL, 0) == 0) {
+                        model = brand;
+                    }
+                    delete[] brand;
+                }
+            #elif defined(SK_OS_ios)
+                // On iOS, "machdep.cpu.brand_string" is not available.
+                // Use "hw.machine" which returns the device model identifier.
+                size_t size = 0;
+                sysctlbyname("hw.machine", NULL, &size, NULL, 0);
+                if (size > 0) {
+                    char* machine = new char[size];
+                    if (sysctlbyname("hw.machine", machine, &size, NULL, 0) == 0) {
+                        model = machine;
+                    }
+                    delete[] machine;
+                }
+            #endif
 
-            return cpus;
-        #else
-            //code
+            // Retrieve the CPU frequency (in Hz) and convert to MHz.
+            uint64_t frequency = 0;
+            size_t freqSize = sizeof(frequency);
+            if (sysctlbyname("hw.cpufrequency", &frequency, &freqSize, NULL, 0) != 0) {
+                frequency = 0;
+            }
+            int speedMHz = static_cast<int>(frequency / 1000000);
+
+            // Retrieve CPU usage times using host_statistics.
+            host_cpu_load_info_data_t cpuLoad;
+            mach_msg_type_number_t count = HOST_CPU_LOAD_INFO_COUNT;
+            kern_return_t kr = host_statistics(mach_host_self(), HOST_CPU_LOAD_INFO,
+                                               reinterpret_cast<host_info_t>(&cpuLoad), &count);
+            uint64_t user = 0, sysTime = 0, idle = 0, nice = 0;
+            if (kr == KERN_SUCCESS) {
+                user   = cpuLoad.cpu_ticks[CPU_STATE_USER];
+                sysTime= cpuLoad.cpu_ticks[CPU_STATE_SYSTEM];
+                idle   = cpuLoad.cpu_ticks[CPU_STATE_IDLE];
+                nice   = cpuLoad.cpu_ticks[CPU_STATE_NICE];
+            }
+
+            // Assemble the CPU info.
+            SK_CPUInfo cpu;
+            cpu.model = model;
+            cpu.speed = speedMHz;
+            cpu.user  = user;
+            cpu.nice  = nice;
+            cpu.sys   = sysTime;
+            cpu.idle  = idle;
+            cpu.irq   = 0; // IRQ not available on macOS/iOS
+
+            cpus.push_back(cpu);
         #endif
+        
+        return cpus;
     }
 
 
@@ -453,12 +511,12 @@ public:
         #elif defined(SK_OS_macos) || defined(SK_OS_ios)
 
             //Either this...
-            /*
+            
             char buffer[256];
             size_t size = sizeof(buffer);
             sysctlbyname("machdep.cpu.brand_string", buffer, &size, nullptr, 0);
             return std::string(buffer);
-            */
+            
 
             //...or this
             /*

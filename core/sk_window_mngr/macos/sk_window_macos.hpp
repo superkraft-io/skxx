@@ -2,15 +2,15 @@
 
 #include "../../sk_common.hpp"
 
-#import <Cocoa/Cocoa.h>
 
 BEGIN_SK_NAMESPACE
 
 class SK_Window : public SK_Window_Root {
 public:
     SK_String windowClassName = "SK_Window";
-    NSWindow* window = nullptr;
-    NSView* webViewContainer = nullptr;
+    HWND hwnd;
+    //NSWindow* window = nullptr;
+    //NSView* webViewContainer = nullptr;
 
     SK_Window() {
         config.onChanged = [&](const std::string& key) {
@@ -20,9 +20,9 @@ public:
     }
 
     ~SK_Window() {
-        if (window) {
+        //if (window) {
             //[window release];
-        }
+        //}
     }
 
     void initialize(const unsigned int& _wndIdx) override {
@@ -31,7 +31,7 @@ public:
     }
 
     void create() {
-        NSRect frame = NSMakeRect(config["x"], config["y"], config["width"], config["height"]);
+        /*NSRect frame = NSMakeRect(config["x"], config["y"], config["width"], config["height"]);
         NSUInteger styleMask = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable;
 
         window = [[NSWindow alloc] initWithContentRect:frame
@@ -43,30 +43,32 @@ public:
         [window setDelegate:(id<NSWindowDelegate>)CFBridgingRelease(this)];
         [window makeKeyAndOrderFront:nil];
 
-        createWebView();
+        createWebView();*/
     }
 
     void createWebView() {
-        webViewContainer = [[NSView alloc] initWithFrame:[window contentRectForFrameRect:[window frame]]];
+        /*webViewContainer = [[NSView alloc] initWithFrame:[window contentRectForFrameRect:[window frame]]];
         [window setContentView:webViewContainer];
-
+         */
+        
+        
         // Initialize WebView here (e.g., using WKWebView)
         // webview.create();
     }
 
     void update(bool manuallyResizing = false) {
-        NSRect frame = [window frame];
+        /*NSRect frame = [window frame];
         frame.size.width = config["width"];
         frame.size.height = config["height"];
         [window setFrame:frame display:YES];
 
         if (webViewContainer) {
             [webViewContainer setFrame:[window contentRectForFrameRect:frame]];
-        }
+        }*/
     }
 
     void updateWindowByConfig() {
-        if (!window) return;
+        /*if (!window) return;
 
         if (checkNeedsUpdateAndReset("title")) {
             [window setTitle: config["title"]];
@@ -108,17 +110,17 @@ public:
 
         if (checkNeedsUpdateAndReset("fullscreen")) {
             setFullscreen(config["fullscreen"]);
-        }
+        }*/
     }
 
     void setFullscreen(bool activate) {
-        if (!config["fullscreenable"]) return;
+        /*if (!config["fullscreenable"]) return;
 
         if (activate) {
             [window toggleFullScreen:nil];
         } else {
             [window toggleFullScreen:nil];
-        }
+        }*/
     }
 
 private:

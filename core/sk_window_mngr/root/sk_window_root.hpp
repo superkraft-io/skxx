@@ -11,7 +11,7 @@ BEGIN_SK_NAMESPACE
     //This forward declaration is needed for MacOS & iOS, or else SK_WebView is not recognizted
     //This is due to that the compiler doesn't seem to recognize sk_webview_macos.hpp before sk_window_root.hpp
     //class SK_WebView;
-    #include "../../sk_webview/macos/sk_webview_macos_v2.hpp" // Include full definition here
+    //#include "../../sk_webview/macos/sk_webview_macos_v2.hpp" // Include full definition here
 #endif
 
 
@@ -45,7 +45,7 @@ public:
 
 	SK_Color backgroundColor = "black";
 
-    SK_WebView webview; //must be a pointer since we forward declared SK_WebView at the beginning of this file
+    //SK_WebView webview; //must be a pointer since we forward declared SK_WebView at the beginning of this file
 
 	SK_Window_Root() {
 	}

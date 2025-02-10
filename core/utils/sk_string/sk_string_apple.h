@@ -96,7 +96,10 @@ public:
     // Stream operator
     friend std::ostream& operator<<(std::ostream& os, const SK_String& skStr);
 
+    
     // Base64 methods
+    static inline const std::string base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+        
     bool is_base64_char(unsigned char c);
     std::string toBase64();
     SK_String fromBase64();

@@ -11,19 +11,19 @@ public:
     #if defined(SK_OS_windows)
         wil::com_ptr<ICoreWebView2> webview;
     #elif defined(SK_OS_macos) || defined(SK_OS_ios)
-        WKWebView *webview;
+        //WKWebView *webview;
     #endif
 
     void init(void* _webview, bool isHardBackend){
         #if defined(SK_OS_windows)
             webview = static_cast<ICoreWebView2*>(_webview);
         #elif defined(SK_OS_macos) || defined(SK_OS_ios)
-            webview = (__bridge WKWebView*)_webview;
+            //webview = (__bridge WKWebView*)_webview;
         #endif
         
         inject_core();
 
-        webview = nullptr;
+        //webview = nullptr;
     }
 
     void inject_core(){
@@ -72,12 +72,12 @@ public:
                 ).Get()
            );
         #elif defined(SK_OS_macos) || defined(SK_OS_ios)
-            WKUserScript *userScript = [[WKUserScript alloc] initWithSource:data
+            /*WKUserScript *userScript = [[WKUserScript alloc] initWithSource:data
                                                               injectionTime:WKUserScriptInjectionTimeAtDocumentStart
                                                            forMainFrameOnly:NO];
 
             [webview.configuration.userContentController addUserScript:userScript];
-        
+        */
         #endif
         
     }

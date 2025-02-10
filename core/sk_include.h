@@ -1,6 +1,8 @@
 #pragma once
 
 
+#include "../../sk_project_includes.hpp"
+
 #include <unordered_map>
 #include <optional>
 #include <filesystem>
@@ -145,8 +147,6 @@
 
 
 
-
- 
 static nlohmann::json sk_config;
 
 BEGIN_SK_NAMESPACE
@@ -165,12 +165,14 @@ public:
 
 	static inline SK_Communication_onRequest onCommunicationRequest;
 
+    
+    
+    static inline SK_onMainWindowHWNDAcquired onMainWindowHWNDAcquired;
+    static inline HWND mainWindowHWND;
 
     #if defined(SK_OS_windows)
         static inline SK_WindowMngr_updateWebViewHWNDListForView updateWebViewHWNDListForView;
-        static inline SK_onMainWindowHWNDAcquired onMainWindowHWNDAcquired;
         static inline SK_WindowMngr_getWebview2HWNDForWindow getWebview2HWNDForWindow;
-        static inline HWND mainWindowHWND;
     #endif
 
 	static inline SK_IPC_v2* sb_ipc;

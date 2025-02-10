@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sk_webview_macos_v2.hpp"
+#include "sk_webview_macos_v2.h"
 
 BEGIN_SK_NAMESPACE
 

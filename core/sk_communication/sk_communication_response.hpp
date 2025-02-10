@@ -41,11 +41,11 @@ public:
     #if defined(SK_OS_windows)
         using SK_Communication_Response_CB_getWebResponse = std::function<wil::com_ptr<ICoreWebView2WebResourceResponse>()>;
     #elif defined(SK_OS_macos) || defined(SK_OS_ios)
-        using SK_Communication_Response_CB_getWebResponse = std::function<NSURLResponse*()>;
+        //using SK_Communication_Response_CB_getWebResponse = std::function<NSURLResponse*()>;
     #elif defined(SK_OS_linux) || defined(SK_OS_android)
         //for linux and android
     #endif
-    SK_Communication_Response_CB_getWebResponse CB_getWebResponse;
+    //SK_Communication_Response_CB_getWebResponse CB_getWebResponse;
 
 	SK_Communication_Response_CB_onHandleResponse onHandleResponse;
 
@@ -180,7 +180,7 @@ public:
         #if defined(SK_OS_windows)
             wil::com_ptr<ICoreWebView2WebResourceResponse> response;
         #elif defined(SK_OS_macos) || defined(SK_OS_ios)
-            NSURLResponse* response;
+            //NSURLResponse* response;
         #elif defined(SK_OS_linux) || defined(SK_OS_android)
         //for linux and android
         #endif
@@ -209,7 +209,7 @@ public:
             
             
             
-            CB_getWebResponse = [&]() { return getWebResponse(); };
+            //CB_getWebResponse = [&]() { return getWebResponse(); };
 		}
 
 		~SK_Communication_Response_Web() {
@@ -339,7 +339,7 @@ public:
         }
         
     #elif defined(SK_OS_macos) || defined(SK_OS_ios)
-        NSURLResponse* getWebResponse() {
+        /*NSURLResponse* getWebResponse() {
             NSData *responseData = SK_String(data);
             response = [[NSURLResponse alloc]
                         initWithURL: url
@@ -350,6 +350,7 @@ public:
             
             return response;
         }
+         */
         
     #elif defined(SK_OS_linux) || defined(SK_OS_android)
     //for linux and android

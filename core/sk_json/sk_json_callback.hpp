@@ -80,14 +80,14 @@ public:
             return ""; // Default value if the key doesn't exist or isn't an int
         }
         
-        #if defined(SK_OS_macos) || defined(SK_OS_ios)
+        /*#if defined(SK_OS_macos) || defined(SK_OS_ios)
             operator NSString*() const {
                 if (parent.data.contains(key) && parent.data[key].is_string()) {
                     return [NSString stringWithUTF8String:parent.data[key].get<std::string>().c_str()];
                 }
                 return @""; // Default value if the key doesn't exist or isn't an int
             }
-        #endif
+        #endif*/
 
         operator nlohmann::json() const {
             if (parent.data.contains(key) && parent.data[key].is_object()) {

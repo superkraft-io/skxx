@@ -1,17 +1,21 @@
 #pragma once
 
-#include "sk_webview_macos_v2.hpp"
+#include "sk_webview_macos_v2.h"
+
+#import <Foundation/Foundation.h>
+#import <WebKit/WebKit.h>
+
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface SK_WebView_URLSchemeHandler : NSObject <WKURLSchemeHandler, WKScriptMessageHandler>
-@property (nonatomic, assign) SK::SK_WebView* webView;
+@property (nonatomic, assign) SK_WebView* webView;
 @end
 
 @implementation SK_WebView_URLSchemeHandler
 - (void)webView:(WKWebView *)webView startURLSchemeTask:(id <WKURLSchemeTask>)urlSchemeTask {
-    SK::SK_Communication_Config config{ "sk.sb", SK::SK_Communication_Packet_Type::sk_comm_pt_web, urlSchemeTask.request };
-    SK::SK_Common::onCommunicationRequest(&config, NULL);
+    /*SK::SK_Communication_Config config{ "sk.sb", SK::SK_Communication_Packet_Type::sk_comm_pt_web, urlSchemeTask.request };
+    SK::SK_Common::onCommunicationRequest(&config, NULL);*/
 }
 
 - (void)webView:(nonnull WKWebView *)webView stopURLSchemeTask:(nonnull id<WKURLSchemeTask>)urlSchemeTask { 

@@ -3,6 +3,9 @@
 
 #include "../sk_common.hpp"
 
+#include <dirent.h>
+#include <iostream>
+
 
 BEGIN_SK_NAMESPACE
 
@@ -10,8 +13,45 @@ static class SK_Path_Utils {
 public:
 	static inline std::map<std::string, std::string> paths;
 
+    static std::string getAbsoluteFilePath() {
+        std::filesystem::path filePath(__FILE__);
+
+        try {
+            return std::filesystem::canonical(filePath).string();
+        } catch (const std::exception& e) {
+            std::cerr << "Error resolving file path: " << e.what() << "\n";
+            return filePath.string(); // Fallback to original
+        }
+    }
+    
+    static void readDirectory(const std::string& path) {
+        DIR* dir = opendir(path.c_str());
+        if (dir) {
+            struct dirent* entry;
+            while ((entry = readdir(dir)) != nullptr) {
+                std::cout << entry->d_name << std::endl;
+            }
+            closedir(dir);
+        } else {
+            std::cerr << "Failed to open directory: " << path << std::endl;
+        }
+    }
+    
 	static std::string pathBackwardsUntilNeighbour(const std::string& neighbourName){
-		std::filesystem::path currentPath(__FILE__);
+        std::filesystem::path testPath = "/Users";
+        
+        readDirectory(testPath);
+        
+        try {
+            for (const auto& entry : std::filesystem::directory_iterator(testPath)) {
+                std::cout << "Found: " << entry.path() << "\n";
+            }
+        } catch (const std::exception& e) {
+            std::cerr << "Error: " << e.what() << "\n";
+        }
+        
+        
+		std::filesystem::path currentPath(getAbsoluteFilePath());
 
 		bool stop = false;
 		while (!stop) {
@@ -21,12 +61,21 @@ public:
 				return "";
 			}
 
-			for (const auto& entry : std::filesystem::directory_iterator(currentPath)) {
-				if (entry.is_directory() && SK_String(entry.path().filename().string()).toLowerCase() == SK_String(neighbourName).toLowerCase()) {
-					stop = true;
-					break;
-				}
-			}
+            try {
+                for (const auto& entry : std::filesystem::directory_iterator(currentPath)) {
+                    SK_String _path = SK_String(entry.path().filename().string());
+                    
+                    std::cerr << "current: " << _path << "\n";
+                    
+                    if (entry.is_directory() && _path.toLowerCase() == SK_String(neighbourName).toLowerCase()) {
+                        stop = true;
+                        break;
+                    }
+                }
+            } catch (const std::exception& e) {
+                std::cerr << "Error accessing directory: " << e.what() << "\n";
+                int x = 0;
+            }
 		}
 
 		return currentPath.string();

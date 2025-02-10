@@ -18,7 +18,7 @@ public:
 			#if defined(SK_OS_windows)
 				ICoreWebView2WebResourceRequestedEventArgs* webPayload;
 			#elif defined(SK_OS_macos) || defined(SK_OS_ios)
-                NSURLRequest* webPayload;
+                //NSURLRequest* webPayload;
 			#elif defined(SK_OS_linux) || defined(SK_OS_android)
 				//for linux and android
 			#endif
@@ -32,8 +32,8 @@ public:
 					webPayload = static_cast<ICoreWebView2WebResourceRequestedEventArgs*>(config->objPtr);
 					packet = SK_Communication_Packet::packetFromWebRequest(webPayload, config->sender);
 				#elif defined(SK_OS_macos) || defined(SK_OS_ios)
-                    NSURLRequest* webPayload = (__bridge NSURLRequest*)config->objPtr;
-                    packet = SK_Communication_Packet::packetFromWebRequest(webPayload, config->sender);
+                    /*NSURLRequest* webPayload = (__bridge NSURLRequest*)config->objPtr;
+                    packet = SK_Communication_Packet::packetFromWebRequest(webPayload, config->sender);*/
 				#elif defined(SK_OS_linux) || defined(SK_OS_android)
 					//for linux and android
 				#endif
@@ -41,7 +41,7 @@ public:
 
 			packet->response()->config = config;
 
-			packet->response()->onHandleResponse = [packet, ipcResponseCallback, webPayload](SK_Communication_Response* response) {
+			/*packet->response()->onHandleResponse = [packet, ipcResponseCallback, webPayload](SK_Communication_Response* response) {
 				if (response->type == SK_Communication_Packet_Type::sk_comm_pt_ipc) {
 					ipcResponseCallback(response->getForIPC());
 				}
@@ -55,9 +55,9 @@ public:
                     #endif
 					
 				}
-
+                
 				delete packet;
-			};
+			};*/
 
 			//Handle this packet
 			handlePacket(packet);

@@ -2,14 +2,6 @@
 
 #include "../sk_common.hpp"
 
-#if defined(SK_OS_macos) || defined(SK_OS_ios)
-    // Forward declare Objective-C types
-    @protocol WKURLSchemeTask;
-    @class NSData;
-    @class NSString;
-    @class NSDictionary;
-#endif
-
 BEGIN_SK_NAMESPACE
 
 class SK_Communication_Packet {
@@ -190,7 +182,7 @@ public:
     }
 
 #elif defined(SK_OS_macos) || defined(SK_OS_ios)
-    static inline SK_Communication_Packet* packetFromWebRequest(NSURLRequest* request, const SK_String& sender) {
+    /*static inline SK_Communication_Packet* packetFromWebRequest(NSURLRequest* request, const SK_String& sender) {
         SK_Communication_Packet* packet = new SK_Communication_Packet();
         packet->type = SK_Communication_Packet_Type::sk_comm_pt_web;
 
@@ -230,7 +222,7 @@ public:
         }
 
         return headersJson;
-    }
+    }*/
 
 #elif defined(SK_OS_linux) || defined(SK_OS_android)
     // For Linux and Android

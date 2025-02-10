@@ -105,9 +105,9 @@ public:
 							wnd->config["height"] = h;
 							wnd->config["scale"] = scale;
 
-							if (wnd->webview.webview != nullptr) {
-								wnd->update();
-							}
+							//if (wnd->webview.webview != nullptr) {
+							//	wnd->update();
+							//}
 						}
 
 						

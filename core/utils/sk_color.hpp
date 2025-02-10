@@ -59,14 +59,14 @@ public:
     #if defined(SK_OS_windows)
         //for windows
     #elif defined(SK_OS_macos) || defined(SK_OS_ios)
-        operator NSColor*(){
+        /*operator NSColor*(){
             return [NSColor
                 colorWithRed:r
                        green:g
                         blue:b
                        alpha:a
             ];
-        }
+        }*/
     #endif
 
 
