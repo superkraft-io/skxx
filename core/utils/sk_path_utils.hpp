@@ -2,6 +2,7 @@
 
 
 #include "../sk_common.hpp"
+#include "../utils/sk_string/sk_string.h"
 
 #include <dirent.h>
 #include <iostream>

@@ -2,6 +2,7 @@
 
 #include "sk_common.hpp"
 
+
 BEGIN_SK_NAMESPACE
 
 class Superkraft {
@@ -29,7 +30,7 @@ public:
 		if (!configFile.loadFromDisk(SK_Path_Utils::paths["config"])) {
 			throw std::runtime_error("[SK++] No config file found!");
 		}
-		sk_config = nlohmann::json::parse(std::string(configFile));
+        SK_Global::sk_config = nlohmann::json::parse(std::string(configFile));
 
 		SK_Machine::init();
 
@@ -40,6 +41,10 @@ public:
 
 	~Superkraft() {
 	}
+    
+    
+    static inline void* _sk = nullptr;
+    static inline Superkraft* sk(){ return static_cast<Superkraft*>(_sk); }
 };
 
 END_SK_NAMESPACE

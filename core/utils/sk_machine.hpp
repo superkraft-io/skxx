@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../sk_common.hpp"
+#include "sk_string/sk_string.h"
 
 
 #if defined(SK_OS_windows)
@@ -216,7 +217,7 @@ public:
             while (!feof(pipe)) {
                 if (fgets(buffer, 128, pipe) != NULL)
                     result += buffer;
-        }
+            }
             pclose(pipe);
 
             // Trim newline character if present

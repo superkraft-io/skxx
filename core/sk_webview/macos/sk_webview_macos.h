@@ -2,15 +2,23 @@
 
 #include "../../sk_common.hpp"
 
-#import <WebKit/WebKit.h>
+#ifdef __OBJC__
+    #import <WebKit/WebKit.h>
+    @class SK_WebView_URLSchemeHandler;
+#else
+class NSWindow;
+class WKWebView;
+class WKScriptMessage;
+#endif
 
-@class SK_WebView_URLSchemeHandler;
+
 
 BEGIN_SK_NAMESPACE
 
 class SK_WebView {
 public:
     using SK_WebView_EvaluationComplete_Callback = std::function<void(const SK_String& result)>;
+
     
     NSWindow *parentWnd;
     WKWebView *webview;

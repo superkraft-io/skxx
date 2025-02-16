@@ -29,7 +29,7 @@ public:
 
 
         if (event == "contextmenu") {
-            if (SK_Common::runningAs == "app") {
+            if (SK_Global::runningAs == "app") {
                 respondWith.error(404, "standalone_runtime");
                 return;
             }

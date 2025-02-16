@@ -10,20 +10,22 @@ public:
 
     #if defined(SK_OS_windows)
         wil::com_ptr<ICoreWebView2> webview;
-    #elif defined(SK_OS_macos) || defined(SK_OS_ios)
-        //WKWebView *webview;
+    #elif defined(SK_OS_apple)
+        #ifdef __OBJC__
+            WKWebView *webview;
+        #endif
     #endif
 
     void init(void* _webview, bool isHardBackend){
         #if defined(SK_OS_windows)
             webview = static_cast<ICoreWebView2*>(_webview);
-        #elif defined(SK_OS_macos) || defined(SK_OS_ios)
-            //webview = (__bridge WKWebView*)_webview;
+        #elif defined(SK_OS_apple)
+            #ifdef __OBJC__
+                webview = (__bridge WKWebView*)_webview;
+            #endif
         #endif
         
         inject_core();
-
-        //webview = nullptr;
     }
 
     void inject_core(){
@@ -72,19 +74,20 @@ public:
                 ).Get()
            );
         #elif defined(SK_OS_macos) || defined(SK_OS_ios)
-            /*WKUserScript *userScript = [[WKUserScript alloc] initWithSource:data
-                                                              injectionTime:WKUserScriptInjectionTimeAtDocumentStart
-                                                           forMainFrameOnly:NO];
+            #ifdef __OBJC__
+                WKUserScript *userScript = [[WKUserScript alloc] initWithSource:data
+                                                                  injectionTime:WKUserScriptInjectionTimeAtDocumentStart
+                                                               forMainFrameOnly:NO];
 
-            [webview.configuration.userContentController addUserScript:userScript];
-        */
+                [webview.configuration.userContentController addUserScript:userScript];
+            #endif
         #endif
         
     }
 
     nlohmann::json getAppInfo() {
-        SK_String appName = sk_config["product_info"]["name"];
-        SK_String appVersion = sk_config["product_info"]["version"];
+        SK_String appName = SK_Global::sk_config["product_info"]["name"];
+        SK_String appVersion = SK_Global::sk_config["product_info"]["version"];
 
         SK_String argv0 = "";
         //if (SK_Superkraft_App::app_argv.length() > 0) argv0 = SK_Superkraft_App::app_argv[0]; //ignoring this for now

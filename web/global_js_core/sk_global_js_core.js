@@ -71,7 +71,7 @@ class SK_Global_Core {
 
 
         this.nativeModules = {
-            node: { fs: 'https://sk.modsys/node/fs.js' }
+            node: { fs: 'sk://sk.modsys/node/fs.js' }
         }
 
 
@@ -119,7 +119,7 @@ class SK_Global_Core {
     }
 
     async initModules() {
-        await import('https://sk.modsys/node/path.js')
+        await import('sk://sk.modsys/node/path.js')
 
         var fs = require('fs')
         var categories = fs.readdirSync('sk.modsys:/', true)
@@ -137,7 +137,7 @@ class SK_Global_Core {
             for (var u in moduleCategory) {
                 var module = moduleCategory[u]
                 var modName = module.name.split('.')[0]
-                sk_api.nativeModules[catName][modName] = 'https://sk.modsys:/' + catName + '/' + modName + '.js'
+                sk_api.nativeModules[catName][modName] = 'sk://sk.modsys:/' + catName + '/' + modName + '.js'
             }
         }
 

@@ -5,6 +5,7 @@
 BEGIN_SK_NAMESPACE
 
 class SK_Window;
+class SK_Communication_Packet;
 
 using SK_Window_onWindowFocusChanged_Callback = std::function<void(SK_Window* wnd, const bool& focused)>;
 
@@ -42,7 +43,8 @@ struct SK_Communication_Config {
 };
 
 using SK_Communication_handlePacket_Response_IPC_CB = std::function<void(const SK_String& ipcResponseData)>;
-using SK_Communication_onRequest = std::function<void(SK_Communication_Config* config, SK_Communication_handlePacket_Response_IPC_CB ipcResponseCallback)>;
+using SK_Communication_AppleCB_CB = std::function<void*(SK_Communication_Packet* packet)>;
+using SK_Communication_onRequest = std::function<void(SK_Communication_Config* config, SK_Communication_handlePacket_Response_IPC_CB ipcResponseCallback, SK_Communication_AppleCB_CB preparePacket)>;
 
 
 using SK_ThreadPool_ProcessMainThreadTasks = std::function<void()>;

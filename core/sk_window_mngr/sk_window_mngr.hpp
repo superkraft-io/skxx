@@ -2,6 +2,13 @@
 
 #include "../sk_common.hpp"
 
+#include "root/sk_window_root.hpp"
+
+#if defined(SK_OS_windows)
+    #include "windows/sk_window_windows.hpp"
+#elif defined(SK_OS_macos) || defined(SK_OS_ios)
+    #include "macos/sk_window_macos.hpp"
+#endif
 
 BEGIN_SK_NAMESPACE
 
@@ -52,7 +59,7 @@ public:
 	unsigned int wndIdx = 0;
 	
 	std::unordered_map<std::string, SK_Window*> list;
-
+    
 	SK_Window* findWindowByClassName(const SK_String& windowClassName) {
 		auto it = list.find(windowClassName);
 
@@ -66,15 +73,17 @@ public:
 	using SK_Window_Create_Callback = std::optional<std::function<void(SK_Window*)>>;
 
 	SK_Window_Mngr() {
-		SK_Common::onWindowFocusChanged = [&](SK_Window* wnd, const bool& focused) {
+        int x = 0;
+        
+        SK_Global::onWindowFocusChanged = [&](SK_Window* wnd, const bool& focused) {
 			if (focused) updateAllWindows(); //This will fix the ussue
 		};
 
-		SK_Common::onFindWindowByClassName = [&](const SK_String& windowClassName) {
+        SK_Global::onFindWindowByClassName = [&](const SK_String& windowClassName) {
 			return findWindowByClassName(windowClassName);
 		};
 
-		SK_Common::onFindWindowByTag = [&](const SK_String& windowTag) {
+        SK_Global::onFindWindowByTag = [&](const SK_String& windowTag) {
 			return findWindowByTag(windowTag);
 		};
 
@@ -83,16 +92,16 @@ public:
 
 
 		#if defined(SK_OS_windows)
-			SK_Common::updateWebViewHWNDListForView = [&](const SK_String& windowClassName) {
+            SK_Global::updateWebViewHWNDListForView = [&](const SK_String& windowClassName) {
 				updateAllWebViewHandlesForView(windowClassName);
 			};
 
-			SK_Common::getWebview2HWNDForWindow = [&](const SK_String& windowClassName) {
+            SK_Global::getWebview2HWNDForWindow = [&](const SK_String& windowClassName) {
 				return SK_Window_WebView_Counter::getWebViewForWindow(windowClassName);
 			};
 		#endif
 
-		SK_Common::resizeAllMianWindowView = [&](int x, int y, int w, int h, float scale) {
+        SK_Global::resizeAllMianWindowView = [&](int x, int y, int w, int h, float scale) {
 			#if defined(SK_MODE_DEBUG)
 				for (auto it = list.begin(); it != list.end(); ++it) {
 					if (it->second) {
@@ -131,7 +140,8 @@ public:
 
 		wnd->initialize(wndIdx);
 
-		list[wnd->windowClassName] = wnd;
+        std::string wcn = wnd->windowClassName;
+		list[wcn] = wnd;
 
 		if (cb != nullptr) (*cb)(wnd);
 

@@ -28,13 +28,13 @@ public:
             if (wnd->config.data.contains("mainWindow") && wnd->config.data["mainWindow"] == true) {
 
                 #if defined(SK_OS_windows)
-                    wnd->hwnd = SK_Common::mainWindowHWND;
+                    wnd->hwnd = SK_Global::mainWindowHWND;
                 #elif defined(SK_OS_macos)
                 #endif
                 
                 wnd->windowClassName = "SK_Window_1";
 
-                SK_Common::setMainWindowSize(wnd->config["width"], wnd->config["height"]);
+                SK_Global::setMainWindowSize(wnd->config["width"], wnd->config["height"]);
 
                 wnd->createWebView();
             }

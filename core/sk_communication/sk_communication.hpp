@@ -12,13 +12,13 @@ public:
 
 	SK_Communication() {
 		int x = 0;
-		SK_Common::onCommunicationRequest = [&](SK_Communication_Config* config, SK_Communication_handlePacket_Response_IPC_CB ipcResponseCallback) {
+        SK_Global::onCommunicationRequest = [&](SK_Communication_Config* config, SK_Communication_handlePacket_Response_IPC_CB ipcResponseCallback, SK_Communication_AppleCB_CB appleCB) {
 			SK_Communication_Packet* packet;
 			
 			#if defined(SK_OS_windows)
 				ICoreWebView2WebResourceRequestedEventArgs* webPayload;
-			#elif defined(SK_OS_macos) || defined(SK_OS_ios)
-                //NSURLRequest* webPayload;
+			#elif defined(SK_OS_apple)
+                void* webPayload;
 			#elif defined(SK_OS_linux) || defined(SK_OS_android)
 				//for linux and android
 			#endif
@@ -31,9 +31,8 @@ public:
 				#if defined(SK_OS_windows)
 					webPayload = static_cast<ICoreWebView2WebResourceRequestedEventArgs*>(config->objPtr);
 					packet = SK_Communication_Packet::packetFromWebRequest(webPayload, config->sender);
-				#elif defined(SK_OS_macos) || defined(SK_OS_ios)
-                    /*NSURLRequest* webPayload = (__bridge NSURLRequest*)config->objPtr;
-                    packet = SK_Communication_Packet::packetFromWebRequest(webPayload, config->sender);*/
+				#elif defined(SK_OS_apple)
+                    packet = static_cast<SK_Communication_Packet*>(appleCB(nullptr));
 				#elif defined(SK_OS_linux) || defined(SK_OS_android)
 					//for linux and android
 				#endif
@@ -41,23 +40,23 @@ public:
 
 			packet->response()->config = config;
 
-			/*packet->response()->onHandleResponse = [packet, ipcResponseCallback, webPayload](SK_Communication_Response* response) {
-				if (response->type == SK_Communication_Packet_Type::sk_comm_pt_ipc) {
-					ipcResponseCallback(response->getForIPC());
-				}
-				else if (response->type == SK_Communication_Packet_Type::sk_comm_pt_web) {
+            packet->response()->onHandleResponse = [packet, ipcResponseCallback, webPayload, appleCB](SK_Communication_Response* response) {
+                
+                if (response->type == SK_Communication_Packet_Type::sk_comm_pt_ipc) {
+                    ipcResponseCallback(response->getForIPC());
+                }
+                else if (response->type == SK_Communication_Packet_Type::sk_comm_pt_web) {
                     #if defined(SK_OS_windows)
                         webPayload->put_Response(response->getForWeb().get());
-                    #elif defined(SK_OS_macos) || defined(SK_OS_ios)
-                        //for apple
+                    #elif defined(SK_OS_apple)
+                        appleCB(packet);
                     #elif defined(SK_OS_linux) || defined(SK_OS_android)
                         //for linux and android
                     #endif
-					
-				}
+                }
                 
 				delete packet;
-			};*/
+			};
 
 			//Handle this packet
 			handlePacket(packet);

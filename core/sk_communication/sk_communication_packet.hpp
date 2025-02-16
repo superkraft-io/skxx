@@ -2,6 +2,8 @@
 
 #include "../sk_common.hpp"
 
+
+
 BEGIN_SK_NAMESPACE
 
 class SK_Communication_Packet {
@@ -181,49 +183,50 @@ public:
         return headersJson;
     }
 
-#elif defined(SK_OS_macos) || defined(SK_OS_ios)
-    /*static inline SK_Communication_Packet* packetFromWebRequest(NSURLRequest* request, const SK_String& sender) {
-        SK_Communication_Packet* packet = new SK_Communication_Packet();
-        packet->type = SK_Communication_Packet_Type::sk_comm_pt_web;
+#elif defined(SK_OS_apple)
+    #ifdef __OBJC__
+        static inline SK_Communication_Packet* packetFromWebRequest(NSURLRequest* request, const SK_String& sender) {
+            SK_Communication_Packet* packet = new SK_Communication_Packet();
+            packet->type = SK_Communication_Packet_Type::sk_comm_pt_web;
 
-        packet->id = "-1";
-        packet->sender = sender;
+            packet->id = "-1";
+            packet->sender = sender;
 
-        // Full URL
-        packet->info["url"] = SK_String(request.URL.absoluteString);
-        packet->parseURLParameters_v2(SK_String(request.URL.absoluteString), packet);
+            // Full URL
+            packet->info["url"] = SK_String(request.URL.absoluteString);
+            packet->parseURLParameters_v2(SK_String(request.URL.absoluteString), packet);
 
-        packet->responseObj = new SK_Communication_Response_Web(SK_String(request.URL.absoluteString));
+            packet->responseObj = new SK_Communication_Response_Web(SK_String(request.URL.absoluteString));
 
-        // HTTP Method (GET, POST, etc.)
-        packet->info["method"] = SK_String(request.HTTPMethod);
+            // HTTP Method (GET, POST, etc.)
+            packet->info["method"] = SK_String(request.HTTPMethod);
 
-        // Request Headers
-        NSDictionary<NSString*, NSString*>* headers = request.allHTTPHeaderFields;
-        packet->info["headers"] = packet->ExtractHeadersToJson(headers);
+            // Request Headers
+            NSDictionary<NSString*, NSString*>* headers = request.allHTTPHeaderFields;
+            packet->info["headers"] = packet->ExtractHeadersToJson(headers);
 
-        // Request Body (if POST)
-        if (packet->info["method"] == "POST") {
-            NSData* bodyData = request.HTTPBody;
-            if (bodyData) {
-                NSString* bodyString = [[NSString alloc] initWithData:bodyData encoding:NSUTF8StringEncoding];
-                packet->info["body"] = SK_String(bodyString);
+            // Request Body (if POST)
+            if (packet->info["method"] == "POST") {
+                NSData* bodyData = request.HTTPBody;
+                if (bodyData) {
+                    NSString* bodyString = [[NSString alloc] initWithData:bodyData encoding:NSUTF8StringEncoding];
+                    packet->info["body"] = SK_String(bodyString);
+                }
             }
+
+            return packet;
+        };
+
+        nlohmann::json ExtractHeadersToJson(NSDictionary<NSString*, NSString*>* headers) {
+            nlohmann::json headersJson;
+
+            for (NSString* key in headers) {
+                headersJson[SK_String(key)] = SK_String(headers[key]);
+            }
+
+            return headersJson;
         }
-
-        return packet;
-    };
-
-    nlohmann::json ExtractHeadersToJson(NSDictionary<NSString*, NSString*>* headers) {
-        nlohmann::json headersJson;
-
-        for (NSString* key in headers) {
-            headersJson[SK_String(key)] = SK_String(headers[key]);
-        }
-
-        return headersJson;
-    }*/
-
+    #endif
 #elif defined(SK_OS_linux) || defined(SK_OS_android)
     // For Linux and Android
 #endif

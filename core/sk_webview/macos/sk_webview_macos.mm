@@ -1,12 +1,16 @@
 #pragma once
 
-#include "sk_webview_macos_v2.h"
+//#include "sk_webview_macos_v2.h"
+
+#include "../../sk_common.hpp"
 
 #import <Foundation/Foundation.h>
 #import <WebKit/WebKit.h>
 
 
 NS_ASSUME_NONNULL_BEGIN
+
+using namespace SK;
 
 @interface SK_WebView_URLSchemeHandler : NSObject <WKURLSchemeHandler, WKScriptMessageHandler>
 @property (nonatomic, assign) SK_WebView* webView;
@@ -15,10 +19,10 @@ NS_ASSUME_NONNULL_BEGIN
 @implementation SK_WebView_URLSchemeHandler
 - (void)webView:(WKWebView *)webView startURLSchemeTask:(id <WKURLSchemeTask>)urlSchemeTask {
     /*SK::SK_Communication_Config config{ "sk.sb", SK::SK_Communication_Packet_Type::sk_comm_pt_web, urlSchemeTask.request };
-    SK::SK_Common::onCommunicationRequest(&config, NULL);*/
+    SK::SK_Global::onCommunicationRequest(&config, NULL);*/
 }
 
-- (void)webView:(nonnull WKWebView *)webView stopURLSchemeTask:(nonnull id<WKURLSchemeTask>)urlSchemeTask { 
+- (void)webView:(nonnull WKWebView *)webView stopURLSchemeTask:(nonnull id<WKURLSchemeTask>)urlSchemeTask {
 
 }
 
@@ -137,7 +141,7 @@ void SK_WebView::evaluateScript(const SK_String& src, SK_WebView_EvaluationCompl
 
     WKWebView* _webview = webview;
     
-    SK_Common::threadPool->queueOnMainThread([this, src, cb, _webview]() {
+    SK_Global::threadPool->queueOnMainThread([this, src, cb, _webview]() {
         evaluateScript_mainThread(_webview, src, cb);
     });
 }

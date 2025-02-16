@@ -7,9 +7,16 @@ BEGIN_SK_NAMESPACE
 class SK_Communication_Response;
 
 
+#if defined(SK_OS_apple)
+    #ifdef __OBJC__
+        struct SK_Communicaton_Response_Apple {
+            NSData* data;
+            NSURLResponse* response;
+        };
+    #endif
+#endif
 
 using SK_Communication_Response_CB_packageIPCResponse = std::function<SK_String(const nlohmann::json& data)>;
-
 using SK_Communication_Response_CB_onHandleResponse = std::function<void(SK_Communication_Response* response)>;
 
 
@@ -40,13 +47,15 @@ public:
 
     #if defined(SK_OS_windows)
         using SK_Communication_Response_CB_getWebResponse = std::function<wil::com_ptr<ICoreWebView2WebResourceResponse>()>;
-    #elif defined(SK_OS_macos) || defined(SK_OS_ios)
-        //using SK_Communication_Response_CB_getWebResponse = std::function<NSURLResponse*()>;
+        SK_Communication_Response_CB_getWebResponse CB_getWebResponse;
+    #elif defined(SK_OS_apple)
+        #ifdef __OBJC__
+            using SK_Communication_Response_CB_getWebResponse = std::function<SK_Communicaton_Response_Apple()>;
+            SK_Communication_Response_CB_getWebResponse CB_getWebResponse;
+        #endif
     #elif defined(SK_OS_linux) || defined(SK_OS_android)
         //for linux and android
     #endif
-    //SK_Communication_Response_CB_getWebResponse CB_getWebResponse;
-
 	SK_Communication_Response_CB_onHandleResponse onHandleResponse;
 
 	bool async = false;
@@ -94,8 +103,12 @@ public:
 	wil::com_ptr<ICoreWebView2WebResourceResponse> getForWeb() {
 		return CB_getWebResponse();
 	}
-#elif defined(SK_OS_macos) || defined(SK_OS_ios)
-	//for apple
+#elif defined(SK_OS_apple)
+    #ifdef __OBJC__
+        SK_Communicaton_Response_Apple getForWeb() {
+            return CB_getWebResponse();
+        }
+    #endif
 #elif defined(SK_OS_linux) || defined(SK_OS_android)
 	//for linux and android
 #endif
@@ -179,10 +192,10 @@ public:
         
         #if defined(SK_OS_windows)
             wil::com_ptr<ICoreWebView2WebResourceResponse> response;
-        #elif defined(SK_OS_macos) || defined(SK_OS_ios)
-            //NSURLResponse* response;
+        #elif defined(SK_OS_apple)
+            //for apple
         #elif defined(SK_OS_linux) || defined(SK_OS_android)
-        //for linux and android
+            //for linux and android
         #endif
         
 		SK_Communication_Response_Web(const SK_String& url = "") {
@@ -200,7 +213,7 @@ public:
 
             #if defined(SK_OS_windows)
                 wil::com_ptr<ICoreWebView2WebResourceResponse> response;
-            #elif defined(SK_OS_macos) || defined(SK_OS_ios)
+            #elif defined(SK_OS_apple)
                 //for apple
             #elif defined(SK_OS_linux) || defined(SK_OS_android)
                 //for linux and android
@@ -209,14 +222,23 @@ public:
             
             
             
-            //CB_getWebResponse = [&]() { return getWebResponse(); };
+            #if defined(SK_OS_windows)
+                CB_getWebResponse = [&]() { return getWebResponse(); };
+            #elif defined(SK_OS_apple)
+                #ifdef __OBJC__
+                    CB_getWebResponse = [&]() {
+                        return getWebResponse();
+                    };
+                #endif
+            #endif
+            
 		}
 
 		~SK_Communication_Response_Web() {
 			
             #if defined(SK_OS_windows)
                 response.reset();
-            #elif defined(SK_OS_macos) || defined(SK_OS_ios)
+            #elif defined(SK_OS_apple)
                 //for apple
             #elif defined(SK_OS_linux) || defined(SK_OS_android)
                 //for linux and android
@@ -338,20 +360,22 @@ public:
             }
         }
         
-    #elif defined(SK_OS_macos) || defined(SK_OS_ios)
-        /*NSURLResponse* getWebResponse() {
-            NSData *responseData = SK_String(data);
-            response = [[NSURLResponse alloc]
-                        initWithURL: url
-                        MIMEType: SK_String(headers["Content-Type"])
-                        expectedContentLength: responseData.length
-                        textEncodingName:@"utf-8"
-            ];
-            
-            return response;
-        }
-         */
-        
+    #elif defined(SK_OS_apple)
+        #ifdef __OBJC__
+            SK_Communicaton_Response_Apple getWebResponse() {
+                SK_Communicaton_Response_Apple res {
+                    SK_String(data),
+                    [[NSURLResponse alloc]
+                     initWithURL: url
+                     MIMEType: SK_String(headers["Content-Type"])
+                     expectedContentLength: data.size()
+                     textEncodingName:@"utf-8"
+                    ]
+                };
+                
+                return res;
+            }
+        #endif
     #elif defined(SK_OS_linux) || defined(SK_OS_android)
     //for linux and android
     #endif

@@ -14,11 +14,11 @@ public:
         SK_String target = payload["target"];
 
         if (target == "sb") {
-            SK_Common::showSoftBackendDevTools();
+            SK_Global::showSoftBackendDevTools();
             return;
         }
 
-        SK_Window* wnd = SK_Common::onFindWindowByTag(target);
+        SK_Window* wnd = SK_Global::onFindWindowByTag(target);
 
         if (wnd == nullptr) {
             respondWith.error(404, "ENOENT");

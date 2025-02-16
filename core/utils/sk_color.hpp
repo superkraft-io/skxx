@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../sk_common.hpp"
+#include "../utils/sk_string/sk_string.h"
 
 BEGIN_SK_NAMESPACE
 

@@ -19,11 +19,11 @@ class SK_Module {
     }
 
     loadFromURL(path) {
-        var pathWithoutProtocol = path.replace('http://', '').replace('https://', '')
+        var pathWithoutProtocol = path.replace('http://', '').replace('https://', '').replace('sk://', '')
 
         var targetRoutes = ['sk.modsys', 'sk.mod']
-        var targetRoute = pathWithoutProtocol.substr(0, path.indexOf('/'))
-        var targetPath = (!targetRoutes.includes(targetRoute) ? 'https://sk.project:' + path : path) 
+        var targetRoute = pathWithoutProtocol.substr(0, pathWithoutProtocol.indexOf('/'))
+        var targetPath = (!targetRoutes.includes(targetRoute) ? 'sk://sk.project:' + path : path)
 
         var data = sk_api.fetch(targetPath)
 
@@ -138,7 +138,7 @@ class SK_Module {
 
 
     static syncOperation(module, operation, data) {
-        var res = sk_api.fetch('https://sk.modop/', {
+        var res = sk_api.fetch('sk://sk.modop/', {
             module: module,
             operation: operation,
             payload: data
