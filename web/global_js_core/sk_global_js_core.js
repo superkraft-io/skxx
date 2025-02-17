@@ -110,7 +110,8 @@ class SK_Global_Core {
 
         try { response = request.responseText } catch { response = request.response }
 
-        if (request.getAllResponseHeaders().indexOf('application/json') > -1) {
+        var headers = request.getAllResponseHeaders()
+        if (headers.indexOf('application/json') > -1) {
             if (!onPreParse) response = JSON.parse(response)
             else response = onPreParse(response)
         }

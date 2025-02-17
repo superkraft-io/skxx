@@ -82,11 +82,7 @@ static wil::unique_cotaskmem_string stringToUniqueCoTaskMemString(const std::str
 }
 
 #elif defined(SK_OS_macos) || defined(SK_OS_ios)
-/*
-static NSString* StringToNSString(const std::string& str){
-    return [NSString stringWithUTF8String:str.c_str()];
-}
-*/
+    //for apple
 #endif
 
 END_SK_NAMESPACE

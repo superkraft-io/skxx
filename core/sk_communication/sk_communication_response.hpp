@@ -11,7 +11,7 @@ class SK_Communication_Response;
     #ifdef __OBJC__
         struct SK_Communicaton_Response_Apple {
             NSData* data;
-            NSURLResponse* response;
+            NSHTTPURLResponse* response;
         };
     #endif
 #endif
@@ -178,18 +178,39 @@ public:
 
 };
 
-	class SK_Communication_Response_Web : public SK_Communication_Response {
-	public:
+class SK_Communication_Response_Web : public SK_Communication_Response {
+public:
 
-		SK_String errorType = "plain/text";
-		int statusCode = 404;
-		SK_String statusMessage = "Not found";
-		nlohmann::json headers{ {"Content-Type", "application/json"} };
-		std::vector<char> data;
-        SK_String url;
+    SK_String errorType = "plain/text";
+    int statusCode = 404;
+    SK_String statusMessage = "Not found";
+    nlohmann::json headers{ {"Content-Type", "application/json"} };
+    std::vector<char> data;
+    SK_String url;
 
 
-        
+    
+    #if defined(SK_OS_windows)
+        wil::com_ptr<ICoreWebView2WebResourceResponse> response;
+    #elif defined(SK_OS_apple)
+        //for apple
+    #elif defined(SK_OS_linux) || defined(SK_OS_android)
+        //for linux and android
+    #endif
+    
+    SK_Communication_Response_Web(const SK_String& url = "") {
+        type = SK_Communication_Packet_Type::sk_comm_pt_web;
+
+        SK_String defaultData = "{\"error\":\"404\",\"message\":\"Not found\"}";
+        data = std::vector<char>(defaultData.data.begin(), defaultData.data.end());
+
+        CB_setAsOK = [&]() { setAsOK(); };
+        CB_JSON = [&](nlohmann::json json) { return JSON(json); };
+        CB_JSON_OK = [&]() { return JSON_OK(); };
+        CB_string = [&](SK_String str, SK_String mimeType) { return string(str, mimeType); };
+        CB_file = [&](SK_String path, SK_String mimeType) { return file(path, mimeType); };
+        CB_error = [&](int code, SK_String msg) { error(code, msg); };
+
         #if defined(SK_OS_windows)
             wil::com_ptr<ICoreWebView2WebResourceResponse> response;
         #elif defined(SK_OS_apple)
@@ -198,122 +219,101 @@ public:
             //for linux and android
         #endif
         
-		SK_Communication_Response_Web(const SK_String& url = "") {
-			type = SK_Communication_Packet_Type::sk_comm_pt_web;
-
-			SK_String defaultData = "{\"error\":\"404\",\"message\":\"Not found\"}";
-			data = std::vector<char>(defaultData.data.begin(), defaultData.data.end());
-
-			CB_setAsOK = [&]() { setAsOK(); };
-			CB_JSON = [&](nlohmann::json json) { return JSON(json); };
-			CB_JSON_OK = [&]() { return JSON_OK(); };
-			CB_string = [&](SK_String str, SK_String mimeType) { return string(str, mimeType); };
-			CB_file = [&](SK_String path, SK_String mimeType) { return file(path, mimeType); };
-			CB_error = [&](int code, SK_String msg) { error(code, msg); };
-
-            #if defined(SK_OS_windows)
-                wil::com_ptr<ICoreWebView2WebResourceResponse> response;
-            #elif defined(SK_OS_apple)
-                //for apple
-            #elif defined(SK_OS_linux) || defined(SK_OS_android)
-                //for linux and android
-            #endif
-            
-            
-            
-            
-            #if defined(SK_OS_windows)
-                CB_getWebResponse = [&]() { return getWebResponse(); };
-            #elif defined(SK_OS_apple)
-                #ifdef __OBJC__
-                    CB_getWebResponse = [&]() {
-                        return getWebResponse();
-                    };
-                #endif
-            #endif
-            
-		}
-
-		~SK_Communication_Response_Web() {
-			
-            #if defined(SK_OS_windows)
-                response.reset();
-            #elif defined(SK_OS_apple)
-                //for apple
-            #elif defined(SK_OS_linux) || defined(SK_OS_android)
-                //for linux and android
-            #endif
-		}
-
-
-		void setAsOK() {
-			statusCode = 200;
-			statusMessage = "OK";
-		}
-
-		bool JSON(const nlohmann::json& json) {
-			SK_String resAsString = std::any_cast<nlohmann::json>(json).dump(0);
-			if (resAsString == "null") {
-				resAsString = "{}";
-			}
-
-			statusMessage = "";
-
-			data = std::vector<char>(resAsString.data.begin(), resAsString.data.end());
-
-			headers["Content-Type"] = "application/json";
-
-			setAsOK();
-
-			return true;
-		}
-
-		bool JSON_OK() {
-			return string("{}", "application/json");
-		}
-
-		bool string(const SK_String& str, const SK_String& mimeType = "plain/text") {
-			statusMessage = "";
-
-			data = std::vector<char>(str.data.begin(), str.data.end());
-			headers["Content-Type"] = mimeType;
-
-			setAsOK();
-
-			return true;
-		}
-
-		bool file(const SK_String& path, const SK_String& mimeType = "auto") {
-			SK_File file;
-			if (file.loadFromDisk(path.replaceAll("\\", "/").c_str())) {
-				headers["Content-Type"] = (mimeType == "auto" ? file.mimeType : mimeType);
-				data = std::vector<char>(file.data.begin(), file.data.end());
-				setAsOK();
-				return true;
-			}
-
-			error(); //something went wrong reading the file so we return a 404
-
-			return false;
-		}
-
-		bool error(int code = 404, const SK_String& msg = "Not Found") {
-
-
-			if (errorType == "json") {
-				JSON({
-					{"error", code},
-					{ "message", msg }
-				});
-			}
-			else {
-				string("");
-				statusCode = code;
-				statusMessage = msg;
-			}
-		}
-
         
+        
+        
+        #if defined(SK_OS_windows)
+            CB_getWebResponse = [&]() { return getWebResponse(); };
+        #elif defined(SK_OS_apple)
+            #ifdef __OBJC__
+                CB_getWebResponse = [&]() {
+                    return getWebResponse();
+                };
+            #endif
+        #endif
+        
+    }
+
+    ~SK_Communication_Response_Web() {
+        
+        #if defined(SK_OS_windows)
+            response.reset();
+        #elif defined(SK_OS_apple)
+            //for apple
+        #elif defined(SK_OS_linux) || defined(SK_OS_android)
+            //for linux and android
+        #endif
+    }
+
+
+    void setAsOK() {
+        statusCode = 200;
+        statusMessage = "OK";
+    }
+
+    bool JSON(const nlohmann::json& json) {
+        SK_String resAsString = std::any_cast<nlohmann::json>(json).dump(0);
+        if (resAsString == "null") {
+            resAsString = "{}";
+        }
+
+        statusMessage = "";
+
+        data = std::vector<char>(resAsString.data.begin(), resAsString.data.end());
+
+        headers["Content-Type"] = "application/json";
+
+        setAsOK();
+
+        return true;
+    }
+
+    bool JSON_OK() {
+        return string("{}", "application/json");
+    }
+
+    bool string(const SK_String& str, const SK_String& mimeType = "plain/text") {
+        statusMessage = "";
+
+        data = std::vector<char>(str.data.begin(), str.data.end());
+        headers["Content-Type"] = mimeType;
+
+        setAsOK();
+
+        return true;
+    }
+
+    bool file(const SK_String& path, const SK_String& mimeType = "auto") {
+        SK_File file;
+        if (file.loadFromDisk(path.replaceAll("\\", "/").c_str())) {
+            headers["Content-Type"] = (mimeType == "auto" ? file.mimeType : mimeType);
+            data = std::vector<char>(file.data.begin(), file.data.end());
+            setAsOK();
+            return true;
+        }
+
+        error(); //something went wrong reading the file so we return a 404
+
+        return false;
+    }
+
+    bool error(int code = 404, const SK_String& msg = "Not Found") {
+
+
+        if (errorType == "json") {
+            JSON({
+                {"error", code},
+                { "message", msg }
+            });
+        }
+        else {
+            string("");
+            statusCode = code;
+            statusMessage = msg;
+        }
+    }
+
+    
     #if defined(SK_OS_windows)
         wil::com_ptr<ICoreWebView2WebResourceResponse> getWebResponse() {
             // Create a memory stream from the byte array using CreateStreamOnHGlobal
@@ -363,17 +363,37 @@ public:
     #elif defined(SK_OS_apple)
         #ifdef __OBJC__
             SK_Communicaton_Response_Apple getWebResponse() {
+                NSInteger _statusCode = statusCode;
+                
                 SK_Communicaton_Response_Apple res {
                     SK_String(data),
-                    [[NSURLResponse alloc]
-                     initWithURL: url
-                     MIMEType: SK_String(headers["Content-Type"])
-                     expectedContentLength: data.size()
-                     textEncodingName:@"utf-8"
+                    [[NSHTTPURLResponse alloc]
+                           initWithURL:url
+                            statusCode:_statusCode
+                           HTTPVersion:@"HTTP/1.1"
+                          headerFields:getHeadersAsNSDictionary()
                     ]
                 };
                 
                 return res;
+            }
+        
+            NSDictionary* getHeadersAsNSDictionary(){
+                NSMutableDictionary *nsDict = [NSMutableDictionary dictionary];
+                
+                if (headers.is_object()) {
+                    for (auto it = headers.begin(); it != headers.end(); ++it) {
+                        
+                        std::string _key = it.key();
+                        std::string _value = it.value();
+                        
+                        NSString *key = [NSString stringWithUTF8String: _key.c_str()];
+                        NSString *value = [NSString stringWithUTF8String: _value.c_str()];
+                        [nsDict setObject:value forKey:key];
+                    }
+                }
+               
+                return [nsDict copy];
             }
         #endif
     #elif defined(SK_OS_linux) || defined(SK_OS_android)
