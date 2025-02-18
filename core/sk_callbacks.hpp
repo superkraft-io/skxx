@@ -14,9 +14,14 @@ using SK_WindowMngr_onFindWindowByString = std::function<SK_Window* (const SK_St
 #if defined(SK_OS_windows)
     using SK_WindowMngr_getWebview2HWNDForWindow = std::function<HWND(const SK_String& windowClassName)>;
 	using SK_WindowMngr_updateWebViewHWNDListForView = std::function<void(const SK_String& windowClassName)>;
+    using SK_onMainWindowHWNDAcquired = std::function<void(HWND handle)>;
+#elif defined(SK_OS_macos) || defined(SK_OS_ios)
+    using SK_onMainWindowHWNDAcquired = std::function<void(void* handle)>;
+#elif defined(SK_OS_linux) || defined(SK_OS_android)
+    //for linux and android
 #endif
 
-using SK_onMainWindowHWNDAcquired = std::function<void(HWND hwnd)>;
+
 
 	
 using SK_WebView_OnReady = std::function<void(void* webview, bool isHardBackend)>;

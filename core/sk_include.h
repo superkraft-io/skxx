@@ -40,7 +40,11 @@
 #include "sk_ipc/sk_ipc_v2.hpp"
 
 
-
+#if defined(SK_OS_macos)
+    #ifdef __OBJC__
+        #import <AppKit/AppKit.h>
+    #endif
+#endif
 
 BEGIN_SK_NAMESPACE
 
@@ -63,11 +67,14 @@ public:
     
     
     static inline SK_onMainWindowHWNDAcquired onMainWindowHWNDAcquired;
-    static inline HWND mainWindowHWND;
+    
 
     #if defined(SK_OS_windows)
+        static inline HWND mainWindowHandle;
         static inline SK_WindowMngr_updateWebViewHWNDListForView updateWebViewHWNDListForView;
         static inline SK_WindowMngr_getWebview2HWNDForWindow getWebview2HWNDForWindow;
+    #elif defined(SK_OS_macos)
+        static inline void* mainWindowHandle;
     #endif
 
 	static inline SK_IPC_v2* sb_ipc;

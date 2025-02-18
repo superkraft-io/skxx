@@ -2,14 +2,14 @@
 
 #include "../../sk_common.hpp"
 
-#ifdef __OBJC__
-    #import <WebKit/WebKit.h>
-    @class SK_WebView_URLSchemeHandler;
-#else
-class NSWindow;
-class WKWebView;
-class WKScriptMessage;
+
+#if defined(SK_OS_macos)
+    #ifdef __OBJC__
+        #import <AppKit/AppKit.h>
+        #import <WebKit/WebKit.h>
+    #endif
 #endif
+
 
 
 
@@ -20,16 +20,20 @@ public:
     using SK_WebView_EvaluationComplete_Callback = std::function<void(const SK_String& result)>;
 
     
-    NSWindow *parentWnd;
-    WKWebView *webview;
+    #if defined(SK_OS_macos)
+        #ifdef __OBJC__
+            NSWindow* parentWnd;
+            WKWebView* webview;
+        #endif
+    #endif
+    
     
     std::string currentURL = "";
     
     void create();
-    void handleScriptMessage(WKScriptMessage* message);
     void update();
     void navigate(std::string url);
-    void evaluateScript_mainThread(WKWebView* _webview, const SK_String& src, SK_WebView_EvaluationComplete_Callback cb);
+    void evaluateScript_mainThread(void* _webview, const SK_String& src, SK_WebView_EvaluationComplete_Callback cb);
     void evaluateScript(const SK_String& src, SK_WebView_EvaluationComplete_Callback cb);
     void showDevTools();
 };

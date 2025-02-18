@@ -2,14 +2,17 @@
 
 #include "../../sk_common.hpp"
 
+#ifdef __OBJC__
+  #import <AppKit/AppKit.h>
+#endif
 
 BEGIN_SK_NAMESPACE
 
 class SK_Window : public SK_Window_Root {
 public:
-    SK_String windowClassName = "SK_Window";
-    HWND hwnd;
-    //NSWindow* window = nullptr;
+    #ifdef __OBJC__
+        NSWindow* wndHandle;
+    #endif
     //NSView* webViewContainer = nullptr;
 
     SK_Window() {
@@ -47,10 +50,10 @@ public:
     }
 
     void createWebView() {
-        /*webViewContainer = [[NSView alloc] initWithFrame:[window contentRectForFrameRect:[window frame]]];
-        [window setContentView:webViewContainer];
-         */
-        
+        #ifdef __OBJC__
+            webViewContainer = [[NSView alloc] initWithFrame:[window contentRectForFrameRect:[window frame]]];
+            [window setContentView:webViewContainer];
+        #endif
         
         // Initialize WebView here (e.g., using WKWebView)
         // webview.create();

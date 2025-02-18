@@ -29,7 +29,8 @@ using namespace SK;
 
 - (void)userContentController:(WKUserContentController *)userContentController didReceiveScriptMessage:(WKScriptMessage *)message {
     if (self.webView) {
-        self.webView->handleScriptMessage(message);
+        //handle incoming here!!!
+        //self.webView->handleScriptMessage(message);
     }
 }
 
@@ -90,10 +91,6 @@ void SK_WebView::create() {
     navigate(currentURL);
 }
 
-void SK_WebView::handleScriptMessage(WKScriptMessage* message) {
-    // Handle the script message here
-    NSLog(@"Received script message: %@", message.body);
-}
 
 void SK_WebView::update() {
     // Implement any update logic here if needed
@@ -115,8 +112,8 @@ void SK_WebView::navigate(std::string url) {
     [webview loadRequest:request];
 }
 
-void SK_WebView::evaluateScript_mainThread(WKWebView* _webview, const SK_String& src, SK_WebView_EvaluationComplete_Callback cb) {
-    [_webview evaluateJavaScript: src
+void SK_WebView::evaluateScript_mainThread(void* _webview, const SK_String& src, SK_WebView_EvaluationComplete_Callback cb) {
+    [(__bridge WKWebView*)_webview evaluateJavaScript: src
                  completionHandler:^(id result, NSError *error) {
         if (error) {
             NSLog(@"Error: %@", error.localizedDescription);

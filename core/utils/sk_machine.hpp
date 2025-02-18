@@ -476,11 +476,19 @@ public:
             { "homedir", SK::SK_Path_Utils::paths["home"] },
             { "tmpdir", SK::SK_Path_Utils::paths["temp"] }
         };
+        
+        
 
         #if defined(SK_OS_android)
-        #elif defined(SK_OS_macos) || defined(SK_OS_ios)
+            json["os"] = "android";
+        #elif defined(SK_OS_macos)
+            json["os"] = "macos";
+        #elif defined(SK_OS_ios)
+            json["os"] = "ios";
         #elif defined(SK_OS_linux)
+            json["os"] = "linux";
         #elif defined(SK_OS_windows)
+            json["os"] = "windows";
             json["EOL"] = "\\r\\n";
             json["devNull"] = "\\\\.\\nul";
         #endif

@@ -2,6 +2,10 @@
 
 #include "../../../../../core/sk_common.hpp"
 
+#ifdef __OBJC__
+    #import <AppKit/AppKit.h>
+#endif
+
 BEGIN_SK_NAMESPACE
 
 class SK_Module_viewMngr {
@@ -32,8 +36,11 @@ public:
             if (wnd->config.data.contains("mainWindow") && wnd->config.data["mainWindow"] == true) {
 
                 #if defined(SK_OS_windows)
-                    wnd->hwnd = SK_Global::mainWindowHWND;
+                    wnd->wndHandle = SK_Global::mainWindowHandle;
                 #elif defined(SK_OS_macos)
+                    #ifdef __OBJC__
+                        wnd->wndHandle = (__bridge NSWindow*) SK_Global::mainWindowHandle;
+                    #endif
                 #endif
                 
                 wnd->windowClassName = "SK_Window_1";

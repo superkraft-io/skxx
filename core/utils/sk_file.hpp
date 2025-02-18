@@ -19,7 +19,8 @@ struct SK_File_Info {
 	SK_String mode;
 	int numberOfLinks;
 
-	uint64_t ino;
+    uint64_t ino;
+    uint64_t size;
 
 	char* atime;
 	char* mtime;
@@ -219,7 +220,7 @@ public:
 				__debugbreak();
 			}
 
-		#elif defined(SK_OS_macos) || defined(SK_OS_ios)
+		#elif defined(SK_OS_apple)
 			struct stat fileStat;
 			if (stat(path.data.c_str(), &fileStat) == 0) {
                 auto timespecToChrono = [](const struct timespec& ts) {
@@ -229,10 +230,6 @@ public:
 				auto creation = timespecToChrono(fileStat.st_ctimespec);
 				auto access = timespecToChrono(fileStat.st_atimespec);
 				auto modification = timespecToChrono(fileStat.st_mtimespec);
-
-				std::cout << "Creation Time: " << std::chrono::system_clock::to_time_t(creation) << std::endl;
-				std::cout << "Last Access Time: " << std::chrono::system_clock::to_time_t(access) << std::endl;
-				std::cout << "Last Modification Time: " << std::chrono::system_clock::to_time_t(modification) << std::endl;
 			}
 			else {
 				std::cerr << "Error: Cannot get file stats." << std::endl;
@@ -278,7 +275,6 @@ public:
 
 
 		if (isDirectory(path)) {
-			uint64_t size = static_cast<uint64_t>(std::filesystem::file_size(std::filesystem::path(path)));
 			statInfo = nlohmann::json {
 				{"type"			, "dir"},
 				{"dev"			, "" },
@@ -289,7 +285,7 @@ public:
 				{"rdev"			, 0  },
 				{"blksize"		, -1 },
 				{"ino"			, 0  },
-				{"size"			, size },
+				{"size"			, 0 },
 				{"blocks"		, -1 },
 				{"atimeMs"		, fileTime.atime },
 				{"mtimeMs"		, fileTime.mtime },
@@ -301,6 +297,8 @@ public:
 				{"birthtime"	, fileTime.ctime_str }
 			};
 		} else {
+            fileInfo.size = static_cast<uint64_t>(std::filesystem::file_size(std::filesystem::path(path)));
+            
 #			if defined(SK_OS_windows)
 				HANDLE hFile = CreateFile(path.data.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 				if (hFile == INVALID_HANDLE_VALUE) {
@@ -321,7 +319,7 @@ public:
 				fileInfo.numberOfLinks = (uint64_t)_fileInfo.nNumberOfLinks;
 				fileInfo.ino = ((uint64_t)_fileInfo.nFileIndexHigh << 32) | _fileInfo.nFileIndexLow;
 
-			#elif defined(SK_OS_macos) || defined(SK_OS_ios)
+			#elif defined(SK_OS_apple)
 
 				struct stat fileStat;
 
@@ -364,8 +362,8 @@ public:
 				{"gid"			, 0  },
 				{"rdev"			, 0  },
 				{"blksize"		, -1 },
-				{"ino"			, fileInfo.ino },
-				{"size"			, std::filesystem::file_size(std::filesystem::path(path)) },
+				{"ino"			, fileInfo.ino  },
+				{"size"			, fileInfo.size },
 				{"blocks"		, -1 },
 				{"atimeMs"		, fileTime.atime },
 				{"mtimeMs"		, fileTime.mtime },
@@ -378,6 +376,8 @@ public:
 			};
 		}
 
+        //SK_String _dump = statInfo.dump();
+        
 		return statInfo;
     }
 };

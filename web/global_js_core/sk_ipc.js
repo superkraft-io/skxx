@@ -37,8 +37,8 @@ class SK_IPC {
             ...overridePacketInfo
         }
 
-        window.chrome.webview.postMessage(req);
-
+        __SK_IPC_Send(req)
+        
         return msg_id
     }
 

@@ -29,11 +29,11 @@ public:
 
 
         //If the path is not absolute, then make the SK_Project folder the root folder
-        if (!SK_File::isPathAbsolute(path)) {
+        if (path.substring(0, 1) == "/" || !SK_File::isPathAbsolute(path)) {
             if (operation != "mkdir") {
                 SK_String targetPrefix = path.substring(0, path.indexOf("/"));
-                if (targetPrefix == "sk.modsys:") {
-                    fullPath = SK_Path_Utils::paths["module_system"] + path.replace("sk.modsys:", "");
+                if (targetPrefix == "sk.modsys") {
+                    fullPath = SK_Path_Utils::paths["module_system"] + path.replace("sk.modsys", "");
                 }
                 else {
                     fullPath = SK_Path_Utils::paths["project"] + path;

@@ -18,6 +18,7 @@ BEGIN_SK_NAMESPACE
 class SK_Window_Root {
 public:
 	unsigned int wndIdx;
+    SK_String windowClassName = "SK_Window";
 	SK_String tag;
 	SK_IPC_v2 ipc;
 

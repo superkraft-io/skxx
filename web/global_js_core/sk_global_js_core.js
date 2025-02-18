@@ -5,15 +5,19 @@ function getDirname(asArray) {
     var stack = (new Error()).stack
     //stack = console.trace()
     var firstCaller = stack.split('\n').at(-1)
+    
+    if (firstCaller === "@") firstCaller = stack.split('\n').at(-2)
+  
+    //most likely running in Chromium
     var split1 = firstCaller.split('')
     var el1 = split1[1]
     var split2 = el1.split(':')
-    var el2 = split2[0]
+    var el2 = split2[0] || ''
     var split3 = el2.split('/')
     var trimmedPath = split3
     trimmedPath.splice(trimmedPath.length - 1, 1)
     trimmedPath = trimmedPath.join('/')
-
+    
     return trimmedPath
 }
 
@@ -123,7 +127,7 @@ class SK_Global_Core {
         await import('sk://sk.modsys/node/path.js')
 
         var fs = require('fs')
-        var categories = fs.readdirSync('sk.modsys:/', true)
+        var categories = fs.readdirSync('sk.modsys/', true)
 
         for (var i in categories) {
             var category = categories[i]
@@ -134,11 +138,11 @@ class SK_Global_Core {
 
             if (!sk_api.nativeModules[catName]) sk_api.nativeModules[catName] = {}
 
-            var moduleCategory = fs.readdirSync('sk.modsys:/' + catName + '/', true)
+            var moduleCategory = fs.readdirSync('sk.modsys/' + catName + '/', true)
             for (var u in moduleCategory) {
                 var module = moduleCategory[u]
                 var modName = module.name.split('.')[0]
-                sk_api.nativeModules[catName][modName] = 'sk://sk.modsys:/' + catName + '/' + modName + '.js'
+                sk_api.nativeModules[catName][modName] = 'sk://sk.modsys/' + catName + '/' + modName + '.js'
             }
         }
 

@@ -22,7 +22,8 @@ class SK_Module {
         var pathWithoutProtocol = path.replace('http://', '').replace('https://', '').replace('sk://', '')
 
         var targetRoutes = ['sk.modsys', 'sk.mod']
-        var targetRoute = pathWithoutProtocol.substr(0, pathWithoutProtocol.indexOf('/'))
+        var endIdx = pathWithoutProtocol.indexOf('/')
+        var targetRoute = pathWithoutProtocol.substr(0, endIdx)
         var targetPath = (!targetRoutes.includes(targetRoute) ? 'sk://sk.project:' + path : path)
 
         var data = sk_api.fetch(targetPath)

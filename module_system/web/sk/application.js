@@ -3,6 +3,7 @@ class SK_Application {
     }
 
     async init() {
+        return true
     }
 
     get mode() { return sk_api.staticInfo.application.mode }
