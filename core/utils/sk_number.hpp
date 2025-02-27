@@ -27,6 +27,9 @@ public:
         else if (j.is_number_float()) {
             value = j.get<double>();
         }
+        else if (j.is_string()) {
+            value = stof(j.get<std::string>());
+        }
         else {
             throw std::runtime_error("JSON value is not a number");
         }
@@ -193,6 +196,28 @@ public:
         }
         else if (std::holds_alternative<double>(value)) {
             return static_cast<int>(std::get<double>(value));
+        }
+        return 0; // Default value if no valid type is found
+    }
+    
+    operator unsigned int() const {
+        if (std::holds_alternative<unsigned int>(value)) {
+            return static_cast<unsigned int>(std::get<int>(value));
+        }
+        else if (std::holds_alternative<long>(value)) {
+            return static_cast<unsigned int>(std::get<long>(value));
+        }
+        else if (std::holds_alternative<int64_t>(value)) {
+            return static_cast<unsigned int>(std::get<int64_t>(value));
+        }
+        else if (std::holds_alternative<uint64_t>(value)) {
+            return static_cast<unsigned int>(std::get<uint64_t>(value));
+        }
+        else if (std::holds_alternative<float>(value)) {
+            return static_cast<unsigned int>(std::get<float>(value));
+        }
+        else if (std::holds_alternative<double>(value)) {
+            return static_cast<unsigned int>(std::get<double>(value));
         }
         return 0; // Default value if no valid type is found
     }

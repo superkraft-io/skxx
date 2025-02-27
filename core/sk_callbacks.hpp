@@ -14,13 +14,13 @@ using SK_WindowMngr_onFindWindowByString = std::function<SK_Window* (const SK_St
 #if defined(SK_OS_windows)
     using SK_WindowMngr_getWebview2HWNDForWindow = std::function<HWND(const SK_String& windowClassName)>;
 	using SK_WindowMngr_updateWebViewHWNDListForView = std::function<void(const SK_String& windowClassName)>;
-    using SK_onMainWindowHWNDAcquired = std::function<void(HWND handle)>;
-#elif defined(SK_OS_macos) || defined(SK_OS_ios)
-    using SK_onMainWindowHWNDAcquired = std::function<void(void* handle)>;
+#elif defined(SK_OS_apple)
+    using SK_Communication_AppleCB_CB = std::function<void*(SK_Communication_Packet* packet)>;
 #elif defined(SK_OS_linux) || defined(SK_OS_android)
     //for linux and android
 #endif
 
+using SK_onMainWindowHWNDAcquired = std::function<void(void* handle)>;
 
 
 	
@@ -40,7 +40,7 @@ struct SK_Communication_Config {
 
 	#if defined(SK_OS_windows)
 		wil::com_ptr<ICoreWebView2Environment> webviewEnvironment;
-	#elif defined(SK_OS_macos) || defined(SK_OS_ios)
+	#elif defined(SK_OS_apple)
 		//for apple
 	#elif defined(SK_OS_linux) || defined(SK_OS_android)
 		//for linux and android
@@ -48,7 +48,6 @@ struct SK_Communication_Config {
 };
 
 using SK_Communication_handlePacket_Response_IPC_CB = std::function<void(const SK_String& ipcResponseData)>;
-using SK_Communication_AppleCB_CB = std::function<void*(SK_Communication_Packet* packet)>;
 using SK_Communication_onRequest = std::function<void(SK_Communication_Config* config, SK_Communication_handlePacket_Response_IPC_CB ipcResponseCallback, SK_Communication_AppleCB_CB preparePacket)>;
 
 
@@ -56,7 +55,7 @@ using SK_ThreadPool_ProcessMainThreadTasks = std::function<void()>;
 
 using SK_showSoftBackendDevTools = std::function<void()>;
 
-using SK_resizeAllMianWindowView = std::function<void(int x, int y, int w, int h, float scale)>;
+using SK_resizeAllMainWindowView = std::function<void(int x, int y, int w, int h, float scale)>;
 
 using SK_getMainWindowSize = std::function<SK_Point()>;
 using SK_setMainWindowSize = std::function<void(int w, int h)>;

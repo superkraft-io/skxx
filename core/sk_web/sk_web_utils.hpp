@@ -15,7 +15,7 @@ public:
         }
     };
 
-    static std::string fromFilename(const std::string filename, const std::string& defaultMimeType = "text/html") {
+    static std::string fromFilename(const std::string& filename, const std::string& defaultMimeType = "text/html") {
         std::string ext = defaultMimeType;
 
         auto step1 = std::filesystem::path(filename);
@@ -45,7 +45,7 @@ public:
         {"ico", "image/vnd.microsoft.icon"},
         {"jpeg", "image/jpeg"},
         {"jpg", "image/jpeg"},
-        {"js", "application/javascript"},
+        {"js", "text/javascript"},
         {"json", "application/json"},
         {"md", "text/markdown"},
         {"mid", "audio/midi"},

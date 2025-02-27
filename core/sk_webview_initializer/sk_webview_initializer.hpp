@@ -29,8 +29,6 @@ public:
     }
 
     void inject_core(){
-        SK_String modulesRoot = "https://sk.sb.gc";
-
         injectData("window.sk_api = {}");
 
         SK_String payload = generateFromFiles(std::vector<SK_String>{
@@ -39,6 +37,7 @@ public:
             SK_Path_Utils::paths["module_system"] + "/sk_module_root.js",
             SK_Path_Utils::paths["global_js_core"] + "/sk_global_js_core.js"
         })
+        .replace("<sk_base_url>", SK_Base_URL)
         .replace("'<sk_static_info>'", getStaticInfo())
         .replace("'<sk_native_actions>'", modsys->nativeActions.listActions());
 

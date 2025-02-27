@@ -115,7 +115,7 @@ class BrowserWindow extends SK_Module_Root {
 
         this.defOpt = {
             //SK Added features
-            "oldStyle": false, //== [OK] ==//
+            "oldStyle": false, //== [OK] ==// //Windows exclusive
 
             //ElectronJS compatible features
             "width": 800, //== [OK] ==//
@@ -175,6 +175,8 @@ class BrowserWindow extends SK_Module_Root {
             "vibrancy": "none", // macOS exclusive (options: 'appearance-based', 'light', 'dark', 'titlebar', 'selection', 'menu', 'popover', 'sidebar', 'medium-light', 'ultra-dark')
             "roundedCorners": true, // macOS exclusive
             "hiddenInMissionControl": false, // macOS exclusive
+            
+            "roundedCorners": true,
 
             "webPreferences": {
                 "devTools": true,
@@ -392,6 +394,9 @@ class BrowserWindow extends SK_Module_Root {
     set skipTaskbar(val) { this.setAttrSync('skipTaskbar', val) }
     get skipTaskbar() { return this.getAttrSync('skipTaskbar') }
 
+    set frame(val) { this.setAttrSync('frame', val) }
+    get frame() { return this.getAttrSync('frame') }
+    
     set thickFrame(val) { this.setAttrSync('thickFrame', val) }
     get thickFrame() { return this.getAttrSync('thickFrame') }
 

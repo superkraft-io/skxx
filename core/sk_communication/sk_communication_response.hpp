@@ -198,8 +198,10 @@ public:
         //for linux and android
     #endif
     
-    SK_Communication_Response_Web(const SK_String& url = "") {
+    SK_Communication_Response_Web(const SK_String& _url = "") {
         type = SK_Communication_Packet_Type::sk_comm_pt_web;
+        
+        url = _url;
 
         SK_String defaultData = "{\"error\":\"404\",\"message\":\"Not found\"}";
         data = std::vector<char>(defaultData.data.begin(), defaultData.data.end());
@@ -365,6 +367,8 @@ public:
             SK_Communicaton_Response_Apple getWebResponse() {
                 NSInteger _statusCode = statusCode;
                 
+                headers["Content-Length"] = data.size();
+                
                 SK_Communicaton_Response_Apple res {
                     SK_String(data),
                     [[NSHTTPURLResponse alloc]
@@ -384,8 +388,8 @@ public:
                 if (headers.is_object()) {
                     for (auto it = headers.begin(); it != headers.end(); ++it) {
                         
-                        std::string _key = it.key();
-                        std::string _value = it.value();
+                        SK_String _key = it.key();
+                        SK_String _value = it.value();
                         
                         NSString *key = [NSString stringWithUTF8String: _key.c_str()];
                         NSString *value = [NSString stringWithUTF8String: _value.c_str()];

@@ -2,7 +2,6 @@
 
 #include "sk_common.hpp"
 
-
 BEGIN_SK_NAMESPACE
 
 class Superkraft {

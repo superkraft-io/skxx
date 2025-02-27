@@ -31,8 +31,8 @@ public:
 
             wnd->configWithInfo(payload);
            
-            //wnd->webview.navigate("https://sk.project/sk_vfs/sk_project/views/" + viewID + "/frontend/view.html");
-
+            wnd->webview.navigate("sk://sk.view." + viewID + "/");
+            
             if (wnd->config.data.contains("mainWindow") && wnd->config.data["mainWindow"] == true) {
 
                 #if defined(SK_OS_windows)

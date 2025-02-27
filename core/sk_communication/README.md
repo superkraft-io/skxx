@@ -4,12 +4,12 @@ This component acts a router for both IPC and Web request.
 
 It routes an IPC request or a web request to either an internally reserved endpoints:
 
-- `sk.hb`
-- `sk.sb`
-- `sk.modsys`
-- `sk.modop`
-- `sk.project`
-- `sk.view`
+- `sk:hb`
+- `sk:sb`
+- `sk:modsys`
+- `sk:modop`
+- `sk:project`
+- `sk:view`
 - `*`
 
 SKC also handles relaying between the views and the soft backend.

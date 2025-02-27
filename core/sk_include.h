@@ -48,6 +48,8 @@
 
 BEGIN_SK_NAMESPACE
 
+class SK_Project_Ready;
+
 class SK_Global {
 public:
     static inline nlohmann::json sk_config;
@@ -87,7 +89,7 @@ public:
 
 	static inline SK_showSoftBackendDevTools showSoftBackendDevTools;
 
-	static inline SK_resizeAllMianWindowView resizeAllMianWindowView;
+	static inline SK_resizeAllMainWindowView resizeAllMainWindowView;
 
 	static inline SK_getMainWindowSize getMainWindowSize;
 	static inline SK_setMainWindowSize setMainWindowSize;

@@ -109,3 +109,10 @@
 
 
 #define SK_THREAD_POOL_COUNT 8
+
+
+#if defined(SK_OS_windows)
+    static inline std::string SK_Base_URL = "https://superkraft.io";
+#elif defined(SK_OS_apple)
+    static inline std::string SK_Base_URL =    "sk://superkraft.io";
+#endif

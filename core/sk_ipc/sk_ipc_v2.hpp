@@ -14,8 +14,8 @@ public:
 
 class SK_IPC_v2 {
 public:
-    SK_String sender_id = "sk.sb";
-    long long msg_id = 0;
+    SK_String sender_id = "sk:sb";
+    static inline long long msg_id = 0;
 
 
     using SK_IPC_v2_FrontendCallback = std::function<void(nlohmann::json data, SK_Communication_Packet* packet)>;

@@ -59,15 +59,34 @@ public:
 
     #if defined(SK_OS_windows)
         //for windows
-    #elif defined(SK_OS_macos) || defined(SK_OS_ios)
-        /*operator NSColor*(){
-            return [NSColor
-                colorWithRed:r
-                       green:g
-                        blue:b
-                       alpha:a
-            ];
-        }*/
+    #elif defined(SK_OS_apple)
+        #ifdef __OBJC__
+            operator NSColor*(){
+                return [NSColor
+                    colorWithRed:r
+                           green:g
+                            blue:b
+                           alpha:a
+                ];
+            }
+    
+            operator CGColorRef() const {
+                // Normalize RGB components from 0-255 to 0.0-1.0
+                CGFloat normalizedRed = r / 255.0f;
+                CGFloat normalizedGreen = g / 255.0f;
+                CGFloat normalizedBlue = b / 255.0f;
+                CGFloat normalizedAlpha = a; // Assuming 'a' is already in the 0.0-1.0 range
+
+                // Create an NSColor with the normalized components
+                NSColor *nsColor = [NSColor colorWithRed:normalizedRed
+                                                   green:normalizedGreen
+                                                    blue:normalizedBlue
+                                                   alpha:normalizedAlpha];
+
+                // Return the CGColor from the NSColor
+                return [nsColor CGColor];
+            }
+        #endif
     #endif
 
 

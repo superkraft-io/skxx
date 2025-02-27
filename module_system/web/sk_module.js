@@ -19,12 +19,12 @@ class SK_Module {
     }
 
     loadFromURL(path) {
-        var pathWithoutProtocol = path.replace('http://', '').replace('https://', '').replace('sk://', '')
+        var pathWithoutProtocol = path.replace('http://', '').replace('https://', '').replace('sk://', '').replace('superkraft.io/', '')
 
-        var targetRoutes = ['sk.modsys', 'sk.mod']
+        var targetRoutes = ['sk:modsys', 'sk:mod']
         var endIdx = pathWithoutProtocol.indexOf('/')
         var targetRoute = pathWithoutProtocol.substr(0, endIdx)
-        var targetPath = (!targetRoutes.includes(targetRoute) ? 'sk://sk.project:' + path : path)
+        var targetPath = (!targetRoutes.includes(targetRoute) ? sk_api.baseURL + '/' + pathWithoutProtocol.replace(targetRoute, '') : path)
 
         var data = sk_api.fetch(targetPath)
 
@@ -139,7 +139,7 @@ class SK_Module {
 
 
     static syncOperation(module, operation, data) {
-        var res = sk_api.fetch('sk://sk.modop/', {
+        var res = sk_api.fetch(sk_api.baseURL + '/sk:modop/', {
             module: module,
             operation: operation,
             payload: data
@@ -149,11 +149,11 @@ class SK_Module {
     }
 
     static async asyncOperation(module, operation, data) {
-        var res = await window.sk_api.ipc.request('sk.modop', {
+        var res = await window.sk_api.ipc.request('sk:modop', {
             module: module,
             operation: operation,
             payload: data
-        }, undefined, {target: 'sk.modop'})
+        }, undefined, {target: 'sk:modop'})
 
         return res
     }

@@ -101,7 +101,7 @@ public:
 			};
 		#endif
 
-        SK_Global::resizeAllMianWindowView = [&](int x, int y, int w, int h, float scale) {
+        SK_Global::resizeAllMainWindowView = [&](int x, int y, int w, int h, float scale) {
 			#if defined(SK_MODE_DEBUG)
 				for (auto it = list.begin(); it != list.end(); ++it) {
 					if (it->second) {
@@ -113,13 +113,7 @@ public:
 							wnd->config["width"] = w;
 							wnd->config["height"] = h;
 							wnd->config["scale"] = scale;
-
-							//if (wnd->webview.webview != nullptr) {
-							//	wnd->update();
-							//}
 						}
-
-						
 					}
 				}
 			#endif

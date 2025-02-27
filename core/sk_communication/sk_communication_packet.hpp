@@ -69,48 +69,67 @@ public:
     };
 
     
-    bool parseURLParameters_v2(const SK_String& url, SK_Communication_Packet* packet) {
+    bool parseURLComponents(const SK_String& url, SK_Communication_Packet* packet) {
+        
+        SK_String pathOnly = url.replace(SK_Base_URL, "");
+        
+        //extract target
+        SK_String targetRoute = "sk:project";
+        SK_String targetPrefix = "/sk:";
+        if (pathOnly.substring(0, targetPrefix.length()) == targetPrefix){
+            size_t targetEndIdx = pathOnly.replace(targetPrefix, "").indexOf("/") + targetPrefix.length();
+            targetRoute = pathOnly.substring(1, targetEndIdx);
+            pathOnly = pathOnly.substring(targetEndIdx, pathOnly.length());
+        }
+        packet->target = targetRoute;
+        
+        int x = 0;
+        
+        
+        
+        SK_String _url = url.replace("/" + targetRoute, "");
+        packet->info["url"] = _url;
+        
         // Parse protocol
-        size_t protocolEnd = url.data.find("://");
+        size_t protocolEnd = _url.data.find("://");
         if (protocolEnd != std::string::npos) {
             packet->info["protocol"] = url.data.substr(0, protocolEnd + 3);
         }
 
         // Parse host and path
         size_t hostStart = protocolEnd == std::string::npos ? 0 : protocolEnd + 3;
-        size_t pathStart = url.data.find('/', hostStart);
-        size_t queryStart = url.data.find('?', pathStart);
+        
+        size_t pathStart = _url.data.find('/', hostStart);
+        size_t queryStart = _url.data.find('?', pathStart);
 
         if (pathStart != std::string::npos) {
             std::string host = url.data.substr(hostStart, pathStart - hostStart);
             packet->info["host"] = host;
-            packet->target = host;
             packet->info["path"] = (queryStart != std::string::npos)
-                ? url.data.substr(pathStart, queryStart - pathStart)
-                : url.data.substr(pathStart);
+                ? _url.data.substr(pathStart, queryStart - pathStart)
+                : _url.data.substr(pathStart);
         }
         else {
             std::string host = (queryStart != std::string::npos)
-                ? url.data.substr(hostStart, queryStart - hostStart)
-                : url.data.substr(hostStart);
+                ? _url.data.substr(hostStart, queryStart - hostStart)
+                : _url.data.substr(hostStart);
             packet->info["host"] = host;
-            packet->target = host;
             packet->info["path"] = "/";
         }
 
         // Parse query parameters
         if (queryStart != std::string::npos) {
             size_t paramStart = queryStart + 1;
-            while (paramStart < url.data.size()) {
-                size_t eqPos = url.data.find('=', paramStart);
-                size_t ampPos = url.data.find('&', paramStart);
+            while (paramStart < _url.data.size()) {
+                size_t eqPos = _url.data.find('=', paramStart);
+                size_t ampPos = _url.data.find('&', paramStart);
 
                 if (eqPos == std::string::npos) break;
 
-                std::string key = url.data.substr(paramStart, eqPos - paramStart);
+                std::string key = _url.data.substr(paramStart, eqPos - paramStart);
                 std::string value = (ampPos != std::string::npos)
-                    ? url.data.substr(eqPos + 1, ampPos - eqPos - 1)
-                    : url.data.substr(eqPos + 1);
+                    ? _url.data.substr(eqPos + 1, ampPos - eqPos - 1)
+                    : _url.data.substr(eqPos + 1);
 
                 packet->info["parameters"][key] = value;
 
@@ -118,7 +137,7 @@ public:
                 paramStart = ampPos + 1;
             }
         }
-
+        
         return true;
     }
     
@@ -137,7 +156,7 @@ public:
         wil::unique_cotaskmem_string _url;
         if (SUCCEEDED(request->get_Uri(&_url))) {
             packet->info["url"] = wstringToString(_url.get());
-            packet->parseURLParameters_v2(wstringToString(_url.get()), packet);
+            packet->parseURLComponents(wstringToString(_url.get()), packet);
         }
 
         packet->responseObj = new SK_Communication_Response_Web(SK_String(packet->info["url"]));
@@ -193,10 +212,18 @@ public:
             packet->sender = sender;
 
             // Full URL
-            packet->info["url"] = SK_String(request.URL.absoluteString);
-            packet->parseURLParameters_v2(SK_String(request.URL.absoluteString), packet);
-
-            packet->responseObj = new SK_Communication_Response_Web(SK_String(request.URL.absoluteString));
+            SK_String url = request.URL.absoluteString;
+            SK_String path = request.URL.path;
+            if (url.indexOf("sk://sk.view.") > -1){
+                if (path.length() == 1){
+                    SK_String viewID = url.replace("sk://sk.view.", "").replace("/", "");
+                    url = SK_Base_URL + "/sk_vfs/sk_project/views/" + viewID + "/frontend/view.html";
+                }
+            }
+            
+            packet->parseURLComponents(url, packet);
+            
+            packet->responseObj = new SK_Communication_Response_Web(packet->info["url"]);
 
             // HTTP Method (GET, POST, etc.)
             packet->info["method"] = SK_String(request.HTTPMethod);

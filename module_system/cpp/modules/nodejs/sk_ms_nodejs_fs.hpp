@@ -4,6 +4,7 @@
 
 BEGIN_SK_NAMESPACE
 
+
 class SK_Module_fs {
 public:
     SK_Module_vfs* vfs;
@@ -27,13 +28,12 @@ public:
 
         SK_String fullPath = path;
 
-
         //If the path is not absolute, then make the SK_Project folder the root folder
         if (path.substring(0, 1) == "/" || !SK_File::isPathAbsolute(path)) {
             if (operation != "mkdir") {
                 SK_String targetPrefix = path.substring(0, path.indexOf("/"));
-                if (targetPrefix == "sk.modsys") {
-                    fullPath = SK_Path_Utils::paths["module_system"] + path.replace("sk.modsys", "");
+                if (targetPrefix == "sk:modsys") {
+                    fullPath = SK_Path_Utils::paths["module_system"] + path.replace("sk:modsys", "");
                 }
                 else {
                     fullPath = SK_Path_Utils::paths["project"] + path;
@@ -91,7 +91,7 @@ public:
             respondWith.error(404, "ENOENT");
             return;
         }
-
+        
         nlohmann::json fileList = nlohmann::json::array();
 
         unsigned int size = list.size();
@@ -104,6 +104,10 @@ public:
                 });
             }
         }
+        
+        std::sort(fileList.begin(), fileList.end(), [](const nlohmann::json& a, const nlohmann::json& b) {
+            return a["name"] < b["name"];
+        });
 
         respondWith.JSON(fileList);
     };

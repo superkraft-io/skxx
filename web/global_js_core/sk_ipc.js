@@ -29,7 +29,7 @@ class SK_IPC {
                 msg_id: msg_id.toString(),
                 type: type,
                 sender: (window.sk && window.sk.id ? window.sk.id : undefined) || this.sender_id,
-                target: "sk.sb",
+                target: "sk:sb",
                 event_id: event_id,
                 data: data
             },

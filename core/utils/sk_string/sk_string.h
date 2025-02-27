@@ -21,8 +21,22 @@ public:
     SK_String(const char *s) : data(s) {}
     SK_String(const std::string& s) : data(s) {}
     SK_String(const SK_String& s) : data(s) {}
-    SK_String(const nlohmann::json& json) : data(json.get<std::string>()) {}
     SK_String(const std::vector<char>& chars) : data(chars.data(), chars.size()) {}
+    
+    SK_String(const nlohmann::json& json) {
+       if (json.is_string()) {
+           data = json.get<std::string>();
+       } else if (json.is_number_integer()) {
+           data = std::to_string(json.get<int>());
+       } else if (json.is_number_float()) {
+           data = std::to_string(json.get<double>());
+       } else if (json.is_boolean()) {
+           data = json.get<bool>() ? "true" : "false";
+       } else {
+           // Handle other types or throw an exception
+           throw std::invalid_argument("Unsupported JSON type for SK_String");
+       }
+   }
 
     
     

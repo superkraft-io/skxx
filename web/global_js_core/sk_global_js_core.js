@@ -68,14 +68,13 @@ class SK_Global_Core {
         this.initialized = false
 
         this.id = opt.id
-
+        
+        this.baseURL = '<sk_base_url>'
         this.nativeActions_definitions = '<sk_native_actions>'
-
         this.staticInfo = '<sk_static_info>'
 
-
         this.nativeModules = {
-            node: { fs: 'sk://sk.modsys/node/fs.js' }
+            node: { fs: this.baseURL + '/sk:modsys/node/fs.js' }
         }
 
 
@@ -124,10 +123,10 @@ class SK_Global_Core {
     }
 
     async initModules() {
-        await import('sk://sk.modsys/node/path.js')
+        await import(sk_api.baseURL + '/sk:modsys/node/path.js')
 
         var fs = require('fs')
-        var categories = fs.readdirSync('sk.modsys/', true)
+        var categories = fs.readdirSync('sk:modsys/', true)
 
         for (var i in categories) {
             var category = categories[i]
@@ -138,17 +137,19 @@ class SK_Global_Core {
 
             if (!sk_api.nativeModules[catName]) sk_api.nativeModules[catName] = {}
 
-            var moduleCategory = fs.readdirSync('sk.modsys/' + catName + '/', true)
+            var moduleCategory = fs.readdirSync('sk:modsys/' + catName + '/', true)
             for (var u in moduleCategory) {
                 var module = moduleCategory[u]
                 var modName = module.name.split('.')[0]
-                sk_api.nativeModules[catName][modName] = 'sk://sk.modsys/' + catName + '/' + modName + '.js'
+                sk_api.nativeModules[catName][modName] = sk_api.baseURL + '/sk:modsys/' + catName + '/' + modName + '.js'
             }
         }
 
         
 
         this.nativeActions = require('nativeActions')
+        
+        var x = 0
     }
 
     async printProfiler() {

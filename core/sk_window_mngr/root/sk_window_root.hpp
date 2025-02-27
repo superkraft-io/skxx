@@ -46,7 +46,7 @@ public:
 
 	SK_Color backgroundColor = "black";
 
-    //SK_WebView webview; //must be a pointer since we forward declared SK_WebView at the beginning of this file
+    SK_WebView webview;
 
 	SK_Window_Root() {
 	}
@@ -60,7 +60,7 @@ public:
 
 		config_updateTracker.update(_info);
 		for (auto& [key, value] : config_updateTracker.items()) {
-			value = true; // Set to boolean true
+			value = true;
 		}
 
 	}

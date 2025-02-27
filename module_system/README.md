@@ -16,6 +16,7 @@ These modules can me imported/required with or without the `sk:` prefix, e.g `sk
 | `vfs`   | Virtual File System module for file manipulation directly to memory rather than disk   |
 | `web`   | Perform GET, POST and download files   |
 | `debugMngr`   | Perform various debug related operations, such as programmatically open the dev tools of e.g the soft backend or the view   |
+| `proton-js`   | ProtonJS is a substitute to ElectronJS   |  🟠 Partial    |
 
 
 ## Node.js Core Modules
@@ -77,7 +78,7 @@ The modules in the `npm` folder emulate a few specific NPM modules.
 
 | Name       | Description       | Implementation       |
 |----------------|----------------|----------------|
-| `electron-js`   | ElectronJS emulation module   |  🟠 Partial    |
+| `electron-js`   | See ProtonJS in the "SK Core Modules" section   |  ---   |
 | `fs-extra`   | An extension of the `fs` module   | 🟠 Partial   |
 
 

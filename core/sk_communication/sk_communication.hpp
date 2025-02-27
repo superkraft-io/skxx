@@ -71,7 +71,7 @@ public:
 			return;
 		}
 
-		if (packet->target == "sk.sb") {
+		if (packet->target == "sk:sb") {
 			if (packet->info.contains("event_id")) {
 				handleForwarding(packet);
 			}
@@ -84,7 +84,7 @@ public:
 				#endif
 			}
 		}
-		else if (packet->target == "sk.modsys") {
+		else if (packet->target == "sk:modsys") {
 			#if defined SK_MODE_DEBUG
 				SK_String filePath = SK_Path_Utils::paths["module_system"] + SK_String(packet->info["path"]);
 				packet->response()->file(filePath);
@@ -93,7 +93,7 @@ public:
 			#endif
 			
 		}
-		else if (packet->target == "sk.modop") {
+		else if (packet->target == "sk:modop") {
 			nlohmann::json payload;
 
 			SK_String path;
@@ -114,12 +114,16 @@ public:
 				(*packet->response())
 			);
 		}
-		else if (packet->target == "sk.project") {
+		else if (packet->target == "sk:project") {
 			SK_String path = SK_String(packet->info["path"]);
 
 			if (path.substring(0, 7) == "/sk_vfs") {
 				SK_Module_vfs_file* vfile = modsys->vfs->findByPath(path);
-				packet->response()->string(vfile->data, "text/html");
+                if (vfile){
+                    packet->response()->string(vfile->data, "text/html");
+                } else {
+                    packet->response()->error();
+                }
 				return;
 			}
 
@@ -130,16 +134,16 @@ public:
 
 			#endif
 		}
-		else if (packet->target == "sk.view") {
+		else if (packet->target == "sk:view") {
 			SK_String path = SK_String(packet->info["path"]);
 
 			SK_String viewID = path.replace("/", "");
 
-			SK_Module_vfs_file* vfile = modsys->vfs->findByPath("sk_vfs/project/views/" + viewID + "/frontend/view.html");
+			SK_Module_vfs_file* vfile = modsys->vfs->findByPath("sk_vfs/sk_project/views/" + viewID + "/frontend/view.html");
 
 			packet->response()->string(vfile->data, "text/html");
 		}
-		else if (packet->target == "sk.profiler") {
+		else if (packet->target == "sk:profiler") {
 			packet->response()->JSON(SK_Profiler::serialize());
 		}
 		else {
@@ -153,7 +157,7 @@ public:
 	};
 
 	SK_IPC_v2* getIPCForID(const SK_String& id) {
-		if (id == "sk.sb") {
+		if (id == "sk:sb") {
 			return sb_ipc;
 		}
 		else {

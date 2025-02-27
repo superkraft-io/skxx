@@ -37,63 +37,69 @@ public:
             }
             return *this;
         }
-
+        
         operator int() const {
             if (parent.data.contains(key) && parent.data[key].is_number_integer()) {
                 return parent.data[key].get<int>();
             }
-            return 0; // Default value if the key doesn't exist or isn't an int
+            throw "Key not found";
         }
 
         operator long() const {
             if (parent.data.contains(key) && parent.data[key].is_number_integer()) {
                 return static_cast<long>(parent.data[key].get<int>());
             }
-            return 0; // Default value if the key doesn't exist or isn't an int
+            throw "Key not found";
         }
 
         operator float() const {
-            if (parent.data.contains(key) && parent.data[key].is_number_float()) {
-                return parent.data[key].get<float>();
+            
+            if (parent.data.contains(key)){
+                return SK_Number(parent.data[key]);
             }
-            return 0.; // Default value if the key doesn't exist or isn't an int
+            
+            throw "Key not found";
         }
 
         operator unsigned int() const {
-            if (parent.data.contains(key) && parent.data[key].is_number_unsigned()) {
-                return parent.data[key].get<unsigned int>();
+            
+            if (parent.data.contains(key)){
+                return SK_Number(parent.data[key]);
             }
-            return 0; // Default value if the key doesn't exist or isn't an int
+            
+            throw "Key not found";
         }
 
         operator std::string() const {
             if (parent.data.contains(key) && parent.data[key].is_string()) {
                 return parent.data[key].get<std::string>();
             }
-            return ""; // Default value if the key doesn't exist or isn't an int
+            throw "Key not found";
         }
         
         operator SK_String() const {
             if (parent.data.contains(key) && parent.data[key].is_string()) {
                 return SK_String(parent.data[key].get<std::string>());
             }
-            return ""; // Default value if the key doesn't exist or isn't an int
+            throw "Key not found";
         }
         
-        /*#if defined(SK_OS_macos) || defined(SK_OS_ios)
-            operator NSString*() const {
-                if (parent.data.contains(key) && parent.data[key].is_string()) {
-                    return [NSString stringWithUTF8String:parent.data[key].get<std::string>().c_str()];
+        #if defined(SK_OS_apple)
+            #ifdef __OBJC__
+                operator NSString*() const {
+                    if (parent.data.contains(key) && parent.data[key].is_string()) {
+                        return [NSString stringWithUTF8String:parent.data[key].get<std::string>().c_str()];
+                    }
+                    throw "Key not found";
                 }
-                return @""; // Default value if the key doesn't exist or isn't an int
-            }
-        #endif*/
+            #endif
+        #endif
 
         operator nlohmann::json() const {
             if (parent.data.contains(key) && parent.data[key].is_object()) {
                 return parent.data[key];
             }
-            return NULL; // Default value if the key doesn't exist or isn't an int
+            throw "Key not found";
         }
 
         // Conversion operator for reading the value
@@ -102,14 +108,14 @@ public:
             if (parent.data.contains(key)) {
                 return parent.data.at(key);
             }
-            return nullptr; // Return null if the key doesn't exist
+            throw "Key not found";
         }
 
         operator bool() const {
             if (parent.data.contains(key)) {
-                return !parent.data[key].empty(); // Consider empty/null as "false"
+                return parent.data[key]; // Consider empty/null as "false"
             }
-            return false; // Default to "false" if key doesn't exist
+            throw "Key not found";
         }
 
         // Logical NOT operator
@@ -135,7 +141,7 @@ public:
                     return parent.data[key].get<unsigned int>(); // Extract unsigned integer
                 }
             }
-            return SK_Number{}; // Default value if the key doesn't exist or isn't a number
+            throw "Key not found";
         }
 
         // Assignment operator for SK_Number
@@ -152,7 +158,7 @@ public:
             if (parent.data.contains(key) && parent.data[key].is_number()) {
                 return parent.data[key].get<float>() * scale;
             }
-            return 0.0f; // Default value if the key doesn't exist or isn't a number
+            throw "Key not found";
         }
 
 
@@ -170,7 +176,7 @@ public:
             if (parent.data.contains(key) && parent.data[key].is_number_integer()) {
                 return parent.data[key].get<int>() > value;
             }
-            return false; // Default behavior if the key doesn't exist or isn't an integer
+            throw "Key not found";
         }
 
         // Operator for float
@@ -178,7 +184,7 @@ public:
             if (parent.data.contains(key) && parent.data[key].is_number_float()) {
                 return parent.data[key].get<float>() > value;
             }
-            return false; // Default behavior if the key doesn't exist or isn't a float
+            throw "Key not found";
         }
 
         bool operator==(bool value) const {
@@ -188,7 +194,7 @@ public:
                     parent.onChanged(key); // Trigger callback on modification
                 }
             }
-            return false; // Default behavior if the key doesn't exist or isn't a boolean
+            throw "Key not found";
         }
 
         SK_JSON_Proxy& operator=(bool value) {
