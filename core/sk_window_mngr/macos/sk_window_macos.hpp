@@ -15,7 +15,8 @@ public:
         NSWindow* wndHandle;
         __strong SK_Window_MacOS_Delegate* wndDelegate;
         NSView* contentView;
-    NSVisualEffectView* vibrantView;
+        NSVisualEffectView* vibrantView;
+        CALayer *maskLayer = [CALayer layer];
     #endif
     //NSView* webViewContainer = nullptr;
 
@@ -48,7 +49,7 @@ public:
 
             // Define the window style
             NSUInteger styleMask = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable;
-
+        
             // Create the window
             wndHandle = [[NSWindow alloc] initWithContentRect:frame
                                                 styleMask:styleMask
@@ -66,16 +67,22 @@ public:
             // Create the content view
             contentView = [[NSView alloc] initWithFrame:frame];
             [wndHandle setContentView:contentView];
-
         
-            vibrantView = [[NSVisualEffectView alloc] initWithFrame:[[wndHandle contentView] bounds]];
+            [contentView setWantsLayer:YES];
+        
+        
+            /*vibrantView = [[NSVisualEffectView alloc] initWithFrame:[[wndHandle contentView] bounds]];
             [vibrantView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
-            [contentView addSubview:vibrantView positioned:NSWindowBelow relativeTo:nil];
+            [contentView addSubview:vibrantView positioned:NSWindowBelow relativeTo:nil];*/
             
         
             // Make the window key and visible
             [wndHandle makeKeyAndOrderFront:nil];
 
+            updateWindowByConfig();
+            
+           
+        
             // Create the web view
             createWebView();
         #endif
@@ -131,13 +138,22 @@ public:
                 [[wndHandle standardWindowButton:NSWindowMiniaturizeButton] setEnabled:minimizable];
             }
         
+        
+            if (checkNeedsUpdateAndReset("transparent")) {
+                bool transparent = config["transparent"];
+                
+                if (transparent){
+                    [wndHandle setBackgroundColor: [NSColor clearColor]];
+                    [wndHandle setOpaque: NO];
+                } else {
+                    [wndHandle setBackgroundColor: [NSColor windowBackgroundColor]];
+                    [wndHandle setOpaque: YES];
+                }
+            }
+        
             if (checkNeedsUpdateAndReset("backgroundColor")) {
                 backgroundColor = config.data["backgroundColor"];
-                
-                CGColor* clr = backgroundColor;
-                
-                [contentView setWantsLayer:YES];
-                [contentView.layer setBackgroundColor:clr];
+                [contentView.layer setBackgroundColor:backgroundColor];
             }
         
             
@@ -158,7 +174,6 @@ public:
                     [wndHandle setLevel:NSNormalWindowLevel];
                 }
             }
-                
         
         
             if (checkNeedsUpdateAndReset("frame")) {
@@ -167,6 +182,9 @@ public:
                 if (hasFrame) {
                     styleMask |= NSWindowStyleMaskTitled;
                 } else {
+                    [wndHandle setBackgroundColor: [NSColor clearColor]];
+                    [wndHandle setOpaque: NO];
+                    
                     styleMask &= ~NSWindowStyleMaskTitled;
                     UpdateWindowMask(false);
                 }
@@ -194,11 +212,7 @@ public:
             }
 
            
-            if (checkNeedsUpdateAndReset("transparent")) {
-                bool transparent = config["transparent"];
-                [wndHandle setOpaque: (transparent ? NO : YES)];
-                [wndHandle setBackgroundColor:[NSColor clearColor]];
-            }
+            
   
 
             if (checkNeedsUpdateAndReset("show")) {
@@ -220,9 +234,9 @@ public:
 
         #ifdef __OBJC__
             if (activate) {
-                [wndHandle toggleFullScreen:nil];
+                //[wndHandle toggleFullScreen:nil];
             } else {
-                [wndHandle toggleFullScreen:nil];
+                //[wndHandle toggleFullScreen:nil];
             }
         #endif
     }
@@ -235,50 +249,38 @@ public:
     }
     
     void UpdateWindowMask(bool fullscreen) {
-
-        if (vibrantView) {
-            const bool roundedCorners = HasStyleMask(NSWindowStyleMaskTitled);
-            const float macos_version = SK_Number(SK_Machine::staticInfo["version"]);
-            const bool isModal = config["modal"];
-            const bool hasFrame = config["frame"];
-
-            // If the window is modal, its corners are rounded on macOS >= 11 or higher
-            // unless the user has explicitly passed noRoundedCorners.
-            bool doRoundModal = roundedCorners && macos_version >= 11.f && isModal;
-            // If the window is nonmodal, its corners are rounded if it is frameless and
-            // the user hasn't passed noRoundedCorners.
-            bool doRoundNonModal = roundedCorners && isModal && hasFrame;
-
-            if (doRoundModal || doRoundNonModal) {
-                CGFloat radius;
-                if (fullscreen) {
-                    radius = 0.0f;
-                } else if (macos_version >= 11.f) {
-                    radius = 9.0f;
-                } else {
-                    // Smaller corner radius on versions prior to Big Sur.
-                    radius = 5.0f;
-                }
-
-                CGFloat dimension = 2 * radius + 1;
-                NSSize size = NSMakeSize(dimension, dimension);
-                NSImage* maskImage = [NSImage imageWithSize:size
-                                                  flipped:NO
-                                           drawingHandler:^BOOL(NSRect rect) {
-                                             NSBezierPath* bezierPath = [NSBezierPath
-                                                 bezierPathWithRoundedRect:rect
-                                                                   xRadius:radius
-                                                                   yRadius:radius];
-                                             [[NSColor blackColor] set];
-                                             [bezierPath fill];
-                                             return YES;
-                                           }];
-
-                [maskImage setCapInsets:NSEdgeInsetsMake(radius, radius, radius, radius)];
-                [maskImage setResizingMode:NSImageResizingModeStretch];
-                [vibrantView setMaskImage:maskImage];
+        float osVersion = SK_Number(SK_Machine::staticInfo["version"]);
+        
+        CGFloat radius = 0.0f;
+        if (!fullscreen){
+            radius = (osVersion >= 11.f ? 9.0f : 5.0f); //pre-Big Sur radius = 5.0f
+            
+            float roundness = config["roundness"];
+            if (roundness > -1){
+                radius = roundness;
             }
         }
+    
+    
+        NSSize maskRect = contentView.frame.size;
+        NSImage* mask = [NSImage imageWithSize:maskRect
+                                          flipped:NO
+                                   drawingHandler:^BOOL(NSRect rect) {
+                                     NSBezierPath* path = [NSBezierPath
+                                         bezierPathWithRoundedRect:rect
+                                                           xRadius:radius
+                                                           yRadius:radius];
+                                     [[NSColor blackColor] set];
+                                     [path fill];
+                                     return YES;
+                                   }];
+
+        [mask setCapInsets:NSEdgeInsetsMake(radius, radius, radius, radius)];
+        [mask setResizingMode:NSImageResizingModeStretch];
+        
+        maskLayer.contents = mask;
+        maskLayer.frame = contentView.bounds;
+        contentView.layer.mask = maskLayer;
     }
     
     

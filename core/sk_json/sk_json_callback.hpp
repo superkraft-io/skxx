@@ -113,7 +113,8 @@ public:
 
         operator bool() const {
             if (parent.data.contains(key)) {
-                return parent.data[key]; // Consider empty/null as "false"
+                auto val = parent.data[key];
+                return val.get<bool>();
             }
             throw "Key not found";
         }

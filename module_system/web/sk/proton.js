@@ -116,6 +116,7 @@ class BrowserWindow extends SK_Module_Root {
         this.defOpt = {
             //SK Added features
             "oldStyle": false, //== [OK] ==// //Windows exclusive
+            "roundness": -1.0, //Dictates the roundness of a the window
 
             //ElectronJS compatible features
             "width": 800, //== [OK] ==//
@@ -136,7 +137,7 @@ class BrowserWindow extends SK_Module_Root {
             "skipTaskbar": false, //== [OK] ==//
             "show": true, //== [OK] ==//
             "frame": true, //== [OK] ==//
-            "title": "My SK++ Proton Window", //== [OK] ==//
+            "title": "My SK++ ProtonJS Window", //== [OK] ==//
             "backgroundColor": "#FFFFFF", //== [OK] ==//
             "transparent": false, //== [OK] ==//
             "thickFrame": true, // Windows exclusive //== [OK] ==//
@@ -145,7 +146,6 @@ class BrowserWindow extends SK_Module_Root {
 
             "fullscreenable": true, //== [OK] ==//
             "fullscreen": false, //== [OK] ==//
-
 
 
             "icon": null,

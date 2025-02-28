@@ -29,4 +29,9 @@
     [super setContentView:wrapperView];
 }
 
+- (void)viewDidResize:(NSNotification *)notification {
+    // Update the mask layer's frame to match the new bounds
+    [[self maskLayer] frame: [[self contentView] bounds]];
+}
+
 @end

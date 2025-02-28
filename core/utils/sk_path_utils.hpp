@@ -66,8 +66,6 @@ public:
                 for (const auto& entry : std::filesystem::directory_iterator(currentPath)) {
                     SK_String _path = SK_String(entry.path().filename().string());
                     
-                    std::cerr << "current: " << _path << "\n";
-                    
                     if (entry.is_directory() && _path.toLowerCase() == SK_String(neighbourName).toLowerCase()) {
                         stop = true;
                         break;
