@@ -17,9 +17,16 @@
 
 - (void)windowDidResize:(NSNotification *)notification {
     NSLog(@"Window resized");
+    if (self.skWindow) {
+       dispatch_async(dispatch_get_main_queue(), ^{
+           //self.skWindow->updateWindowMask(self.skWindow->config.data["fullscreen"]);
+       });
+   } else {
+       NSLog(@"skWindow is nil!");
+   }
 }
 
-
+/*
 - (void)setContentView:(NSView *)contentView {
     NSView *wrapperView = [[NSView alloc] initWithFrame:contentView.frame];
     [wrapperView setWantsLayer:YES];
@@ -33,5 +40,6 @@
     // Update the mask layer's frame to match the new bounds
     [[self maskLayer] frame: [[self contentView] bounds]];
 }
+*/
 
 @end

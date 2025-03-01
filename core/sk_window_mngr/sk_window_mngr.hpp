@@ -108,13 +108,12 @@ public:
 						SK_Window* wnd = it->second;
 						
 						if (wnd->config["mainWindow"] == true) {
-                            wnd->config.bypassCallback = true;
-							wnd->config["left"] = x;
-							wnd->config["top"] = y;
-							wnd->config["width"] = w;
-							wnd->config["height"] = h;
-                            wnd->config.bypassCallback = false;
-							wnd->config["scale"] = scale;
+                            wnd->config.data["scale"]  = scale;
+							wnd->config.data["left"]   = x;
+							wnd->config.data["top"]    = y;
+							wnd->config.data["width"]  = w;
+							wnd->config.data["height"] = h;
+                            wnd->updateWindowByConfig();
 						}
 					}
 				}

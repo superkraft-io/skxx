@@ -115,37 +115,37 @@ class BrowserWindow extends SK_Module_Root {
 
         this.defOpt = {
             //SK Added features
-            "oldStyle": false, //== [OK] ==// //Windows exclusive
-            "roundness": -1.0, //Dictates the roundness of a the window
+            "oldStyle": false, //[OK] win       Windows exclusive
+            "roundness": -1.0, //Sghould dictates the roundness of a the window, but isn't. Why? because it must use a mask, and redrawing the mask during window resize is too inefficient.
 
             //ElectronJS compatible features
-            "width": 800, //== [OK] ==//
-            "height": 600, //== [OK] ==//
-            "x": 0, //== [OK] ==//
-            "y": 0, //== [OK] ==//
-            "center": true, //== [OK] ==//
-            "minWidth": 0, //== [OK] ==//
-            "minHeight": 0, //== [OK] ==//
-            "maxWidth": Infinity, //== [OK] ==//
-            "maxHeight": Infinity, //== [OK] ==//
-            "resizable": true, //== [OK] ==//
-            "movable": true, //== [OK] ==//
-            "minimizable": true, //== [OK] ==//
-            "maximizable": true, //== [OK] ==//
-            "closable": true, //== [OK] ==//
-            "alwaysOnTop": false, //== [OK] ==//
-            "skipTaskbar": false, //== [OK] ==//
-            "show": true, //== [OK] ==//
-            "frame": true, //== [OK] ==//
-            "title": "My SK++ ProtonJS Window", //== [OK] ==//
-            "backgroundColor": "#FFFFFF", //== [OK] ==//
-            "transparent": false, //== [OK] ==//
-            "thickFrame": true, // Windows exclusive //== [OK] ==//
-            "opacity": 1.0, //== [OK] ==//
-            "kiosk": false, //== [OK] ==//
+            "title": "My SK++ ProtonJS Window", //[OK] win, macos
+            "backgroundColor": "#FFFFFF", //[OK] win, macos
+            "width": 800,           //[OK] win, macos
+            "height": 600,          //[OK] win, macos
+            "x": 0,                 //[OK] win, macos
+            "y": 0,                 //[OK] win, macos
+            "center": true,         //[OK] win, macos
+            "minWidth": 0,          //[OK] win, macos
+            "minHeight": 0,         //[OK] win, macos
+            "maxWidth": -1,         //[OK] win, macos
+            "maxHeight": -1,        //[OK] win, macos
+            "resizable": true,      //[OK] win, macos
+            "movable": true,        //[OK] win, macos
+            "minimizable": true,    //[OK] win, macos
+            "maximizable": true,    //[OK] win, macos
+            "closable": true,       //[OK] win, macos
+            "show": true,           //[OK] win, macos
+            "frame": true,          //[OK] win, macos
+            "transparent": false,   //[OK] win, macos
+            "opacity": 1.0,         //[OK] win, macos
+            "alwaysOnTop": false,   //[OK] win
+            "skipTaskbar": false,   //[OK] win
+            "kiosk": false,         //[OK] win
+            "fullscreenable": true, //[OK] win
+            "fullscreen": false,    //[OK] win
 
-            "fullscreenable": true, //== [OK] ==//
-            "fullscreen": false, //== [OK] ==//
+            "thickFrame": true,     //[OK] win      Windows exclusive 
 
 
             "icon": null,
@@ -159,24 +159,27 @@ class BrowserWindow extends SK_Module_Root {
             "paintWhenInitiallyHidden": true, 
 
 
-            "hasShadow": true,//Seems to do nothing on Windows 11
+            "hasShadow": true,  //Seems to do nothing on Windows 11
             "darkTheme": false, //Seems to do nothing on Windows 11
             "throttleWhenBackground": true, //not documented?
 
 
-
-            "acceptFirstMouse": false, //macos only
-            "enableLargerThanScreen": false, //macos only
-            "simpleFullscreen": false, // macOS exclusive
-            "titleBarStyle": "default", // macOS exclusive (options: 'default', 'hidden', 'hiddenInset', 'customButtonsOnHover')
-            "zoomToPageWidth": false, // macOS exclusive
-            "tabbingIdentifier": null, // macOS exclusive
-            "trafficLightPosition": { "x": 10, "y": 10 }, // macOS exclusive (controls the position of the traffic light buttons in frameless windows)
-            "vibrancy": "none", // macOS exclusive (options: 'appearance-based', 'light', 'dark', 'titlebar', 'selection', 'menu', 'popover', 'sidebar', 'medium-light', 'ultra-dark')
-            "roundedCorners": true, // macOS exclusive
-            "hiddenInMissionControl": false, // macOS exclusive
+            //MacOS Exclusives
+            "acceptFirstMouse": false,
+            "enableLargerThanScreen": false,
+            "simpleFullscreen": false,
+            "titleBarStyle": "default", //options: 'default', 'hidden', 'hiddenInset', 'customButtonsOnHover'
+            "zoomToPageWidth": false,
+            "tabbingIdentifier": null,
+            "trafficLightPosition": { "x": 10, "y": 10 }, //controls the position of the traffic light buttons in frameless windows
+            "vibrancy": "none", //options: 'appearance-based', 'light', 'dark', 'titlebar', 'selection', 'menu', 'popover', 'sidebar', 'medium-light', 'ultra-dark'
+            "hiddenInMissionControl": false,
             
-            "roundedCorners": true,
+            "roundedCorners": true, //Unused. Use the ProtonJS attribute "roundness" instead.
+
+
+
+
 
             "webPreferences": {
                 "devTools": true,
@@ -237,16 +240,6 @@ class BrowserWindow extends SK_Module_Root {
         this.defOpt = { ...this.defOpt, ...opt }
             
         this.sync('construct', { constructorOpts: this.defOpt })
-
-        /*const proxy = new Proxy(this, {
-            set(target, key, val) {
-                if (!this[key] && !this.defOpt[key]) return console.log('Invalid call')
-
-                if (this.defOpt[key]) {
-                    this.defOpt[key] = value
-                }
-            }
-        });*/
     }
 
     setAttrSync(attribute, value) { this.sync('configure', { attribute: attribute, value: value }) }
@@ -390,6 +383,9 @@ class BrowserWindow extends SK_Module_Root {
 
     set backgroundColor(val) { this.setAttrSync('backgroundColor', val) }
     get backgroundColor() { return this.getAttrSync('backgroundColor') }
+    
+    set transparent(val) { this.setAttrSync('transparent', val) }
+    get transparent() { return this.getAttrSync('transparent') }
 
     set skipTaskbar(val) { this.setAttrSync('skipTaskbar', val) }
     get skipTaskbar() { return this.getAttrSync('skipTaskbar') }
@@ -402,6 +398,18 @@ class BrowserWindow extends SK_Module_Root {
 
     set opacity(val) { this.setAttrSync('opacity', val) }
     get opacity() { return this.getAttrSync('opacity') }
+    
+    set minWidth(val) { this.setAttrSync('minWidth', val) }
+    get minWidth() { return this.getAttrSync('minWidth') }
+    
+    set maxWidth(val) { this.setAttrSync('maxWidth', val) }
+    get maxWidth() { return this.getAttrSync('maxWidth') }
+    
+    set minHeight(val) { this.setAttrSync('minHeight', val) }
+    get minHeight() { return this.getAttrSync('minHeight') }
+    
+    set maxHeight(val) { this.setAttrSync('maxHeight', val) }
+    get maxHeight() { return this.getAttrSync('maxHeight') }
 
     set excludedFromShownWindowsMenu(val) {
 
@@ -638,9 +646,9 @@ class BrowserWindow extends SK_Module_Root {
 
     }
 
-    setAlwaysOnTop(flag, level, relativeLevel) { this.setAttrSync('setAlwaysOnTop', { flag: flag, level: level, relativeLevel: relativeLevel }) } //== [OK] ==//
+    setAlwaysOnTop(flag, level, relativeLevel) { this.setAttrSync('setAlwaysOnTop', { flag: flag, level: level, relativeLevel: relativeLevel }) } //[OK] win
 
-    isAlwaysOnTop() { return this.getAttrSync('alwaysOnTop') } //== [OK] ==//
+    isAlwaysOnTop() { return this.getAttrSync('alwaysOnTop') } //[OK] win
 
     moveAbove(mediaSourceId) {
 
@@ -650,7 +658,7 @@ class BrowserWindow extends SK_Module_Root {
 
     }
 
-    center() { this.setAttrSync('center', true) } //== [OK] ==//
+    center() { this.setAttrSync('center', true) } //[OK] win
 
     setPosition(x, y, animate) {
 

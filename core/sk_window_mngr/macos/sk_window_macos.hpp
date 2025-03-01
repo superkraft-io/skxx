@@ -14,11 +14,15 @@ public:
     #ifdef __OBJC__
         NSWindow* wndHandle;
         __strong SK_Window_MacOS_Delegate* wndDelegate;
+    
+        NSView* backgroundPanel;
         NSView* contentView;
+    
         NSVisualEffectView* vibrantView;
-        CALayer *maskLayer = [CALayer layer];
+        
     #endif
-    //NSView* webViewContainer = nullptr;
+    
+    bool maskCreated;
 
     SK_Window() {
         config.onChanged = [&](const std::string& key) {
@@ -45,7 +49,7 @@ public:
     void create() {
     #ifdef __OBJC__
             // Set the window frame
-            NSRect frame = NSMakeRect(int(config["x"]), int(config["y"]), int(config["width"]), int(config["height"]));
+            NSRect frame = NSMakeRect(0, 0, int(config["width"]), int(config["height"]));
 
             // Define the window style
             NSUInteger styleMask = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable;
@@ -66,15 +70,31 @@ public:
 
             // Create the content view
             contentView = [[NSView alloc] initWithFrame:frame];
+            [contentView setWantsLayer:YES];
+            contentView.layer.masksToBounds = YES;
             [wndHandle setContentView:contentView];
         
-            [contentView setWantsLayer:YES];
+        
+            backgroundPanel = [[NSView alloc] initWithFrame:frame];
+            [backgroundPanel setWantsLayer:YES];
+            contentView.layer.backgroundColor = [[NSColor clearColor] CGColor];
+            [backgroundPanel setTranslatesAutoresizingMaskIntoConstraints:YES];
+            [backgroundPanel setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
+            [backgroundPanel setAcceptsTouchEvents:NO];
+            [contentView addSubview:backgroundPanel];
         
         
-            /*vibrantView = [[NSVisualEffectView alloc] initWithFrame:[[wndHandle contentView] bounds]];
-            [vibrantView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
-            [contentView addSubview:vibrantView positioned:NSWindowBelow relativeTo:nil];*/
+            /*
+            vibrantView = [[NSVisualEffectView alloc] initWithFrame:[[wndHandle contentView] bounds]];
+            vibrantView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+            vibrantView.blendingMode = NSVisualEffectBlendingModeBehindWindow;
+            vibrantView.state = NSVisualEffectStateActive;
+            [contentView addSubview:vibrantView positioned:NSWindowBelow relativeTo:nil];
+             */
             
+        
+            NSPoint origin = NSMakePoint(config.data["x"], config.data["y"]);
+            [wndHandle setFrameOrigin:origin];
         
             // Make the window key and visible
             [wndHandle makeKeyAndOrderFront:nil];
@@ -107,6 +127,7 @@ public:
             [webViewContainer setFrame:[window contentRectForFrameRect:frame]];
         }*/
     }
+   
 
     void updateWindowByConfig() {
         #ifdef __OBJC__
@@ -114,22 +135,21 @@ public:
 
             if (checkNeedsUpdateAndReset("title")) [wndHandle setTitle: config["title"]];
         
-            if (checkNeedsUpdateAndReset("resizable")) {
-                NSUInteger styleMask = [wndHandle styleMask];
-                if (config["resizable"]) {
-                    styleMask |= NSWindowStyleMaskResizable;
-                } else {
-                    styleMask &= ~NSWindowStyleMaskResizable;
-                }
-                [wndHandle setStyleMask:styleMask];
-            }
-
             if (checkNeedsUpdateAndReset("alwaysOnTop")) {
-                [wndHandle setLevel:(config["alwaysOnTop"] ? NSStatusWindowLevel : NSNormalWindowLevel)];
+                //Incomplete
+                //[wndHandle setLevel:(config["alwaysOnTop"] ? NSStatusWindowLevel : NSNormalWindowLevel)];
+            }
+        
+            if (checkNeedsUpdateAndReset("movable")) {
+                [wndHandle setMovable: config["movable"]];
+            }
+        
+            if (checkNeedsUpdateAndReset("resizable")) {
+                setStyle(NSWindowStyleMaskResizable, config["resizable"]);
             }
             
             if (checkNeedsUpdateAndReset("maximizable")) {
-                BOOL maximizable = config["maximizable"];
+                bool maximizable = config["maximizable"];
                 [[wndHandle standardWindowButton:NSWindowZoomButton] setEnabled:maximizable];
             }
 
@@ -138,6 +158,10 @@ public:
                 [[wndHandle standardWindowButton:NSWindowMiniaturizeButton] setEnabled:minimizable];
             }
         
+            if (checkNeedsUpdateAndReset("closable")) {
+                bool closable = config["closable"];
+                [[wndHandle standardWindowButton:NSWindowCloseButton] setEnabled:closable];
+            }
         
             if (checkNeedsUpdateAndReset("transparent")) {
                 bool transparent = config["transparent"];
@@ -145,25 +169,30 @@ public:
                 if (transparent){
                     [wndHandle setBackgroundColor: [NSColor clearColor]];
                     [wndHandle setOpaque: NO];
+                    
+                    contentView.layer.backgroundColor = [[NSColor clearColor] CGColor];
                 } else {
                     [wndHandle setBackgroundColor: [NSColor windowBackgroundColor]];
                     [wndHandle setOpaque: YES];
+                    
+                    contentView.layer.backgroundColor = [[NSColor windowBackgroundColor] CGColor];
                 }
             }
         
             if (checkNeedsUpdateAndReset("backgroundColor")) {
                 backgroundColor = config.data["backgroundColor"];
-                [contentView.layer setBackgroundColor:backgroundColor];
+                [backgroundPanel.layer setBackgroundColor:backgroundColor];
             }
         
             
             if (checkNeedsUpdateAndReset("focusable")) {
+                //incomplete
                 bool focusable = config["focusable"];
-                if (focusable) {
+                /*if (focusable) {
                     [wndHandle setIgnoresMouseEvents:NO];
                 } else {
                     [wndHandle setIgnoresMouseEvents:YES];
-                }
+                }*/
             }
 
             if (checkNeedsUpdateAndReset("skipTaskbar")) {
@@ -178,50 +207,117 @@ public:
         
             if (checkNeedsUpdateAndReset("frame")) {
                 bool hasFrame = config["frame"];
-                NSUInteger styleMask = [wndHandle styleMask];
+                
+                setStyle(NSWindowStyleMaskTitled, config["frame"]);
+                
                 if (hasFrame) {
-                    styleMask |= NSWindowStyleMaskTitled;
-                } else {
-                    [wndHandle setBackgroundColor: [NSColor clearColor]];
-                    [wndHandle setOpaque: NO];
+                    [wndHandle setOpaque:!config["transparent"]];
                     
-                    styleMask &= ~NSWindowStyleMaskTitled;
-                    UpdateWindowMask(false);
-                }
-                [wndHandle setStyleMask:styleMask];
-            }
-
-            if (checkNeedsUpdateAndReset("thickFrame")) {
-                bool thickFrame = config["thickFrame"];
-                NSUInteger styleMask = [wndHandle styleMask];
-                if (thickFrame) {
-                    styleMask |= NSWindowStyleMaskResizable;
+                    [wndHandle setMovableByWindowBackground:NO];
+                    [wndHandle setTitlebarAppearsTransparent:NO];
+                    [wndHandle setTitleVisibility:NSWindowTitleVisible];
+                    [wndHandle setShowsToolbarButton:YES];
+                    
+                    [wndHandle setStyleMask: NSTitledWindowMask | NSFullSizeContentViewWindowMask];
+                    
+                    setStyle(NSResizableWindowMask, config["resizable"]);
+                    
+                    if (config["closable"])    [[wndHandle standardWindowButton:NSWindowCloseButton] setHidden:NO];
+                    if (config["minimizable"]) [[wndHandle standardWindowButton:NSWindowMiniaturizeButton] setHidden:NO];
+                    if (config["maximizable"]) [[wndHandle standardWindowButton:NSWindowZoomButton] setHidden:NO];
                 } else {
-                    styleMask &= ~NSWindowStyleMaskResizable;
-                }
-                [wndHandle setStyleMask:styleMask];
-            }
+                    [wndHandle setOpaque:NO];
+                    [wndHandle setStyleMask:NSResizableWindowMask | NSTitledWindowMask | NSFullSizeContentViewWindowMask];
+                    [wndHandle setMovableByWindowBackground:YES];
+                    [wndHandle setTitlebarAppearsTransparent:YES];
+                    [wndHandle setTitleVisibility:NSWindowTitleHidden];
+                    [wndHandle setShowsToolbarButton:NO];
 
+                    // Hide standard window buttons
+                    [[wndHandle standardWindowButton:NSWindowFullScreenButton] setHidden:YES];
+                    [[wndHandle standardWindowButton:NSWindowMiniaturizeButton] setHidden:YES];
+                    [[wndHandle standardWindowButton:NSWindowCloseButton] setHidden:YES];
+                    [[wndHandle standardWindowButton:NSWindowZoomButton] setHidden:YES];
+                }
+            }
+        
             if (checkNeedsUpdateAndReset("opacity")) {
-                [wndHandle setAlphaValue:config["opacity"]];
+                [wndHandle setAlphaValue: config["opacity"]];
             }
 
-            if (checkNeedsUpdateAndReset("closable")) {
-                bool closable = config["closable"];
-                [[wndHandle standardWindowButton:NSWindowCloseButton] setEnabled:closable];
+        
+        
+            if (checkNeedsUpdateAndReset("minWidth") || checkNeedsUpdateAndReset("minHeight")) {
+                [wndHandle setContentMinSize:NSMakeSize(config["minWidth"], config["minHeight"])];
             }
-
-           
             
-  
+            if (checkNeedsUpdateAndReset("maxWidth") || checkNeedsUpdateAndReset("maxHeight")) {
+                int mW = config["maxWidth"];
+                int mH = config["maxHeight"];
+                NSSize size = NSMakeSize((mW == -1 ? CGFLOAT_MAX : mW), (mH == -1 ? CGFLOAT_MAX : mH));
+                [wndHandle setContentMaxSize:size];
+            }
+           
+        
+            if (checkNeedsUpdateAndReset("width") || checkNeedsUpdateAndReset("height")) {
+                int w = config.data["width"];
+                int h = config.data["height"];
+                
+                NSRect frame = [wndHandle frame];
+                frame.size.width = w;
+                frame.size.height = h;
+                [wndHandle setFrame:frame display:YES animate:NO];
+                [wndHandle setContentSize:NSMakeSize(frame.size.width, frame.size.height)];
+            }
+        
+        
+            if (!isMaximized()) {
+                if (checkNeedsUpdateAndReset("center") && config.data["center"] == true) {
+                    NSRect wndRect = [wndHandle frame];
 
-            if (checkNeedsUpdateAndReset("show")) {
-                if (config["show"]) {
-                    [wndHandle makeKeyAndOrderFront:nil];
-                } else {
-                    [wndHandle orderOut:nil];
+                    float wndWidth  = wndRect.size.width;
+                    float wndHeight = wndRect.size.height;
+
+                    if (config.data["minWidth"] > 0 && wndWidth > config.data["minWidth"]) wndWidth = config.data["minWidth"];
+                    if (config.data["minHeight"] > 0 && wndHeight > config.data["minHeight"]) wndHeight = config.data["minHeight"];
+
+                    if (config.data["maxWidth"] > 0 && wndWidth > config.data["maxWidth"]) wndWidth = config.data["maxWidth"];
+                    if (config.data["maxHeight"] > 0 && wndHeight > config.data["maxHeight"]) wndHeight = config.data["maxHeight"];
+
+                    float scale = config["scale"];
+                    wndWidth *= scale;
+                    wndHeight *= scale;
+
+                    NSScreen* screen = [wndHandle screen];
+                    NSRect screenRect = [screen visibleFrame];
+                    int posx = screenRect.size.width / 2 - wndWidth / 2;
+                    int posy = screenRect.size.height / 2 - wndHeight / 2;
+
+                    config.data["x"] = posx;
+                    config.data["y"] = posy;
+                }
+
+                bool needsReposition = false;
+                bool needsResize = false;
+                if (checkNeedsUpdateAndReset("x") || checkNeedsUpdateAndReset("y")) needsReposition = true;
+                if (checkNeedsUpdateAndReset("width") || checkNeedsUpdateAndReset("width")) needsResize = true;
+                
+                if (needsReposition || needsResize) {
+                    NSPoint origin = NSMakePoint(config.data["x"], config.data["y"]);
+                    [wndHandle setFrameOrigin:origin];
+                }
+
+                if (checkNeedsUpdateAndReset("show")) {
+                    //Working upon window creation, but not after
+                    if (config["show"]) {
+                        [wndHandle makeKeyAndOrderFront:nil];
+                    } else {
+                        [wndHandle orderOut:nil];
+                    }
                 }
             }
+
+            
 
             if (checkNeedsUpdateAndReset("fullscreen")) {
                 setFullscreen(config["fullscreen"]);
@@ -244,45 +340,30 @@ public:
     
     #ifdef __OBJC__
     
-    bool HasStyleMask(NSUInteger flag) const {
-      return [wndHandle styleMask] & flag;
+    void setStyle(NSUInteger style, bool activate) {
+        NSUInteger styleMask = [wndHandle styleMask];
+        
+        if (activate) styleMask |= style;
+        else styleMask &= ~style;
+        
+        [wndHandle setStyleMask:styleMask];
     }
     
-    void UpdateWindowMask(bool fullscreen) {
-        float osVersion = SK_Number(SK_Machine::staticInfo["version"]);
-        
-        CGFloat radius = 0.0f;
-        if (!fullscreen){
-            radius = (osVersion >= 11.f ? 9.0f : 5.0f); //pre-Big Sur radius = 5.0f
-            
-            float roundness = config["roundness"];
-            if (roundness > -1){
-                radius = roundness;
-            }
-        }
+    bool hasStyle(NSUInteger flag) const {
+        return [wndHandle styleMask] & flag;
+    }
     
+    bool isMinimized() { return [wndHandle isMiniaturized]; }
     
-        NSSize maskRect = contentView.frame.size;
-        NSImage* mask = [NSImage imageWithSize:maskRect
-                                          flipped:NO
-                                   drawingHandler:^BOOL(NSRect rect) {
-                                     NSBezierPath* path = [NSBezierPath
-                                         bezierPathWithRoundedRect:rect
-                                                           xRadius:radius
-                                                           yRadius:radius];
-                                     [[NSColor blackColor] set];
-                                     [path fill];
-                                     return YES;
-                                   }];
+    bool isMaximized() {
+        NSRect windowFrame = [wndHandle frame];
 
-        [mask setCapInsets:NSEdgeInsetsMake(radius, radius, radius, radius)];
-        [mask setResizingMode:NSImageResizingModeStretch];
-        
-        maskLayer.contents = mask;
-        maskLayer.frame = contentView.bounds;
-        contentView.layer.mask = maskLayer;
+        NSScreen* screen = [wndHandle screen];
+        if (!screen) return false;
+        NSRect screenVisibleFrame = [screen visibleFrame];
+
+        return NSEqualRects(windowFrame, screenVisibleFrame);
     }
-    
     
     
     #endif

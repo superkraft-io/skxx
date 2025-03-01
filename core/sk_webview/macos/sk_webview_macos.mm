@@ -97,7 +97,6 @@ void SK_WebView::create() {
     SK_WebView_URLSchemeHandler* urlHandler = [[SK_WebView_URLSchemeHandler alloc] init];
     messageHandler.webView = this;
     [config setURLSchemeHandler:urlHandler forURLScheme: @"sk"];
-    [config setURLSchemeHandler:urlHandler forURLScheme: @"juce"];
 
     [config.userContentController  addUserScript:[[WKUserScript alloc] initWithSource:
                                  @"function __SK_IPC_Send(opt) { webkit.messageHandlers.SK_IPC_Handler.postMessage(opt); }"
