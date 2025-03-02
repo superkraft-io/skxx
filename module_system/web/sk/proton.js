@@ -116,7 +116,7 @@ class BrowserWindow extends SK_Module_Root {
         this.defOpt = {
             //SK Added features
             "oldStyle": false, //[OK] win       Windows exclusive
-            "roundness": -1.0, //Sghould dictates the roundness of a the window, but isn't. Why? because it must use a mask, and redrawing the mask during window resize is too inefficient.
+            "roundness": -1.0, //Should dictates the roundness of a the window, but isn't. Why? because it must use a mask, and redrawing the mask during window resize is too inefficient.
 
             //ElectronJS compatible features
             "title": "My SK++ ProtonJS Window", //[OK] win, macos
@@ -142,8 +142,8 @@ class BrowserWindow extends SK_Module_Root {
             "alwaysOnTop": false,   //[OK] win
             "skipTaskbar": false,   //[OK] win
             "kiosk": false,         //[OK] win
-            "fullscreenable": true, //[OK] win
-            "fullscreen": false,    //[OK] win
+            "fullscreenable": true, //[OK] win, macos
+            "fullscreen": false,    //[OK] win, macos
 
             "thickFrame": true,     //[OK] win      Windows exclusive 
 
@@ -261,98 +261,15 @@ class BrowserWindow extends SK_Module_Root {
 
     }
 
-    get webContents() {
-        return;
-    }
-
-    get ids() {
-        return;
-    }
-
-    get tabbingIdentifier() {
-        return;
-    }
-
-
-    set autoHideMenuBar(val) {
-
-    }
-
-    get autoHideMenuBar() {
-        return;
-    }
-
-
-    set simpleFullScreen(val) {
-
-    }
-    get simpleFullScreen() {
-        return;
-    }
+    
 
 
     set fullscreen(val) { this.setAttrSync('fullscreen', val) }
     get fullscreen() { return this.getAttrSync('fullscreen') }
 
 
-
     set focusable(val) { this.setAttrSync('focusable', val) }
     get focusable() { return this.getAttrSync('focusable') }
-
-
-    set visibleOnAllWorkspaces(val) {
-
-    }
-
-    get visibleOnAllWorkspaces() {
-        if (sk_api.staticInfo.machine.os == "win") return false //always returns false on windows
-
-        //macos result here
-
-        return;
-    }
-
-
-    set shadow(val) {
-
-    }
-    get shadow() {
-        return;
-    }
-
-
-    set menuBarVisible(val) {
-
-    }
-
-    get menuBarVisible() {
-        return;
-    }
-
-
-    set kiosk(val) {
-
-    }
-    get kiosk() {
-        return;
-    }
-
-
-    set documentEdited(val) {
-
-    }
-    get documentEdited() {
-        return;
-    }
-
-
-    set representedFilenames(val) {
-
-    }
-
-    get representedFilenames() {
-        return;
-    }
 
 
     set title(val) { this.setAttrSync('title', val) }
@@ -410,6 +327,93 @@ class BrowserWindow extends SK_Module_Root {
     
     set maxHeight(val) { this.setAttrSync('maxHeight', val) }
     get maxHeight() { return this.getAttrSync('maxHeight') }
+
+    get webContents() {
+        return;
+    }
+
+    get ids() {
+        return;
+    }
+
+    get tabbingIdentifier() {
+        return;
+    }
+
+
+    set autoHideMenuBar(val) {
+
+    }
+
+    get autoHideMenuBar() {
+        return;
+    }
+
+
+    set simpleFullScreen(val) {
+
+    }
+    get simpleFullScreen() {
+        return;
+    }
+
+    
+    set visibleOnAllWorkspaces(val) {
+
+    }
+
+    get visibleOnAllWorkspaces() {
+        if (sk_api.staticInfo.machine.os == "win") return false //always returns false on windows
+
+        //macos result here
+
+        return;
+    }
+
+
+    set shadow(val) {
+
+    }
+    get shadow() {
+        return;
+    }
+
+
+    set menuBarVisible(val) {
+
+    }
+
+    get menuBarVisible() {
+        return;
+    }
+
+
+    set kiosk(val) {
+
+    }
+    get kiosk() {
+        return;
+    }
+
+
+    set documentEdited(val) {
+
+    }
+    get documentEdited() {
+        return;
+    }
+
+
+    set representedFilenames(val) {
+
+    }
+
+    get representedFilenames() {
+        return;
+    }
+
+
+   
 
     set excludedFromShownWindowsMenu(val) {
 

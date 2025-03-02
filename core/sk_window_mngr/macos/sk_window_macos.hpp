@@ -22,7 +22,7 @@ public:
         
     #endif
     
-    bool maskCreated;
+    bool isFullscreened;
 
     SK_Window() {
         config.onChanged = [&](const std::string& key) {
@@ -133,8 +133,10 @@ public:
         #ifdef __OBJC__
             if (!wndHandle) return;
 
-            if (checkNeedsUpdateAndReset("title")) [wndHandle setTitle: config["title"]];
+            
         
+            if (checkNeedsUpdateAndReset("title")) [wndHandle setTitle: config["title"]];
+            
             if (checkNeedsUpdateAndReset("alwaysOnTop")) {
                 //Incomplete
                 //[wndHandle setLevel:(config["alwaysOnTop"] ? NSStatusWindowLevel : NSNormalWindowLevel)];
@@ -149,17 +151,18 @@ public:
             }
             
             if (checkNeedsUpdateAndReset("maximizable")) {
-                bool maximizable = config["maximizable"];
-                [[wndHandle standardWindowButton:NSWindowZoomButton] setEnabled:maximizable];
+                updateZoomButton();
             }
 
             if (checkNeedsUpdateAndReset("minimizable")) {
-                BOOL minimizable = config["minimizable"];
+                bool minimizable = config["minimizable"];
+                setStyle(NSWindowStyleMaskMiniaturizable, minimizable);
                 [[wndHandle standardWindowButton:NSWindowMiniaturizeButton] setEnabled:minimizable];
             }
         
             if (checkNeedsUpdateAndReset("closable")) {
                 bool closable = config["closable"];
+                setStyle(NSWindowStyleMaskClosable, closable);
                 [[wndHandle standardWindowButton:NSWindowCloseButton] setEnabled:closable];
             }
         
@@ -204,40 +207,59 @@ public:
                 }
             }
         
-        
             if (checkNeedsUpdateAndReset("frame")) {
                 bool hasFrame = config["frame"];
                 
                 setStyle(NSWindowStyleMaskTitled, config["frame"]);
                 
-                if (hasFrame) {
-                    [wndHandle setOpaque:!config["transparent"]];
-                    
-                    [wndHandle setMovableByWindowBackground:NO];
-                    [wndHandle setTitlebarAppearsTransparent:NO];
-                    [wndHandle setTitleVisibility:NSWindowTitleVisible];
-                    [wndHandle setShowsToolbarButton:YES];
-                    
-                    [wndHandle setStyleMask: NSTitledWindowMask | NSFullSizeContentViewWindowMask];
-                    
-                    setStyle(NSResizableWindowMask, config["resizable"]);
-                    
-                    if (config["closable"])    [[wndHandle standardWindowButton:NSWindowCloseButton] setHidden:NO];
-                    if (config["minimizable"]) [[wndHandle standardWindowButton:NSWindowMiniaturizeButton] setHidden:NO];
-                    if (config["maximizable"]) [[wndHandle standardWindowButton:NSWindowZoomButton] setHidden:NO];
-                } else {
-                    [wndHandle setOpaque:NO];
-                    [wndHandle setStyleMask:NSResizableWindowMask | NSTitledWindowMask | NSFullSizeContentViewWindowMask];
-                    [wndHandle setMovableByWindowBackground:YES];
-                    [wndHandle setTitlebarAppearsTransparent:YES];
-                    [wndHandle setTitleVisibility:NSWindowTitleHidden];
-                    [wndHandle setShowsToolbarButton:NO];
-
-                    // Hide standard window buttons
-                    [[wndHandle standardWindowButton:NSWindowFullScreenButton] setHidden:YES];
-                    [[wndHandle standardWindowButton:NSWindowMiniaturizeButton] setHidden:YES];
-                    [[wndHandle standardWindowButton:NSWindowCloseButton] setHidden:YES];
-                    [[wndHandle standardWindowButton:NSWindowZoomButton] setHidden:YES];
+                if (!hasStyle(NSWindowStyleMaskFullScreen)){
+                    if (hasFrame) {
+                        [wndHandle setOpaque:!config["transparent"]];
+                        
+                        [wndHandle setMovableByWindowBackground:NO];
+                        [wndHandle setTitlebarAppearsTransparent:NO];
+                        [wndHandle setTitleVisibility:NSWindowTitleVisible];
+                        [wndHandle setShowsToolbarButton:YES];
+                        
+                        [wndHandle setStyleMask: NSTitledWindowMask | NSFullSizeContentViewWindowMask];
+                        
+                        setStyle(NSResizableWindowMask, config["resizable"]);
+                        
+                        
+                        bool isClosable = config["closable"];
+                        [[wndHandle standardWindowButton:NSWindowCloseButton] setHidden:false];
+                        [[wndHandle standardWindowButton:NSWindowCloseButton] setEnabled:isClosable];
+                        setStyle(NSWindowStyleMaskClosable, isClosable);
+                        
+                        
+                        bool isMinimizable = config["minimizable"];
+                        [[wndHandle standardWindowButton:NSWindowMiniaturizeButton] setHidden:false];
+                        [[wndHandle standardWindowButton:NSWindowMiniaturizeButton] setEnabled:isMinimizable];
+                        setStyle(NSWindowStyleMaskMiniaturizable, isMinimizable);
+                        
+                        
+                        bool isMaximizable = config["maximizable"];
+                        [[wndHandle standardWindowButton:NSWindowFullScreenButton] setHidden:false];
+                        [[wndHandle standardWindowButton:NSWindowFullScreenButton] setEnabled:isMaximizable];
+                        
+                        [[wndHandle standardWindowButton:NSWindowZoomButton] setHidden:false];
+                        [[wndHandle standardWindowButton:NSWindowZoomButton] setEnabled:isMaximizable];
+                        
+                        updateZoomButton();
+                    } else {
+                        [wndHandle setOpaque:NO];
+                        [wndHandle setStyleMask:NSResizableWindowMask | NSTitledWindowMask | NSFullSizeContentViewWindowMask];
+                        [wndHandle setMovableByWindowBackground:YES];
+                        [wndHandle setTitlebarAppearsTransparent:YES];
+                        [wndHandle setTitleVisibility:NSWindowTitleHidden];
+                        [wndHandle setShowsToolbarButton:NO];
+                        
+                        // Hide standard window buttons
+                        [[wndHandle standardWindowButton:NSWindowFullScreenButton] setHidden:YES];
+                        [[wndHandle standardWindowButton:NSWindowMiniaturizeButton] setHidden:YES];
+                        [[wndHandle standardWindowButton:NSWindowCloseButton] setHidden:YES];
+                        [[wndHandle standardWindowButton:NSWindowZoomButton] setHidden:YES];
+                    }
                 }
             }
         
@@ -322,20 +344,11 @@ public:
             if (checkNeedsUpdateAndReset("fullscreen")) {
                 setFullscreen(config["fullscreen"]);
             }
+         
         #endif
     }
 
-    void setFullscreen(bool activate) {
-        if (!config["fullscreenable"]) return;
-
-        #ifdef __OBJC__
-            if (activate) {
-                //[wndHandle toggleFullScreen:nil];
-            } else {
-                //[wndHandle toggleFullScreen:nil];
-            }
-        #endif
-    }
+    
 
     
     #ifdef __OBJC__
@@ -349,7 +362,7 @@ public:
         [wndHandle setStyleMask:styleMask];
     }
     
-    bool hasStyle(NSUInteger flag) const {
+    bool hasStyle(NSUInteger flag) {
         return [wndHandle styleMask] & flag;
     }
     
@@ -366,6 +379,41 @@ public:
     }
     
     
+    
+    void setFullscreen(bool fullscreen) {
+        if (isFullscreened == fullscreen) return;
+        
+        
+        isFullscreened = !isFullscreened;
+        config.data["fullScreen"] = isFullscreened;
+        
+        if (config.data["fullscreenable"] ){
+            [wndHandle toggleFullScreen:nil];
+        } else {
+            [wndHandle zoom:nil];
+        }
+    }
+    
+    
+    void updateZoomButton(){
+        bool isMaximizable = config.data["maximizable"];
+        bool isFullscreenable = config.data["fullscreenable"];
+        
+        if (!isMaximizable && !isFullscreenable){
+            [[wndHandle standardWindowButton:NSWindowZoomButton] setEnabled: false];
+            return;
+        }
+        
+        [[wndHandle standardWindowButton:NSWindowZoomButton] setEnabled: true];
+        
+        if (isFullscreenable){
+            [wndHandle setCollectionBehavior:[wndHandle collectionBehavior] | NSWindowCollectionBehaviorFullScreenPrimary];
+            [wndHandle setCollectionBehavior:[wndHandle collectionBehavior] & (~NSWindowCollectionBehaviorFullScreenAuxiliary)];
+        } else {
+            [wndHandle setCollectionBehavior:[wndHandle collectionBehavior] | NSWindowCollectionBehaviorFullScreenAuxiliary];
+            [wndHandle setCollectionBehavior:[wndHandle collectionBehavior] & (~NSWindowCollectionBehaviorFullScreenPrimary)];
+        }
+    }
     #endif
 private:
     bool needsWindowUpdate() {
