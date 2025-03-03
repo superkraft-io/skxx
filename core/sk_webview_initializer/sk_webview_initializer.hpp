@@ -29,6 +29,10 @@ public:
     }
 
     void inject_core(){
+        #if defined(SK_OS_windows)
+            injectData("window.__SK_IPC_Send  = data => { window.chrome.webview.postMessage(data) }");
+        #endif
+        
         injectData("window.sk_api = {}");
 
         SK_String payload = generateFromFiles(std::vector<SK_String>{
@@ -65,7 +69,7 @@ public:
     void injectData(const SK_String& data){
         #if defined(SK_OS_windows)
             webview->AddScriptToExecuteOnDocumentCreated(
-                data,
+                data.toWString().c_str(),
                 Callback<ICoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler>(
                     [this](HRESULT error, PCWSTR id) -> HRESULT {
                         return S_OK;

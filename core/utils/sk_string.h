@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../sk_include_core.h"
+#include "../sk_include_core.h"
 
 #if defined(SK_OS_apple)
     #ifdef __OBJC__
@@ -70,12 +70,11 @@ public:
             return *this;
         }
 
-        operator LPCWSTR() const {
+        std::wstring toWString() const {
             int size = MultiByteToWideChar(CP_UTF8, 0, data.c_str(), -1, nullptr, 0);
             std::wstring wstr(size, 0);
             MultiByteToWideChar(CP_UTF8, 0, data.c_str(), -1, &wstr[0], size);
-
-            return wstr.c_str();
+            return wstr;
         }
     #endif
     

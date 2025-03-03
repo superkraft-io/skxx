@@ -33,7 +33,7 @@ public:
     std::string ipcTestStr = "{\"L1_obj1\":{\"L2_str1\":\"another string - level 2 object of obj 1 at level 1 - but this is much longer\",\"L2_obj1\":{\"string\":\"another string but not as long\"}},\"L1_obj2\":{\"L2_str1ng\":\"short string\",\"L2_str1\":\"this is a very long string - this is a very long string - this is a very long string - this is a very long string - this is a very long string\",\"L2_obj1\":{\"string\":\"kind of a lonigsh string - this is a story all about how mynlife got flipped upside down\"}}}";
 
 
-
+    /*
     nlohmann::json yyjsonToNlohmann(yyjson_mut_val* node) {
         if (!node) return nullptr;
 
@@ -84,6 +84,7 @@ public:
         // If the node type is unknown, return nullptr
         return nullptr;
     }
+    */
 
 
 
@@ -210,6 +211,7 @@ public:
                                     else if (str.data.substr(1, 6) == "yyjson") {
                                         msg_id = str.data.substr(7, str.data.size() - 7);
                                         
+                                        /*
                                         yyjson_doc* read_doc = yyjson_read(ipcTestStr.c_str(), ipcTestStr.size(), 0);
                                         if (!read_doc) { throw std::runtime_error("Failed to parse JSON string"); }
 
@@ -219,6 +221,7 @@ public:
                                        
 
                                         yyjson_doc_free(read_doc);
+                                        */
                                     }
                                     else if (str.data.substr(1, 8) == "nlohmann") {
                                         msg_id = str.data.substr(9, str.data.size() - 9);
@@ -282,11 +285,11 @@ public:
 
 		if (webview == nullptr) return;
 
-		webview->Navigate(url);
+		webview->Navigate(url.toWString().c_str());
 	};
 
     void evaluateScript_mainThread(wil::com_ptr<ICoreWebView2> webview, const SK_String& src, SK_WebView_EvaluationComplete_Callback cb) {
-        LPCWSTR str = src;
+        LPCWSTR str = src.toWString().c_str();
         webview->ExecuteScript(str, Callback<ICoreWebView2ExecuteScriptCompletedHandler>([cb](HRESULT err, LPCWSTR resAsWStr) -> HRESULT {
             if (cb != nullptr && resAsWStr) {
                 SK_String resAsStr = resAsWStr;

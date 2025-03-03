@@ -18,7 +18,7 @@ public:
             
     nlohmann::json call(const nlohmann::json& opt) {
        // Initialize the curl library
-       curl_global_init(CURL_GLOBAL_DEFAULT);
+      /* curl_global_init(CURL_GLOBAL_DEFAULT);
 
        // Create a curl handle
        CURL* handle = curl_easy_init();
@@ -108,7 +108,9 @@ public:
            curl_global_cleanup();
            return { {"error", "failed web request"}};
        }
-       
+       */
+
+        return {};
     };
 };
 

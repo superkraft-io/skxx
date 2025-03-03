@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../sk_common.hpp"
-#include "sk_string/sk_string.h"
+#include "sk_string.h"
 
 
 #if defined(SK_OS_windows)
