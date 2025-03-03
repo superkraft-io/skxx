@@ -107,9 +107,13 @@ class NatoveImage {
         return 0
     }
 }
+
 class BrowserWindow extends SK_Module_Root {
     constructor(opt = {}) {
         super('proton')
+
+        this.events = {}
+
 
         this.__moduleInstanceConfig.__uuid = sk_api.__protonjs.next_window_uuid()
 
@@ -238,9 +242,51 @@ class BrowserWindow extends SK_Module_Root {
         }
 
         this.defOpt = { ...this.defOpt, ...opt }
-            
+        
+        
+        sk_api.ipc.onMessage = res => {
+            this.handleMessage(res)
+        }
+        
         this.sync('construct', { constructorOpts: this.defOpt })
     }
+    
+    handleMessage(res){
+        if (res.action === 'windowEvent'){
+            handleWindowEvent(res.eventID)
+        }
+    }
+    
+
+
+
+    handleWindowEvent(eventID, data){
+        this.emit(eventID, data)
+    }
+
+
+    emit(eventID, data) {
+        var listener = this.events[eventID]
+        if (!listener) return
+
+        alert(eventID + ': ' + JSON.stringify(data))
+            
+        listener(data)
+    }
+
+    on(eventID, cb) {
+        var listener = this.events[eventID]
+        if (!listener) this.events[eventID] = cb
+    }
+
+    off(eventID, callback) {
+        delete this.events[eventID]
+    }
+
+
+
+
+
 
     setAttrSync(attribute, value) { this.sync('configure', { attribute: attribute, value: value }) }
     getAttrSync(attribute, value) { return this.sync('configure', { attribute: attribute, read: true }) }

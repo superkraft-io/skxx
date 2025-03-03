@@ -415,6 +415,14 @@ public:
             [wndHandle setCollectionBehavior:[wndHandle collectionBehavior] & (~NSWindowCollectionBehaviorFullScreenPrimary)];
         }
     }
+    
+    void emitEvent(const SK_String& eventID, const nlohmann::json& data){
+        ipc.message({
+            {"action", "windowEvent"},
+            {"eventID", eventID},
+            {"data", data}
+        });
+    }
     #endif
 private:
     bool needsWindowUpdate() {

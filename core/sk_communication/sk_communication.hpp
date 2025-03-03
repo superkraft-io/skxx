@@ -35,7 +35,7 @@ public:
 					webPayload = static_cast<ICoreWebView2WebResourceRequestedEventArgs*>(config->objPtr);
 					packet = SK_Communication_Packet::packetFromWebRequest(webPayload, config->sender);
 				#elif defined(SK_OS_apple)
-                    packet = static_cast<SK_Communication_Packet*>(appleCB(nullptr));
+                    packet = static_cast<SK_Communication_Packet*>(resHandler(nullptr));
 				#elif defined(SK_OS_linux) || defined(SK_OS_android)
 					//for linux and android
 				#endif
@@ -52,7 +52,7 @@ public:
                     #if defined(SK_OS_windows)
                         webPayload->put_Response(response->getForWeb().get());
                     #elif defined(SK_OS_apple)
-                        appleCB(packet);
+                    resHandler(packet);
                     #elif defined(SK_OS_linux) || defined(SK_OS_android)
                         //for linux and android
                     #endif
