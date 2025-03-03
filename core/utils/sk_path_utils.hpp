@@ -4,10 +4,6 @@
 #include "../sk_common.hpp"
 #include "../utils/sk_string/sk_string.h"
 
-#include <dirent.h>
-#include <iostream>
-
-
 BEGIN_SK_NAMESPACE
 
 static class SK_Path_Utils {
@@ -25,33 +21,7 @@ public:
         }
     }
     
-    static void readDirectory(const std::string& path) {
-        DIR* dir = opendir(path.c_str());
-        if (dir) {
-            struct dirent* entry;
-            while ((entry = readdir(dir)) != nullptr) {
-                std::cout << entry->d_name << std::endl;
-            }
-            closedir(dir);
-        } else {
-            std::cerr << "Failed to open directory: " << path << std::endl;
-        }
-    }
-    
 	static std::string pathBackwardsUntilNeighbour(const std::string& neighbourName){
-        std::filesystem::path testPath = "/Users";
-        
-        readDirectory(testPath);
-        
-        try {
-            for (const auto& entry : std::filesystem::directory_iterator(testPath)) {
-                std::cout << "Found: " << entry.path() << "\n";
-            }
-        } catch (const std::exception& e) {
-            std::cerr << "Error: " << e.what() << "\n";
-        }
-        
-        
 		std::filesystem::path currentPath(getAbsoluteFilePath());
 
 		bool stop = false;
@@ -72,7 +42,7 @@ public:
                     }
                 }
             } catch (const std::exception& e) {
-                std::cerr << "Error accessing directory: " << e.what() << "\n";
+                std::cerr << "Error accessing directory: " << e.what() << ". If you're on MacOS using Xcode, it may be due to sandboxin in your Xcode project settings. Remove sandboxing.\n";
                 int x = 0;
             }
 		}

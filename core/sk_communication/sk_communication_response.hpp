@@ -299,9 +299,7 @@ public:
         return false;
     }
 
-    bool error(int code = 404, const SK_String& msg = "Not Found") {
-
-
+    void error(int code = 404, const SK_String& msg = "Not Found") {
         if (errorType == "json") {
             JSON({
                 {"error", code},

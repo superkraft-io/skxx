@@ -40,14 +40,11 @@
 #include "sk_var.hpp"
 
 
-#if defined(SK_OS_windows)
-    #include <vld.h>
-#endif
-
 #include "json.hpp"
 
 
 #if defined(SK_OS_windows)
+	#include <vld.h>
 	#include <windows.h>
 	#include <windowsx.h>
 
@@ -93,12 +90,8 @@
 	#include <cstdlib>
 	#include <sys/stat.h>
 
-	#if defined (SK_OS_macos) || defined (SK_OS_ios)
+	#if defined (SK_OS_apple)
 		#include <TargetConditionals.h>
-        
-     
-        
-    
 	#elif defined (SK_OS_linux) || defined (SK_OS_android)
 		// Linux specific includes
 	#endif

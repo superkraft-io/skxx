@@ -11,8 +11,11 @@ public:
 	SK_Window_Mngr* wndMngr;
 
 	SK_Communication() {
-		int x = 0;
-        SK_Global::onCommunicationRequest = [&](SK_Communication_Config* config, SK_Communication_handlePacket_Response_IPC_CB ipcResponseCallback, SK_Communication_AppleCB_CB appleCB) {
+#if defined(SK_OS_windows)
+		SK_Global::onCommunicationRequest = [&](SK_Communication_Config* config, SK_Communication_handlePacket_Response_IPC_CB ipcResponseCallback, void* resHandler) {
+#elif defined(SK_OS_apple)
+		SK_Global::onCommunicationRequest = [&](SK_Communication_Config* config, SK_Communication_handlePacket_Response_IPC_CB ipcResponseCallback, SK_Communication_AppleCB_CB resHandler) {
+#endif
 			SK_Communication_Packet* packet;
 			
 			#if defined(SK_OS_windows)
@@ -40,7 +43,7 @@ public:
 
 			packet->response()->config = config;
 
-            packet->response()->onHandleResponse = [packet, ipcResponseCallback, webPayload, appleCB](SK_Communication_Response* response) {
+            packet->response()->onHandleResponse = [packet, ipcResponseCallback, webPayload, resHandler](SK_Communication_Response* response) {
                 
                 if (response->type == SK_Communication_Packet_Type::sk_comm_pt_ipc) {
                     ipcResponseCallback(response->getForIPC());

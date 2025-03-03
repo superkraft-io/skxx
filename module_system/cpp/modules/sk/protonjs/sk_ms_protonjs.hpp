@@ -28,7 +28,7 @@ public:
             if (wnd->config.data.contains("mainWindow") && wnd->config.data["mainWindow"] == true) {
 
                 #if defined(SK_OS_windows)
-                    wnd->hwnd = SK_Global::mainWindowHWND;
+                    wnd->wndHandle = SK_Global::mainWindowHandle;
                 #elif defined(SK_OS_macos)
                 #endif
                 

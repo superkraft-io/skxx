@@ -11,6 +11,7 @@ BEGIN_SK_NAMESPACE
 
 class SK_Window : public SK_Window_Root {
 public:
+
     #ifdef __OBJC__
         NSWindow* wndHandle;
         __strong SK_Window_MacOS_Delegate* wndDelegate;

@@ -39,7 +39,7 @@ class SK_Window : public SK_Window_Root {
 public:
 
     SK_String windowClassName = "SK_Window";
-    HWND hwnd = NULL;
+    HWND wndHandle = NULL;
     WNDCLASS wc{};
     HINSTANCE hInstance;
 
@@ -196,10 +196,10 @@ public:
 
             case WM_ACTIVATE: {
                 if (wParam == WA_INACTIVE) {
-                    SK_Common::onWindowFocusChanged(wnd, false);
+                    SK_Global::onWindowFocusChanged(wnd, false);
                 }
                 else {
-                    SK_Common::onWindowFocusChanged(wnd, true);
+                    SK_Global::onWindowFocusChanged(wnd, true);
                 }
 
                 return 0;
@@ -379,7 +379,7 @@ public:
         
 
         // Create the window
-        hwnd = CreateWindowEx(
+        wndHandle = CreateWindowEx(
             0,
 
             windowClassName.c_str(),
@@ -398,16 +398,16 @@ public:
             this
         );
 
-        if (!hwnd) {
+        if (!wndHandle) {
             std::string errorMessage = "Failed to create window. Error: " + GetLastErrorAsString();
             MessageBox(nullptr, errorMessage.c_str(), "Error", MB_OK | MB_ICONERROR);
         }
 
         updateWindowByConfig();
-        UpdateWindow(hwnd);
+        UpdateWindow(wndHandle);
         createWebView();
 
-        SK_Common::updateWebViewHWNDListForView(windowClassName);
+        SK_Global::updateWebViewHWNDListForView(windowClassName);
 
 
     };
@@ -415,16 +415,16 @@ public:
 	void createWebView() {
         webview.callResize = [&]() { update(); };
 
-        webview.parentHwnd = &hwnd;
+        webview.parentHwnd = &wndHandle;
         webview.parentClassName = windowClassName;
         webview.create();
-        SK_Common::updateWebViewHWNDListForView(windowClassName);
+        SK_Global::updateWebViewHWNDListForView(windowClassName);
     };
 
 
     void update(bool manuallyResizing = false) {
         RECT clientRect;
-        GetClientRect(hwnd, &clientRect);
+        GetClientRect(wndHandle, &clientRect);
 
         int x = 0;
         int y = 0;
@@ -439,7 +439,7 @@ public:
             webview.updateStyling(rect);
             webview.controller->SetBoundsAndZoomFactor(rect, 1);
             //webview.environment->TriggerRepaint();
-            RedrawWindow(hwnd, &rect, nullptr, RDW_UPDATENOW | RDW_INVALIDATE | RDW_ALLCHILDREN);
+            RedrawWindow(wndHandle, &rect, nullptr, RDW_UPDATENOW | RDW_INVALIDATE | RDW_ALLCHILDREN);
         }
     }
 
@@ -457,7 +457,7 @@ public:
             ::GetSystemMetrics(SM_CYFRAME) + ::GetSystemMetrics(SM_CXPADDEDBORDER)
         };
         RECT window;
-        if (!::GetWindowRect(hwnd, &window)) {
+        if (!::GetWindowRect(wndHandle, &window)) {
             return HTNOWHERE;
         }
 
@@ -496,23 +496,23 @@ public:
 
     void setStyle(DWORD style, bool activate, bool isEXStyle = false) {
         if (!isEXStyle) {
-            if (activate) SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) | style);
-            else SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) & ~style);
+            if (activate) SetWindowLong(wndHandle, GWL_STYLE, GetWindowLong(wndHandle, GWL_STYLE) | style);
+            else SetWindowLong(wndHandle, GWL_STYLE, GetWindowLong(wndHandle, GWL_STYLE) & ~style);
         }
         else {
-            if (activate) SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | style);
-            else SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) & ~style);
+            if (activate) SetWindowLong(wndHandle, GWL_EXSTYLE, GetWindowLong(wndHandle, GWL_EXSTYLE) | style);
+            else SetWindowLong(wndHandle, GWL_EXSTYLE, GetWindowLong(wndHandle, GWL_EXSTYLE) & ~style);
         }
     }
 
     void updateWindowByConfig() {
-        if (hwnd == NULL) return;
+        if (wndHandle == NULL) return;
 
        
-        float scale = getHWNDScale(hwnd);
+        float scale = getHWNDScale(wndHandle);
 
         //movable: handled in WindowProc
-        if (checkNeedsUpdateAndReset("title")) SetWindowText(hwnd, SK_String(config.data["title"]).c_str());
+        if (checkNeedsUpdateAndReset("title")) SetWindowText(wndHandle, SK_String(config.data["title"]).c_str());
         if (checkNeedsUpdateAndReset("resizable")) setStyle(WS_SIZEBOX, config.data["resizable"]);
         if (checkNeedsUpdateAndReset("alwaysOnTop")) setAlwaysOnTop(config.data["alwaysOnTop"]);
         if (checkNeedsUpdateAndReset("maximizable")) setStyle(WS_MAXIMIZEBOX, config.data["maximizable"]);
@@ -533,15 +533,15 @@ public:
             SK_Number clamped = SK_Number::clamp(config.data["opacity"], .0, 1.);
             SK_Number opacity = SK_Number::map(clamped, .0, 1., .0, 255.);
             BYTE opacityInt = opacity;
-            SetLayeredWindowAttributes(hwnd, 0, opacity, LWA_ALPHA);
+            SetLayeredWindowAttributes(wndHandle, 0, opacity, LWA_ALPHA);
         }
 
         if (checkNeedsUpdateAndReset("closable")) {
-            HMENU hMenu = GetSystemMenu(hwnd, FALSE);
+            HMENU hMenu = GetSystemMenu(wndHandle, FALSE);
             if (hMenu) {
                 if (config.data["closable"] == false) EnableMenuItem(hMenu, SC_CLOSE, MF_BYCOMMAND | MF_GRAYED);
                 else EnableMenuItem(hMenu, SC_CLOSE, MF_BYCOMMAND | MF_ENABLED);
-                DrawMenuBar(hwnd);
+                DrawMenuBar(wndHandle);
             }
         }
 
@@ -551,7 +551,7 @@ public:
 
         if (checkNeedsUpdateAndReset("oldStyle")) {
             int policy = (config.data["oldStyle"] ? DWMNCRP_DISABLED : DWMNCRP_ENABLED);
-            DwmSetWindowAttribute(hwnd, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
+            DwmSetWindowAttribute(wndHandle, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
         }
 
 
@@ -561,7 +561,7 @@ public:
         if (!isMaximized) {
             if (checkNeedsUpdateAndReset("center") && config.data["center"] == true) {
                 RECT  wndRect;
-                GetWindowRect(hwnd, &wndRect);
+                GetWindowRect(wndHandle, &wndRect);
 
                 int wndWidth  = (wndRect.right - wndRect.left);
                 int wndHeight = (wndRect.bottom - wndRect.top);
@@ -587,18 +587,18 @@ public:
             if (checkNeedsUpdateAndReset("x") || checkNeedsUpdateAndReset("y")) needsReposition = true;
             if (checkNeedsUpdateAndReset("width") || checkNeedsUpdateAndReset("width")) needsResize = true;
             
-            if (needsReposition || needsResize) SetWindowPos(hwnd, NULL, config.data["x"], config.data["y"], config["width"] * scale, config["height"] * scale, SWP_NOZORDER);
+            if (needsReposition || needsResize) SetWindowPos(wndHandle, NULL, config.data["x"], config.data["y"], config["width"] * scale, config["height"] * scale, SWP_NOZORDER);
 
             if (needsResize) update();
 
-            if (checkNeedsUpdateAndReset("show")) ShowWindow(hwnd, (config["show"] ? SW_SHOW : SW_HIDE));
+            if (checkNeedsUpdateAndReset("show")) ShowWindow(wndHandle, (config["show"] ? SW_SHOW : SW_HIDE));
 
             
         }
 
         if (needsWindowUpdate()) {
-            InvalidateRect(hwnd, NULL, TRUE);
-            UpdateWindow(hwnd);
+            InvalidateRect(wndHandle, NULL, TRUE);
+            UpdateWindow(wndHandle);
         }
 
         if (checkNeedsUpdateAndReset("fullscreen")) setFullscreen(config.data["fullscreen"]);
@@ -607,8 +607,8 @@ public:
 
     void setAlwaysOnTop(bool flag, int level = 0, int relativeLevel = 0) {
         config.data["alwaysOnTop"] = flag;
-        if (flag == true) SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-        else SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+        if (flag == true) SetWindowPos(wndHandle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+        else SetWindowPos(wndHandle, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
     }
 
     void setFullscreen(bool activate) {
@@ -625,13 +625,13 @@ public:
         }
 
 
-        DWORD style = GetWindowLong(hwnd, GWL_STYLE);
+        DWORD style = GetWindowLong(wndHandle, GWL_STYLE);
         MONITORINFO monitor_info = { sizeof(monitor_info) };
         RECT wndRect;
-        if (GetWindowRect(hwnd, &wndRect) && GetMonitorInfo(MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY), &monitor_info)) {
-            SetWindowLong(hwnd, GWL_STYLE, style & ~WS_OVERLAPPEDWINDOW);
+        if (GetWindowRect(wndHandle, &wndRect) && GetMonitorInfo(MonitorFromWindow(wndHandle, MONITOR_DEFAULTTOPRIMARY), &monitor_info)) {
+            SetWindowLong(wndHandle, GWL_STYLE, style & ~WS_OVERLAPPEDWINDOW);
             SetWindowPos(
-                hwnd, HWND_TOP, monitor_info.rcMonitor.left, monitor_info.rcMonitor.top,
+                wndHandle, HWND_TOP, monitor_info.rcMonitor.left, monitor_info.rcMonitor.top,
                 monitor_info.rcMonitor.right - monitor_info.rcMonitor.left,
                 monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top,
                 SWP_NOOWNERZORDER | SWP_FRAMECHANGED);

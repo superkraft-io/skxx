@@ -179,7 +179,7 @@ public:
 
 			SK_Window* window = it->second;
 
-			HWND child = GetWindow(window->hwnd, GW_CHILD);
+			HWND child = GetWindow(window->wndHandle, GW_CHILD);
 
 			while (child) {
 				char className[256];

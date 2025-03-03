@@ -38,7 +38,46 @@ public:
        }
    }
 
-    
+    #if defined(SK_OS_windows)
+        SK_String(const std::wstring& wstr) {
+            int size = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, nullptr, 0, nullptr, nullptr);
+            std::string str(size, 0);
+            WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, &str[0], size, nullptr, nullptr);
+            data = str;
+        }
+
+        SK_String& operator=(const std::wstring& other) {
+            SK_String wstr(other);
+            data = wstr;
+            return *this;
+        }
+        
+
+
+
+        SK_String(const LPCWSTR& lpcwstr) {
+            int size = WideCharToMultiByte(CP_UTF8, 0, lpcwstr, -1, nullptr, 0, nullptr, nullptr);
+            std::string str(size, 0);
+            WideCharToMultiByte(CP_UTF8, 0, lpcwstr, -1, &str[0], size, nullptr, nullptr);
+            str.pop_back();
+
+            data = str;
+        }
+
+        SK_String& operator=(const LPCWSTR& other) {
+            SK_String lpcwstr(other);
+            data = lpcwstr;
+            return *this;
+        }
+
+        operator LPCWSTR() const {
+            int size = MultiByteToWideChar(CP_UTF8, 0, data.c_str(), -1, nullptr, 0);
+            std::wstring wstr(size, 0);
+            MultiByteToWideChar(CP_UTF8, 0, data.c_str(), -1, &wstr[0], size);
+
+            return wstr.c_str();
+        }
+    #endif
     
     #if defined(SK_OS_apple)
         #ifdef __OBJC__
