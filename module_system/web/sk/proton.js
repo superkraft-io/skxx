@@ -252,18 +252,11 @@ class BrowserWindow extends SK_Module_Root {
     }
     
     handleMessage(res){
-        if (res.action === 'windowEvent'){
-            handleWindowEvent(res.eventID)
+        if (res.action === 'windowEvent' && res.windowID === res.windowID){
+            this.emit(res.eventID, res.data)
         }
     }
     
-
-
-
-    handleWindowEvent(eventID, data){
-        this.emit(eventID, data)
-    }
-
 
     emit(eventID, data) {
         var listener = this.events[eventID]

@@ -32,6 +32,8 @@ public:
            data = std::to_string(json.get<double>());
        } else if (json.is_boolean()) {
            data = json.get<bool>() ? "true" : "false";
+       } else if (json.is_object()) {
+           data = json.dump(4);
        } else {
            // Handle other types or throw an exception
            throw std::invalid_argument("Unsupported JSON type for SK_String");

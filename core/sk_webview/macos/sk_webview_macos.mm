@@ -15,6 +15,7 @@ using namespace SK;
 
 @interface SK_WebView_URLSchemeHandler : NSObject <WKURLSchemeHandler, WKScriptMessageHandler>
 @property (nonatomic, assign) SK_WebView* webView;
+@property (nonatomic, assign) SK_String tag;
 @end
 
 @implementation SK_WebView_URLSchemeHandler
@@ -24,7 +25,8 @@ using namespace SK;
     SK_String url = urlSchemeTask.request.URL.absoluteString;
     SK_String path = urlSchemeTask.request.URL.path;
     
-    SK_Communication_Config config{"sk.sb", SK_Communication_Packet_Type::sk_comm_pt_web, (__bridge void *)urlSchemeTask.request};
+    
+    SK_Communication_Config config{self.tag, SK_Communication_Packet_Type::sk_comm_pt_web, (__bridge void *)urlSchemeTask.request};
     SK_Global::onCommunicationRequest(&config, NULL, [&](SK_Communication_Packet* packet) {
         if (packet == nullptr){
             return SK_Communication_Packet::packetFromWebRequest(urlSchemeTask.request, config.sender);
@@ -56,7 +58,7 @@ using namespace SK;
         
         bool isSK_IPC_call = json.contains("isSK_IPC_call");
         if (isSK_IPC_call) {
-            SK_Communication_Config config{"sk.sb", SK_Communication_Packet_Type::sk_comm_pt_ipc, &json};
+            SK_Communication_Config config{self.tag, SK_Communication_Packet_Type::sk_comm_pt_ipc, &json};
             
             SK_Global::onCommunicationRequest(&config, [&](const SK_String& ipcResponseData) {
                 SK_String data = "sk_api.ipc.handleIncoming(" + ipcResponseData + ")";
@@ -90,12 +92,14 @@ void SK_WebView::create() {
     
     // Create an instance of the Objective-C message handler
     SK_WebView_URLSchemeHandler* messageHandler = [[SK_WebView_URLSchemeHandler alloc] init];
+    messageHandler.tag = tag;
     messageHandler.webView = this;
     [config.userContentController addScriptMessageHandler:messageHandler name:@"SK_IPC_Handler"];
 
     // Register a custom URL scheme handler (for request interception)
     SK_WebView_URLSchemeHandler* urlHandler = [[SK_WebView_URLSchemeHandler alloc] init];
-    messageHandler.webView = this;
+    urlHandler.tag = tag;
+    urlHandler.webView = this;
     [config setURLSchemeHandler:urlHandler forURLScheme: @"sk"];
 
     [config.userContentController  addUserScript:[[WKUserScript alloc] initWithSource:

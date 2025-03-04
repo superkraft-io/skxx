@@ -9,48 +9,33 @@
 
 #pragma mark - NSWindowDelegate Methods
 
-- (BOOL)windowShouldClose:(NSWindow *)sender {
-    self.skWindow->emitEvent("close",{});
-    return YES; // Allow the window to close
+
+
+- (void)windowDidChangeOcclusionState:(NSNotification*)notification {
+    NSWindow* window = notification.object;
+
+    // check occlusion binary flag
+    if (window.occlusionState & NSWindowOcclusionStateVisible) {
+        if (self.skWindow->parent && self.skWindow->isMinimized()) {
+            self.skWindow->restore();
+        }
+
+        self.skWindow->emitEvent("show",{});
+    } else {
+        self.skWindow->emitEvent("hide",{});
+    }
 }
 
-- (void)windowWillClose:(NSNotification *)notification {
-    self.skWindow->emitEvent("closed",{});
-}
-
-- (void)windowDidBecomeKey:(NSNotification *)notification {
+- (void)windowDidBecomeMain:(NSNotification*)notification {
     self.skWindow->emitEvent("focus",{});
 }
 
-- (void)windowDidResignKey:(NSNotification *)notification {
+- (void)windowDidResignMain:(NSNotification*)notification {
     self.skWindow->emitEvent("blur",{});
 }
 
-- (void)windowDidMiniaturize:(NSNotification *)notification {
-    self.skWindow->emitEvent("minimize",{});
-}
-
-- (void)windowDidDeminiaturize:(NSNotification *)notification {
-    self.skWindow->emitEvent("restore",{});
-}
-
-- (void)windowDidEnterFullScreen:(NSNotification *)notification {
-    self.skWindow->emitEvent("enter-full-screen",{});
-}
-
-- (void)windowDidExitFullScreen:(NSNotification *)notification {
-    self.skWindow->emitEvent("leave-full-screen",{});
-}
-
-- (void)windowDidMove:(NSNotification *)notification {
-    self.skWindow->emitEvent("moved",{});
-}
-
-- (void)windowDidResize:(NSNotification *)notification {
-    self.skWindow->emitEvent("resized",{});
-}
-
 - (NSSize)windowWillResize:(NSWindow *)sender toSize:(NSSize)frameSize {
+    self.skWindow->emitEvent("will-resize",{});
     /*self.skWindow->emitEvent("will-resize",{
         {"newBounds", {
             {"x", frameSize.x},
@@ -65,16 +50,67 @@
     return frameSize; // Return the new size
 }
 
-- (void)windowWillStartLiveResize:(NSNotification *)notification {
-    self.skWindow->emitEvent("resize",{});
-}
-
-- (void)windowDidEndLiveResize:(NSNotification *)notification {
+- (void)windowDidResize:(NSNotification *)notification {
     self.skWindow->emitEvent("resized",{});
 }
 
 - (void)windowWillMove:(NSNotification *)notification {
-    self.skWindow->emitEvent("will-move ",{});
+    self.skWindow->emitEvent("will-move",{});
+}
+
+- (BOOL)windowShouldClose:(NSWindow *)sender {
+    self.skWindow->emitEvent("close",{});
+    return YES; // Allow the window to close
+}
+
+- (void)windowWillClose:(NSNotification *)notification {
+    self.skWindow->emitEvent("closed",{});
+}
+
+- (void)windowDidResignKey:(NSNotification *)notification {
+    self.skWindow->emitEvent("blur",{});
+}
+
+- (void)windowDidBecomeKey:(NSNotification *)notification {
+    self.skWindow->emitEvent("focus",{});
+}
+
+- (void)windowDidMiniaturize:(NSNotification *)notification {
+    self.skWindow->emitEvent("minimize",{});
+}
+
+- (void)windowDidDeminiaturize:(NSNotification *)notification {
+    self.skWindow->emitEvent("restore",{});
+}
+
+- (void)windowDidEnterFullScreen:(NSNotification *)notification {
+    self.skWindow->emitEvent("enter-full-screen",{});
+}
+
+- (void)windowDidMove:(NSNotification *)notification {
+    self.skWindow->emitEvent("moved",{});
+}
+
+- (void)windowWillStartLiveResize:(NSNotification *)notification {
+    self.skWindow->emitEvent("resize",{});
+}
+
+- (BOOL)windowShouldZoom:(NSWindow*)window toFrame:(NSRect)newFrame {
+    self.skWindow->isZooming = true;
+  return YES;
+}
+
+- (void)windowDidEndLiveResize:(NSNotification *)notification {
+    self.skWindow->emitEvent("resized",{});
+    
+    if (self.skWindow->isZooming) {
+        if (self.skWindow->isMaximized())
+            self.skWindow->emitEvent("maximize",{});
+        else
+            self.skWindow->emitEvent("unmaximize",{});
+        
+      self.skWindow->isZooming = false;
+    }
 }
 
 - (void)windowDidChangeScreen:(NSNotification *)notification {
@@ -83,10 +119,6 @@
 
 - (void)windowDidChangeBackingProperties:(NSNotification *)notification {
     self.skWindow->emitEvent("backing-properties-change",{});
-}
-
-- (void)windowDidChangeOcclusionState:(NSNotification *)notification {
-    self.skWindow->emitEvent("occlusion-state-change",{});
 }
 
 - (void)windowDidChangeScreenProfile:(NSNotification *)notification {
@@ -103,14 +135,6 @@
 
 - (void)windowWillBeginSheet:(NSNotification *)notification {
     self.skWindow->emitEvent("sheet-begin",{});
-}
-
-- (void)windowDidUpdate:(NSNotification *)notification {
-    self.skWindow->emitEvent("update",{});
-}
-
-- (void)windowDidExpose:(NSNotification *)notification {
-    self.skWindow->emitEvent("expose",{});
 }
 
 - (void)windowDidChangeScreenParameters:(NSNotification *)notification {
@@ -131,6 +155,27 @@
 
 - (void)windowDidChangeFirstResponder:(NSNotification *)notification {
     self.skWindow->emitEvent("first-responder-change",{});
+}
+
+- (void)windowWillEnterFullScreen:(NSNotification*)notification {
+    self.skWindow->emitEvent("will-enter-full-screen",{});
+}
+
+- (void)windowDidFailToEnterFullScreen:(NSWindow*)window {
+    self.skWindow->emitEvent("failed-enter-full-screen",{});
+}
+
+- (void)windowWillExitFullScreen:(NSNotification*)notification {
+    self.skWindow->emitEvent("will-leave-full-screen",{});
+}
+
+- (void)windowDidExitFullScreen:(NSNotification *)notification {
+    self.skWindow->emitEvent("leave-full-screen",{});
+}
+
+
+- (IBAction)newWindowForTab:(id)sender {
+    self.skWindow->emitEvent("new-window-for-tab",{});
 }
 
 @end

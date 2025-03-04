@@ -24,7 +24,8 @@ public:
     #endif
     
     bool isFullscreened;
-
+    bool isZooming;
+    
     SK_Window() {
         config.onChanged = [&](const std::string& key) {
             config_updateTracker[key] = true;
@@ -112,6 +113,7 @@ public:
     void createWebView() {
         #ifdef __OBJC__
             //webview.callResize = [&]() { update(); };
+            webview.tag = tag;
             webview.parentHandle = wndHandle;
             webview.create();
             //SK_Common::updateWebViewHWNDListForView(windowClassName);
@@ -367,7 +369,6 @@ public:
         return [wndHandle styleMask] & flag;
     }
     
-    bool isMinimized() { return [wndHandle isMiniaturized]; }
     
     bool isMaximized() {
         NSRect windowFrame = [wndHandle frame];
@@ -417,12 +418,32 @@ public:
     }
     
     void emitEvent(const SK_String& eventID, const nlohmann::json& data){
-        ipc.message({
+        nlohmann::json payload {
             {"action", "windowEvent"},
+            {"windowID", tag},
             {"eventID", eventID},
             {"data", data}
-        });
+        };
+        
+        SK_Global::sb_ipc->message(payload);
+        ipc.message(payload);
     }
+    
+    
+    
+    
+    void minimize(){
+        [wndHandle miniaturize:nil];
+    }
+    
+    void restore(){
+        [wndHandle deminiaturize:nil];
+    }
+    
+    bool isMinimized() const {
+        return [wndHandle isMiniaturized];
+    }
+    
     #endif
 private:
     bool needsWindowUpdate() {

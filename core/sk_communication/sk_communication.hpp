@@ -74,7 +74,11 @@ public:
 			return;
 		}
 
-		if (packet->target == "sk:sb") {
+        if (packet->target == "sk:viewIPC") {
+            SK_IPC_v2* sender = getIPCForID(packet->sender);
+            sender->handle_IPC_Msg(packet);
+        }
+		else if (packet->target == "sk:sb") {
 			if (packet->info.contains("event_id")) {
 				handleForwarding(packet);
 			}
@@ -169,6 +173,7 @@ public:
 		}
 	}
 
+        
 	void handleForwarding(SK_Communication_Packet* packet) {
 		SK_IPC_v2* sender = getIPCForID(packet->sender);
 		SK_IPC_v2* target = getIPCForID(packet->target);

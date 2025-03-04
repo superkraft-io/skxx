@@ -29,8 +29,7 @@ public:
             return;
         }
 
-        //wnd->webview.showDevTools();
-
+        wnd->webview.showDevTools();
         
         respondWith.JSON_OK();
     };

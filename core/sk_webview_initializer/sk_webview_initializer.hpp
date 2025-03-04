@@ -39,7 +39,9 @@ public:
             SK_Path_Utils::paths["global_js_core"] + "/sk_ipc.js",
             SK_Path_Utils::paths["module_system"] + "/sk_module.js",
             SK_Path_Utils::paths["module_system"] + "/sk_module_root.js",
-            SK_Path_Utils::paths["global_js_core"] + "/sk_global_js_core.js"
+            SK_Path_Utils::paths["global_js_core"] + "/sk_global_js_core.js",
+            
+            SK_Path_Utils::paths["global_js_core"] + "/sk_debug_mode.js"
         })
         .replace("<sk_base_url>", SK_Base_URL)
         .replace("'<sk_static_info>'", getStaticInfo())
@@ -87,7 +89,7 @@ public:
         #endif
         
     }
-
+    
     nlohmann::json getAppInfo() {
         SK_String appName = SK_Global::sk_config["product_info"]["name"];
         SK_String appVersion = SK_Global::sk_config["product_info"]["version"];

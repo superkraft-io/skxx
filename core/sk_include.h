@@ -11,6 +11,8 @@
 #include "utils/sk_color.hpp"
 #include "utils/sk_machine.hpp"
 
+#include "utils/sk_logger.h"
+
 #include "sk_json/sk_json_callback.hpp"
 
 //#include "../libs/general/yyjson/yyjson.h"
@@ -41,7 +43,9 @@
 
 #if defined(SK_OS_macos)
     #ifdef __OBJC__
+        #import <Foundation/Foundation.h>
         #import <AppKit/AppKit.h>
+        #import <WebKit/WebKit.h>
     #endif
 #endif
 

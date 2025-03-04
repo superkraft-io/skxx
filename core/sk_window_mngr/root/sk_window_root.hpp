@@ -14,6 +14,7 @@ BEGIN_SK_NAMESPACE
     //#include "../../sk_webview/macos/sk_webview_macos_v2.hpp" // Include full definition here
 #endif
 
+class SK_Window;
 
 class SK_Window_Root {
 public:
@@ -36,11 +37,12 @@ public:
 
 	SK_Point maxSizeFull {-1, -1};
 
+    SK_Window* parent;
     
     std::optional<int> zIndex = NULL;
 
 	bool resizing = false;
-	bool isMaximized = false;
+    bool isMaximized = false;
 	bool frameless_drag;
 	bool frameless_resize;
 

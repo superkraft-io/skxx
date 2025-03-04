@@ -64,8 +64,8 @@ class SK_IPC {
         })
     }
 
-    message(data) {
-        this.sendToBE("SK_IPC_Message", data, "message")
+    message(data, overridePacketInfo = {}) {
+        this.sendToBE("SK_IPC_Message", data, "message", overridePacketInfo)
     }
 
     on(event_id, cb, once) {

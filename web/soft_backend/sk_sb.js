@@ -19,7 +19,7 @@ var __start = async () => {
         var x = 0
     }
 
-    sk_api.setID('sk.sb')
+    sk_api.setID('sk:sb')
 
     var start_app = async () => {
         window.global = window

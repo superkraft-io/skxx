@@ -92,8 +92,6 @@ public:
         if (listener != NULL) return "always";
         if (listener_once != NULL) return "once";
 
-        int x = 0;
-
         return "";
     }
 
@@ -159,6 +157,27 @@ public:
 
     void handleMessage(SK_Communication_Packet* packet) {
         if (onMessage != NULL) onMessage(sender_id, packet);
+        
+        if (packet->data.contains("isSKDebugCall")){
+            handleSKDebugCall(packet->data);
+        }
+    }
+    
+    void handleSKDebugCall(const nlohmann::json& msg){
+        #if defined(SK_OS_windows)
+            //for windows
+        #elif defined(SK_OS_apple)
+            #ifdef __OBJC__
+                SK_String type = msg["type"];
+                SK_String data(msg["data"]);
+                data =  "[From " + sender_id + "] " + data;
+                NSString* _data = data;
+        
+                if (type == "log") SKLog(@"%@", _data);
+                else if (type == "warning") SKLogWarning(@"%@", _data);
+                else if (type == "error") SKLogError(@"%@", _data);
+            #endif
+        #endif
     }
 
     SK_String sendToFE(const SK_String& sender, const SK_String& target, const SK_String& event_id, nlohmann::json data, SK_String type, SK_IPC_v2_BackendCallback cb) {
