@@ -35,18 +35,59 @@
 }
 
 - (NSSize)windowWillResize:(NSWindow *)sender toSize:(NSSize)frameSize {
-    self.skWindow->emitEvent("will-resize",{});
-    /*self.skWindow->emitEvent("will-resize",{
-        {"newBounds", {
-            {"x", frameSize.x},
-            {"x", frameSize.x},
-            {"width", frameSize.width},
-            {"height", frameSize.height},
-        }},
+    NSPoint mouseLocation = [NSEvent mouseLocation]; // Get current mouse location in screen coordinates
+    NSRect windowFrame = sender.frame; // Get the window's frame
 
-        {"details", {}}
+    
+    SK::SK_String edge = "none";
+    
+    // Define corner regions (e.g., 20x20 pixels)
+    CGFloat cornerSize = 20.0;
+
+    // Check if the mouse is near a corner
+    BOOL isNearTopLeft = mouseLocation.x < NSMinX(windowFrame) + cornerSize && mouseLocation.y > NSMaxY(windowFrame) - cornerSize;
+    BOOL isNearTopRight = mouseLocation.x > NSMaxX(windowFrame) - cornerSize && mouseLocation.y > NSMaxY(windowFrame) - cornerSize;
+    BOOL isNearBottomLeft = mouseLocation.x < NSMinX(windowFrame) + cornerSize && mouseLocation.y < NSMinY(windowFrame) + cornerSize;
+    BOOL isNearBottomRight = mouseLocation.x > NSMaxX(windowFrame) - cornerSize && mouseLocation.y < NSMinY(windowFrame) + cornerSize;
+
+    // Determine the resizing edge or corner
+    if (isNearTopLeft) {
+        edge = "top-left";
+    } else if (isNearTopRight) {
+        edge = "top-right";
+    } else if (isNearBottomLeft) {
+        edge = "bottom-left";
+    } else if (isNearBottomRight) {
+        edge = "bottom-right";
+    } else {
+        // If not near a corner, check edges
+        CGFloat leftDistance = mouseLocation.x - NSMinX(windowFrame);
+        CGFloat rightDistance = NSMaxX(windowFrame) - mouseLocation.x;
+        CGFloat topDistance = NSMaxY(windowFrame) - mouseLocation.y;
+        CGFloat bottomDistance = mouseLocation.y - NSMinY(windowFrame);
+
+        if (leftDistance < rightDistance && leftDistance < topDistance && leftDistance < bottomDistance) {
+            edge = "left";
+        } else if (rightDistance < leftDistance && rightDistance < topDistance && rightDistance < bottomDistance) {
+            edge = "right";
+        } else if (topDistance < leftDistance && topDistance < rightDistance && topDistance < bottomDistance) {
+            edge = "top";
+        } else if (bottomDistance < leftDistance && bottomDistance < rightDistance && bottomDistance < topDistance) {
+            edge = "bottom";
+        } else {
+            edge = "unknown";
+        }
+    }
+
+    NSSize size = [[sender contentView] frame].size;
+    self.skWindow->emitEvent("will-resize",{
+        {"x", sender.frame.origin.x},
+        {"y", sender.frame.origin.y},
+        {"width", size.width},
+        {"height", size.height},
+        {"edge", edge},
     });
-     */
+    
     return frameSize; // Return the new size
 }
 
@@ -55,16 +96,41 @@
 }
 
 - (void)windowWillMove:(NSNotification *)notification {
-    self.skWindow->emitEvent("will-move",{});
+    NSWindow* window = notification.object;
+    NSSize size = [[window contentView] frame].size;
+    self.skWindow->emitEvent("will-move",{
+        {"x", window.frame.origin.x},
+        {"y", window.frame.origin.y},
+        {"width", size.width},
+        {"height", size.height}
+    });
+}
+
+- (void)windowDidMove:(NSNotification*)notification {
+    self.skWindow->emitEvent("move",{});
+    self.skWindow->emitEvent("moved",{});
 }
 
 - (BOOL)windowShouldClose:(NSWindow *)sender {
-    self.skWindow->emitEvent("close",{});
-    return YES; // Allow the window to close
+    SK::SK_Window* skWindow = self.skWindow;
+    
+    if (!self.skWindow->canClose){
+        self.skWindow->emitEvent("close",{}, [skWindow](nlohmann::json response){
+            bool isNull = response["returnValue"] == "<null>";
+            if (!isNull){
+                skWindow->canClose = true;
+                [skWindow->wndHandle close];
+            }
+        });
+    }
+    
+    return self.skWindow->canClose;
 }
 
 - (void)windowWillClose:(NSNotification *)notification {
+    if (!self.skWindow->canClose) return;
     self.skWindow->emitEvent("closed",{});
+    self.skWindow->canClose = false;
 }
 
 - (void)windowDidResignKey:(NSNotification *)notification {
@@ -87,17 +153,13 @@
     self.skWindow->emitEvent("enter-full-screen",{});
 }
 
-- (void)windowDidMove:(NSNotification *)notification {
-    self.skWindow->emitEvent("moved",{});
-}
-
 - (void)windowWillStartLiveResize:(NSNotification *)notification {
     self.skWindow->emitEvent("resize",{});
 }
 
 - (BOOL)windowShouldZoom:(NSWindow*)window toFrame:(NSRect)newFrame {
     self.skWindow->isZooming = true;
-  return YES;
+    return YES;
 }
 
 - (void)windowDidEndLiveResize:(NSNotification *)notification {
@@ -172,7 +234,6 @@
 - (void)windowDidExitFullScreen:(NSNotification *)notification {
     self.skWindow->emitEvent("leave-full-screen",{});
 }
-
 
 - (IBAction)newWindowForTab:(id)sender {
     self.skWindow->emitEvent("new-window-for-tab",{});

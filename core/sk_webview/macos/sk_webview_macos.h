@@ -7,6 +7,15 @@
     #ifdef __OBJC__
         #import <AppKit/AppKit.h>
         #import <WebKit/WebKit.h>
+
+        NS_ASSUME_NONNULL_BEGIN
+
+        @interface SK_Webview_MacOS_Delegate : NSObject <WKUIDelegate>
+            @property (nonatomic, weak) NSWindow* windowHandle; // Use 'weak' to avoid strong reference cycles
+        @end
+
+
+        NS_ASSUME_NONNULL_END
     #endif
 #endif
 
@@ -23,6 +32,7 @@ public:
         #ifdef __OBJC__
             NSWindow* parentHandle;
             WKWebView* webview;
+            __strong SK_Webview_MacOS_Delegate* webviewDelegate;
         #endif
     #endif
     

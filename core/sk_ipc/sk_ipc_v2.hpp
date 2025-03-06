@@ -6,6 +6,10 @@ BEGIN_SK_NAMESPACE
 
 using SK_IPC_v2_forwardCallback = std::function<void(SK_Communication_Packet* packet)>;
 
+using SK_IPC_v2_FrontendCallback = std::function<void(nlohmann::json data, SK_Communication_Packet* packet)>;
+using SK_IPC_v2_sendToFrontend_CB = std::function<void(const SK_String& target, const SK_String& data)>;
+using SK_IPC_v2_BackendCallback = std::function<void(const SK_String& target, SK_Communication_Packet* packet)>;
+
 class SK_IPC_v2_awaiter {
 public:
     SK_String id;
@@ -18,9 +22,6 @@ public:
     static inline long long msg_id = 0;
 
 
-    using SK_IPC_v2_FrontendCallback = std::function<void(nlohmann::json data, SK_Communication_Packet* packet)>;
-    using SK_IPC_v2_sendToFrontend_CB = std::function<void(const SK_String& target, const SK_String& data)>;
-    using SK_IPC_v2_BackendCallback = std::function<void(const SK_String& target, SK_Communication_Packet* packet)>;
 
     static inline SK_IPC_v2_sendToFrontend_CB onSendToFrontend;
     SK_IPC_v2_BackendCallback onMessage;

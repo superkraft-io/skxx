@@ -101,6 +101,14 @@ public:
             // Make the window key and visible
             [wndHandle makeKeyAndOrderFront:nil];
 
+            
+            // Monitor swipe and rotate gestures
+            NSEventMask eventMask = NSEventMaskSwipe | NSEventMaskRotate;
+            [NSEvent addLocalMonitorForEventsMatchingMask:eventMask handler:^NSEvent *(NSEvent *event) {
+                this->handleGestureEvent(event);
+                return event;
+            }];
+        
             updateWindowByConfig();
             
            
@@ -417,17 +425,7 @@ public:
         }
     }
     
-    void emitEvent(const SK_String& eventID, const nlohmann::json& data){
-        nlohmann::json payload {
-            {"action", "windowEvent"},
-            {"windowID", tag},
-            {"eventID", eventID},
-            {"data", data}
-        };
-        
-        SK_Global::sb_ipc->message(payload);
-        ipc.message(payload);
-    }
+    
     
     
     
@@ -443,6 +441,63 @@ public:
     bool isMinimized() const {
         return [wndHandle isMiniaturized];
     }
+    
+    
+    
+    
+    
+    void handleGestureEvent(NSEvent* event) {
+        switch (event.type) {
+            case NSEventTypeSwipe:
+                handleSwipeEvent(event);
+                break;
+            case NSEventTypeRotate:
+                handleRotateEvent(event);
+                break;
+            default:
+                //NSLog(@"Unhandled event type: %lu", (unsigned long)event.type);
+                break;
+        }
+    }
+
+    void handleSwipeEvent(NSEvent* event) {
+        CGFloat deltaX = event.deltaX;
+        CGFloat deltaY = event.deltaY;
+
+        
+        SK::SK_String direction = "none";
+        CGFloat delta = 0;
+        
+        if (deltaX > 0) {
+            direction = "left";
+            delta = deltaX;
+        } else if (deltaX < 0) {
+            direction = "right";
+            delta = deltaX;
+        }
+
+        if (deltaY > 0) {
+            direction = "down";
+            delta = deltaY;
+        } else if (deltaY < 0) {
+            direction = "up";
+            delta = deltaY;
+        }
+        
+        emitEvent("swipe",{
+            {"direction", direction},
+            {"delta", delta}
+        });
+    }
+
+    void handleRotateEvent(NSEvent* event) {
+        CGFloat rotation = event.rotation;
+        
+        emitEvent("rotate-gesture",{
+            {"rotation", rotation}
+        });
+    }
+
     
     #endif
 private:

@@ -70,6 +70,39 @@ using namespace SK;
 
 @end
 
+
+@implementation SK_Webview_MacOS_Delegate
+
+- (void)webView:(WKWebView *)webView runOpenPanelWithParameters:(WKOpenPanelParameters *)parameters initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(NSArray<NSURL *> * _Nullable))completionHandler {
+    // Ensure the window handle is valid
+    if (!self.windowHandle) {
+        NSLog(@"Error: windowHandle is nil.");
+        completionHandler(nil); // Handle the error by calling the completion handler with nil
+        return;
+    }
+
+    // Create an NSOpenPanel
+    NSOpenPanel* openPanel = [NSOpenPanel openPanel];
+
+    // Configure the NSOpenPanel based on the WKOpenPanelParameters
+    openPanel.allowsMultipleSelection = parameters.allowsMultipleSelection; // Allow multiple files if requested
+    openPanel.canChooseFiles = YES; // Always allow files
+    openPanel.canChooseDirectories = parameters.allowsDirectories; // Allow directories if requested
+
+    // Present the file dialog
+    [openPanel beginSheetModalForWindow:self.windowHandle completionHandler:^(NSInteger result) {
+        if (result == NSModalResponseOK) {
+            // Pass the selected file(s) to the completion handler
+            completionHandler(openPanel.URLs);
+        } else {
+            // User canceled the dialog
+            completionHandler(nil);
+        }
+    }];
+}
+
+@end
+
 NS_ASSUME_NONNULL_END
 
 BEGIN_SK_NAMESPACE
@@ -109,6 +142,11 @@ void SK_WebView::create() {
     
     // Create the WKWebView
     webview = [[WKWebView alloc] initWithFrame:frame configuration:config];
+    
+    webviewDelegate = [[SK_Webview_MacOS_Delegate alloc] init];
+    webviewDelegate.windowHandle = parentHandle;
+    [webview setUIDelegate:webviewDelegate];
+    
     webview.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
     [webview setValue:@NO forKey:@"drawsBackground"];
     

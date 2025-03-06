@@ -244,27 +244,33 @@ class BrowserWindow extends SK_Module_Root {
         this.defOpt = { ...this.defOpt, ...opt }
         
         
-        sk_api.ipc.onMessage = res => {
-            this.handleMessage(res)
-        }
+        sk_api.ipc.on('sk:proton.js::windowEvent::' + this.__moduleInstanceConfig.__uuid, (res, respondWith)=>{
+            this.emit(res, respondWith)
+        })
         
         this.sync('construct', { constructorOpts: this.defOpt })
     }
     
-    handleMessage(res){
-        if (res.action === 'windowEvent' && res.windowID === res.windowID){
-            this.emit(res.eventID, res.data)
+
+    emit(res, respondWith) {
+        var listenerCB = this.events[res.eventID]
+        if (!listenerCB) return
+
+        var opt = {...res.data, ...{}}
+
+        if (res.eventID === 'close'){
+            opt.returnValue = '<null>'
         }
-    }
-    
 
-    emit(eventID, data) {
-        var listener = this.events[eventID]
-        if (!listener) return
+        listenerCB(opt)
 
-        alert(eventID + ': ' + JSON.stringify(data))
-            
-        listener(data)
+        var responseObj = {}
+        if (opt.returnValue){
+            responseObj.returnValue = opt.returnValue
+            if (responseObj.returnValue != false && responseObj.returnValue != true) responseObj.returnValue = '<null>'
+        }
+        
+        respondWith({returnValue: responseObj.returnValue})
     }
 
     on(eventID, cb) {

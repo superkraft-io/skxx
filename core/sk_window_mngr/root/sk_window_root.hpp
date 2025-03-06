@@ -7,12 +7,7 @@
 BEGIN_SK_NAMESPACE
 
 
-#if defined(SK_OS_macos) || defined(SK_OS_ios)
-    //This forward declaration is needed for MacOS & iOS, or else SK_WebView is not recognizted
-    //This is due to that the compiler doesn't seem to recognize sk_webview_macos.hpp before sk_window_root.hpp
-    //class SK_WebView;
-    //#include "../../sk_webview/macos/sk_webview_macos_v2.hpp" // Include full definition here
-#endif
+using SK_Window_Root_windowEventMsg_CB = std::function<void(nlohmann::json data)>;
 
 class SK_Window;
 
@@ -41,10 +36,11 @@ public:
     
     std::optional<int> zIndex = NULL;
 
-	bool resizing = false;
-    bool isMaximized = false;
+	bool resizing;
+    bool isMaximized;
 	bool frameless_drag;
-	bool frameless_resize;
+    bool frameless_resize;
+    bool canClose;
 
 	SK_Color backgroundColor = "black";
 
@@ -84,6 +80,25 @@ public:
 		config_updateTracker[attribute] = false;
 		return needsUpdate;
 	}
+    
+    
+    
+    
+    void emitEvent(const SK_String& eventID, const nlohmann::json& data, SK_Window_Root_windowEventMsg_CB cb = NULL){
+        nlohmann::json payload {
+            {"action", "windowEvent"},
+            {"windowID", tag},
+            {"eventID", eventID},
+            {"data", data}
+        };
+        
+        SK_Global::sb_ipc->request("sk:viewIPC", "sk:sb", "sk:proton.js::windowEvent::" + tag, payload, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
+            
+            if (cb != NULL) cb(responsePacket->data);
+        });
+        
+        ipc.message(payload);
+    }
 private:
 
 };
