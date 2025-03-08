@@ -41,7 +41,7 @@ public:
     
     void create();
     void update();
-    void navigate(SK_String url);
+    void navigate(const SK_String& url);
     void evaluateScript_mainThread(void* _webview, const SK_String& src, SK_WebView_EvaluationComplete_Callback cb);
     void evaluateScript(const SK_String& src, SK_WebView_EvaluationComplete_Callback cb);
     void showDevTools();

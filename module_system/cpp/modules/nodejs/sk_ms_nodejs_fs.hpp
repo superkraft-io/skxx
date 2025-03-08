@@ -13,7 +13,7 @@ public:
         SK_String path = payload["path"];
 
         //If path starts with sk_vfs/, we route the operation to the VFS module
-        if (path.substring(0, 7) == "sk_vfs/") {
+        if (path.indexOf("sk_vfs/") > -1) {
             vfs->handleOperation(operation, payload, respondWith);
             return;
         }

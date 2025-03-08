@@ -1,6 +1,6 @@
 console.log('sk_debug_mode.js')
 
-
+/*
 window.sk_console = window.console
 
 
@@ -17,20 +17,25 @@ window.console = {
         }, {target: 'sk:viewIPC'})
     },
     
-    log: obj => {
-        sk_console.log(obj)
-        console.__printToBackend('log', obj)
+    log: (...args)=>{
+        sk_console.log(...args)
+        console.__printToBackend('log', JSON.stringify(args))
     },
         
-    warning: obj => {
-        sk_console.warning(obj)
-        console.__printToBackend('warning', obj)
+    warning: (...args)=>{
+        sk_console.warning(...args)
+        console.__printToBackend('warning', JSON.stringify(args))
     },
         
-    error: obj => {
-        sk_console.error(obj)
-        console.__printToBackend('error', obj)
+    error: (...args)=>{
+        sk_console.error(...args)
+        console.__printToBackend('error', JSON.stringify(args))
+    },
+       
+    info: (...args)=>{
+        sk_console.info(...args)
+        console.__printToBackend('info', JSON.stringify(args))
     }
 }
-
+*/
 if (sk_api.staticInfo.application.mode === 'debug') console.printToBackend = true

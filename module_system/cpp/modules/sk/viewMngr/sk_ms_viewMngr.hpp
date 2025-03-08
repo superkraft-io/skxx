@@ -31,7 +31,7 @@ public:
 
             wnd->configWithInfo(payload);
            
-            wnd->webview.navigate("sk://sk.view." + viewID + "/");
+            wnd->webview.navigate("/sk:view/" + viewID);
             
             if (wnd->config.data.contains("mainWindow") && wnd->config.data["mainWindow"] == true) {
 

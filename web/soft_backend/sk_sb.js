@@ -1,4 +1,6 @@
-/*function sleep(delay = 1000) {
+console.log('sk_sb.js')
+
+function sleep(delay = 1000) {
     return new Promise(resolve => {
         setTimeout(() => {
             resolve()
@@ -8,8 +10,7 @@
 
 
 var __start = async () => {
-    await sleep(10000)
-*/
+
 
     
     window.global = window
@@ -20,6 +21,9 @@ var __start = async () => {
     }
 
     sk_api.setID('sk:sb')
+   
+
+    
 
     var start_app = async () => {
         window.global = window
@@ -29,7 +33,14 @@ var __start = async () => {
 
 
         window.process = require('node:process')
-    
+        
+        sk_api.application = require('application')
+        
+        await sk_api.ipc.request('sk_app_is_ready', {})
+
+        
+        await sleep(5000)
+
         try {
             window.appMain = new (require('/main.js'))()
         } catch(err) {
@@ -76,7 +87,7 @@ var __start = async () => {
             },
 
             onReady: async () => {
-                if (appMain.postSKInit) appMain.postSKInit(sk)                
+                if (appMain.postSKInit) appMain.postSKInit(sk)
             }
         }
 
@@ -100,6 +111,6 @@ var __start = async () => {
 
     start_app()
 
-//}
+}
 
-//__start()
+__start()

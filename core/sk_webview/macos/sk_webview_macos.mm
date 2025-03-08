@@ -60,9 +60,10 @@ using namespace SK;
         if (isSK_IPC_call) {
             SK_Communication_Config config{self.tag, SK_Communication_Packet_Type::sk_comm_pt_ipc, &json};
             
-            SK_Global::onCommunicationRequest(&config, [&](const SK_String& ipcResponseData) {
+            SK_WebView* webview = self.webView;
+            SK_Global::onCommunicationRequest(&config, [&, webview](const SK_String& ipcResponseData) {
                 SK_String data = "sk_api.ipc.handleIncoming(" + ipcResponseData + ")";
-                self.webView->evaluateScript(data.c_str(), NULL);
+                webview->evaluateScript(data.c_str(), NULL);
             }, NULL);
         }
     }
@@ -100,6 +101,12 @@ using namespace SK;
         }
     }];
 }
+
+
+/*- (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation {
+    NSLog(@"Page has finished loading!");
+    // Perform actions after the page has loaded
+}*/
 
 @end
 
@@ -176,28 +183,9 @@ void SK_WebView::update() {
     // Implement any update logic here if needed
 }
 
-void SK_WebView::navigate(SK_String url) {
-    /*
-    // Read HTML content from the disk and pass its content directly to the webview
-    NSString *htmlContent = [NSString stringWithContentsOfURL:_url ...];
-    NSURL *baseURL = [_url URLByDeletingLastPathComponent];
-    [webview loadHTMLString:htmlContent baseURL:baseURL];
-    */
-    
-    //Load the HTML file from scheme handler
+void SK_WebView::navigate(const SK_String& url) {
     currentURL = url;
-    
     if (webview == NULL) return;
-
-    //NSURL* _url = [NSURL URLWithString:[NSString stringWithUTF8String:currentURL.c_str()]];
-    
-    // Log the URL being loaded for debugging
-    //NSLog(@"Navigating to URL: %@", _url);
-    
-    //NSURLRequest* request = [NSURLRequest requestWithURL:_url];
-
-    // Load the request in the web view
-    //[webview loadRequest:request];
     
     NSString* urlString = url;
 

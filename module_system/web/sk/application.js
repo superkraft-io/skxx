@@ -1,9 +1,15 @@
 class SK_Application {
     constructor(opt) {
-    }
-
-    async init() {
-        return true
+        this.isReady = false
+        
+        sk_api.ipc.on('sk:appEvent', (res, rW)=>{
+            if (res.eventID === 'ready'){
+                this.isReady = true
+                if (this.onReady) this.onReady()
+            }
+            
+            rW({})
+        })
     }
 
     get mode() { return sk_api.staticInfo.application.mode }

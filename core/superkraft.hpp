@@ -15,13 +15,16 @@ public:
 
 	SK_Communication comm;
 
+   
+    
 	Superkraft() {
 		SK_Path_Utils::init();
 		SK_Colors_Init();
 
 		modsys.bdfs->binaryData = &binaryData;
 		modsys.viewMngr.wndMngr = &wndMngr;
-		modsys.proton.wndMngr = &wndMngr;
+        
+		modsys.proton.config(&wndMngr);
 
 		wvinit.modsys = &modsys;
 

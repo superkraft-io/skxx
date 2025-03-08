@@ -16,11 +16,13 @@ class SK_IPC {
         })
     }
 
-    sendToBE(event_id, data = {}, type = "request", overridePacketInfo = {}) {
+    sendToBE(event_id, data = {}, type = "request", overridePacketInfo = {}, onMsgID_CB) {
         if (!event_id) throw "[SK IPC.sendToBE] Event ID cannot be empty"
 
         this.msg_id++
         var msg_id = this.msg_id
+
+        if (onMsgID_CB) onMsgID_CB(msg_id)
 
         //send to backend
         var req = {
@@ -44,23 +46,22 @@ class SK_IPC {
 
     request(event_id, data = {}, timeout = 10000, overridePacketInfo = {}) {
         return new Promise((resolve, reject) => {
-            var msg_id = this.sendToBE(event_id, data, "request", overridePacketInfo)
+            
 
             var timeoutTimer = setTimeout(() => {
-                resolve()
-                return
-
                 var err = `[SK IPC.send] Send event ${event_id} timed out`
                 console.error(err)
                 console.log('----- END -----')
                 reject(err)
             }, timeout)
 
-            this.awaitList[msg_id] = {
-                resolve: resolve,
-                reject: reject,
-                timeoutTimer: timeoutTimer
-            }
+            var msg_id = this.sendToBE(event_id, data, "request", overridePacketInfo, msg_id => {
+                this.awaitList[msg_id] = {
+                    resolve: resolve,
+                    reject: reject,
+                    timeoutTimer: timeoutTimer
+                }
+            })
         })
     }
 

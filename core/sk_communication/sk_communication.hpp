@@ -11,11 +11,11 @@ public:
 	SK_Window_Mngr* wndMngr;
 
 	SK_Communication() {
-#if defined(SK_OS_windows)
+    #if defined(SK_OS_windows)
 		SK_Global::onCommunicationRequest = [&](SK_Communication_Config* config, SK_Communication_handlePacket_Response_IPC_CB ipcResponseCallback, void* resHandler) {
-#elif defined(SK_OS_apple)
+    #elif defined(SK_OS_apple)
 		SK_Global::onCommunicationRequest = [&](SK_Communication_Config* config, SK_Communication_handlePacket_Response_IPC_CB ipcResponseCallback, SK_Communication_AppleCB_CB resHandler) {
-#endif
+    #endif
 			SK_Communication_Packet* packet;
 			
 			#if defined(SK_OS_windows)
