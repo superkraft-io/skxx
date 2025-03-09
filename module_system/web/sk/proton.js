@@ -120,7 +120,7 @@ class BrowserWindow extends SK_Module_Root {
         this.__moduleInstanceConfig.__target = 'window'
         this.__moduleInstanceConfig.__uuid = opt.id || sk_api.__protonjs.next_window_uuid()
 
-        this.defOpt = { ...this.getDefOpts(), ...opt }
+        this.defOpt = { ...BrowserWindow.getDefOpts(), ...opt }
         
         
         sk_api.ipc.on('sk:proton.js::windowEvent::' + this.__moduleInstanceConfig.__uuid, (res, respondWith)=>{

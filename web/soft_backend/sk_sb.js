@@ -39,7 +39,7 @@ var __start = async () => {
         await sk_api.ipc.request('sk_app_is_ready', {})
 
         
-        await sleep(5000)
+        //await sleep(5000)
 
         try {
             window.appMain = new (require('/main.js'))()

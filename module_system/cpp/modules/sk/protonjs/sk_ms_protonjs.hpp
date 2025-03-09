@@ -2,9 +2,6 @@
 
 #include "../../../../../core/sk_common.hpp"
 
-#include "sk_ms_protonjs_app.hpp"
-#include "sk_ms_protonjs_window.hpp"
-
 BEGIN_SK_NAMESPACE
 
 class SK_Module_ProtonJS {
@@ -12,9 +9,9 @@ public:
     SK_Module_ProtonJS_App app;
     SK_Module_ProtonJS_Window window;
     
-    void config(SK_Window_Mngr* wndMngr){
+    /*void config(SK_Window_Mngr* wndMngr){
         window.wndMngr = wndMngr;
-    }
+    }*/
     
     
     void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {

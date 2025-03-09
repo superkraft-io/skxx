@@ -2,11 +2,17 @@
 
 #include "../../../../../core/sk_common.hpp"
 
+#ifdef __OBJC__
+    #import <AppKit/AppKit.h>
+#endif
+
 BEGIN_SK_NAMESPACE
 
 class SK_Module_ProtonJS_Window {
 public:
     SK_Window_Mngr* wndMngr;
+    
+    
     
     void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
         
@@ -15,7 +21,7 @@ public:
         
               if (operation == "construct") construct(wnd, payload, respondWith);
          else if (operation == "configure") configure(wnd, payload, respondWith);
-         else if (operation == "loadURL") loadURL(wnd, payload, respondWith);
+         //else if (operation == "loadURL") loadURL(wnd, payload, respondWith);
     };
 
     void construct(SK_Window* wnd, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
@@ -30,7 +36,7 @@ public:
 
             newWnd->configWithInfo(payload["constructorOpts"]);
 
-            wnd->webview.navigate("/sk:view/" + wndID);
+            newWnd->webview.navigate(SK_Base_URL + "/sk:view/" + wndID);
 
             if (newWnd->config.data.contains("mainWindow") && newWnd->config.data["mainWindow"] == true) {
 
@@ -87,9 +93,9 @@ public:
     
     
     
-    void loadURL(SK_Window* wnd, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+    /*void loadURL(SK_Window* wnd, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
         wnd->webview.navigate(SK_Base_URL + SK_String(payload["url"]));
-    }
+    }*/
 };
 
 END_SK_NAMESPACE

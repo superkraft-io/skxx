@@ -53,7 +53,7 @@ class SK_IPC {
             var timeoutTimer = setTimeout(() => {
                 var err = `[SK IPC.send] Send event ${event_id} timed out`
                 console.error(err)
-                console.log('----- END -----')
+                console.error('----- END -----')
                 reject(err)
             }, timeout)
 
@@ -91,16 +91,6 @@ class SK_IPC {
 
 
     handleIncoming(res) {
-        var str = JSON.stringify(res)
-        //console.log(str)
-        if (str.indexOf('getInfo') > -1){
-            var x = 0
-        }
-
-        if (str.indexOf('action_root') > -1){
-            var xx = 0
-        }
-
         if (res.type === "response") this.handleResponse(res)
         else if (res.type === "request") this.handleRequest(res)
         else if (res.type === "message") this.handleMessage(res)

@@ -22,9 +22,8 @@ public:
 		SK_Colors_Init();
 
 		modsys.bdfs->binaryData = &binaryData;
-		modsys.viewMngr.wndMngr = &wndMngr;
         
-		modsys.proton.config(&wndMngr);
+        modsys.proton.window.wndMngr = &wndMngr;
 
 		wvinit.modsys = &modsys;
 

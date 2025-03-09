@@ -12,7 +12,6 @@ public:
 	SK_Module_bdfs* bdfs;
 	SK_Module_fs fs;
 	SK_Module_web web;
-	SK_Module_viewMngr viewMngr;
 	SK_Module_NativeActions nativeActions;
 	SK_Module_debugMngr debugMngr;
 
@@ -37,7 +36,6 @@ public:
 		else if (module == "bdfs") bdfs->handleOperation(operation, payload, respondWith);
 		else if (module == "vfs") vfs->handleOperation(operation, payload, respondWith);
 		else if (module == "web") web.handleOperation(operation, payload, respondWith);
-		else if (module == "viewMngr") viewMngr.handleOperation(operation, payload, respondWith);
 		else if (module == "nativeActions") nativeActions.handleOperation(operation, payload, respondWith);
 		else if (module == "debugMngr") debugMngr.handleOperation(operation, payload, respondWith);
 		else if (module == "proton") proton.handleOperation(operation, payload, respondWith);
