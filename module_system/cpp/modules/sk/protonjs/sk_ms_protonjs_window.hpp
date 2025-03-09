@@ -30,16 +30,20 @@ public:
 
             newWnd->configWithInfo(payload["constructorOpts"]);
 
+            wnd->webview.navigate("/sk:view/" + wndID);
+
             if (newWnd->config.data.contains("mainWindow") && newWnd->config.data["mainWindow"] == true) {
 
                 #if defined(SK_OS_windows)
                     newWnd->wndHandle = SK_Global::mainWindowHandle;
                 #elif defined(SK_OS_apple)
-                    //for apple
+                    #ifdef __OBJC__
+                        newWnd->wndHandle = (__bridge NSWindow*) SK_Global::mainWindowHandle;
+                    #endif
                 #endif
 
-                newWnd->windowClassName = "SK_Window_1";
-
+                newWnd->windowClassName = "SK_Window_" + wndID;
+                
                 SK_Global::setMainWindowSize(newWnd->config["width"], newWnd->config["height"]);
 
                 newWnd->createWebView();

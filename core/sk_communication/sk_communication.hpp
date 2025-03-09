@@ -74,7 +74,10 @@ public:
 			return;
 		}
 
-        if (packet->target == "sk:viewIPC") {
+        if (packet->target == "sk:test") {
+            packet->response()->JSON({{"response", "OK"}});
+        }
+        else if (packet->target == "sk:viewIPC") {
             SK_IPC_v2* sender = getIPCForID(packet->sender);
             sender->handle_IPC_Msg(packet);
         }

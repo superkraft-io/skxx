@@ -13,7 +13,9 @@ public:
     static inline std::thread::id mainThreadId = std::this_thread::get_id();
 
     static inline bool thisFunctionRunningInMainThread() {
-        if (std::this_thread::get_id() == mainThreadId) return true;
+        if (std::this_thread::get_id() == mainThreadId) {
+            return true;
+        }
         return false;
     };
 

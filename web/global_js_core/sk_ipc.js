@@ -44,9 +44,11 @@ class SK_IPC {
         return msg_id
     }
 
-    request(event_id, data = {}, timeout = 10000, overridePacketInfo = {}) {
+    request(event_id, data = {}, _timeout = 10000, overridePacketInfo = {}) {
         return new Promise((resolve, reject) => {
             
+            var timeout = _timeout
+            if (timeout === null || timeout === undefined) timeout = 10000
 
             var timeoutTimer = setTimeout(() => {
                 var err = `[SK IPC.send] Send event ${event_id} timed out`
@@ -89,6 +91,16 @@ class SK_IPC {
 
 
     handleIncoming(res) {
+        var str = JSON.stringify(res)
+        //console.log(str)
+        if (str.indexOf('getInfo') > -1){
+            var x = 0
+        }
+
+        if (str.indexOf('action_root') > -1){
+            var xx = 0
+        }
+
         if (res.type === "response") this.handleResponse(res)
         else if (res.type === "request") this.handleRequest(res)
         else if (res.type === "message") this.handleMessage(res)

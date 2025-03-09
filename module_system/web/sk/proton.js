@@ -120,7 +120,21 @@ class BrowserWindow extends SK_Module_Root {
         this.__moduleInstanceConfig.__target = 'window'
         this.__moduleInstanceConfig.__uuid = opt.id || sk_api.__protonjs.next_window_uuid()
 
-        this.defOpt = {
+        this.defOpt = { ...this.getDefOpts(), ...opt }
+        
+        
+        sk_api.ipc.on('sk:proton.js::windowEvent::' + this.__moduleInstanceConfig.__uuid, (res, respondWith)=>{
+            this.emit(res, respondWith)
+        })
+        
+        this.sync('construct', { constructorOpts: this.defOpt })
+
+        sk_api.__protonjs.windows[this.__moduleInstanceConfig.__uuid] = this
+        sk_api.__protonjs.app.emit({eventID: 'browser-window-created', data: {}}, ()=>{})
+    }
+
+    static getDefOpts(){
+        return {
             //SK Added features
             "oldStyle": false, //[OK] win       Windows exclusive
             "roundness": -1.0, //Should dictates the roundness of a the window, but isn't. Why? because it must use a mask, and redrawing the mask during window resize is too inefficient.
@@ -243,18 +257,6 @@ class BrowserWindow extends SK_Module_Root {
                 "paintWhenInitiallyHidden": true
             },
         }
-
-        this.defOpt = { ...this.defOpt, ...opt }
-        
-        
-        sk_api.ipc.on('sk:proton.js::windowEvent::' + this.__moduleInstanceConfig.__uuid, (res, respondWith)=>{
-            this.emit(res, respondWith)
-        })
-        
-        this.sync('construct', { constructorOpts: this.defOpt })
-
-        sk_api.__protonjs.windows[this.__moduleInstanceConfig.__uuid] = this
-        sk_api.__protonjs.app.emit({eventID: 'browser-window-created', data: {}}, ()=>{})
     }
     
 

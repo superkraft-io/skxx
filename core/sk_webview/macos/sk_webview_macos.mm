@@ -54,6 +54,11 @@ using namespace SK;
         NSString* jsonString = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
         //mIWebView->OnMessageFromWebView([jsonString UTF8String]);
         
+        SK_String _jsonString = jsonString;
+        if (_jsonString.indexOf("getInfo") > -1){
+            int x = 0;
+        }
+        
         nlohmann::json json = nlohmann::json::parse([jsonString UTF8String], nullptr, false);
         
         bool isSK_IPC_call = json.contains("isSK_IPC_call");
@@ -116,7 +121,9 @@ BEGIN_SK_NAMESPACE
 
 void SK_WebView::create() {
     NSRect frame = parentHandle.contentView.frame;
-
+    //frame.size.width = 100;
+    //frame.size.height = 100;
+    
     // Create WKWebViewConfiguration and set preferences
     WKWebViewConfiguration* config = [[WKWebViewConfiguration alloc] init];
     WKPreferences* preferences = [[WKPreferences alloc] init];
