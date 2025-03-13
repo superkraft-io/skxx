@@ -484,7 +484,7 @@ public:
             delta = deltaY;
         }
         
-        emitEvent("swipe",{
+        SK::SK_Window_Root::emitWndEvent(this, "swipe",{
             {"direction", direction},
             {"delta", delta}
         });
@@ -493,7 +493,7 @@ public:
     void handleRotateEvent(NSEvent* event) {
         CGFloat rotation = event.rotation;
         
-        emitEvent("rotate-gesture",{
+        SK::SK_Window_Root::emitWndEvent(this, "rotate-gesture",{
             {"rotation", rotation}
         });
     }

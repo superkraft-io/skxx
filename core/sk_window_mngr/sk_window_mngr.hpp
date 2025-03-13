@@ -114,7 +114,10 @@ public:
 							wnd->config.data["width"]  = w;
 							wnd->config.data["height"] = h;
                             wnd->updateWindowByConfig();
-							wnd->updateWebView();
+							
+                            #if defined(SK_OS_windows)
+                                wnd->updateWebView();
+                            #endif
 						}
 					}
 				}

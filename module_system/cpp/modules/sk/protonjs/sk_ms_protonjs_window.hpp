@@ -44,7 +44,7 @@ public:
                     newWnd->wndHandle = SK_Global::mainWindow->wndHandle;
                 #elif defined(SK_OS_apple)
                     #ifdef __OBJC__
-                        newWnd->wndHandle = (__bridge NSWindow*) SK_Global::mainWindowHandle;
+                        newWnd->wndHandle = SK_Global::mainWindow->wndHandle;
                     #endif
                 #endif
 
