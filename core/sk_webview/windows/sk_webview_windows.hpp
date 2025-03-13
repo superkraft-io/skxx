@@ -12,7 +12,7 @@ class SK_Window;
 class SK_WebView {
 public:
     using SK_WebView_EvaluationComplete_Callback = std::function<void(const SK_String& result)>;
-    using SK_WebView_callResize_Callback = std::function<void()>;
+    using SK_WebView_Simple_Callback = std::function<void()>;
 
     SK_WebViewResourceHandler* wvrh;
 
@@ -28,7 +28,8 @@ public:
     
 	SK_String currentURL = "";
 
-    SK_WebView_callResize_Callback callResize;
+    SK_WebView_Simple_Callback callResize;
+    SK_WebView_Simple_Callback notifyReadyToShow;
 
     std::string ipcTestStr = "{\"L1_obj1\":{\"L2_str1\":\"another string - level 2 object of obj 1 at level 1 - but this is much longer\",\"L2_obj1\":{\"string\":\"another string but not as long\"}},\"L1_obj2\":{\"L2_str1ng\":\"short string\",\"L2_str1\":\"this is a very long string - this is a very long string - this is a very long string - this is a very long string - this is a very long string\",\"L2_obj1\":{\"string\":\"kind of a lonigsh string - this is a story all about how mynlife got flipped upside down\"}}}";
 
@@ -267,6 +268,8 @@ public:
 
                             navigate(currentURL);
 
+                            notifyReadyToShow();
+
                             return S_OK;
                         }).Get());
                     return S_OK;
@@ -289,7 +292,8 @@ public:
 	};
 
     void evaluateScript_mainThread(wil::com_ptr<ICoreWebView2> webview, const SK_String& src, SK_WebView_EvaluationComplete_Callback cb) {
-        LPCWSTR str = src.toWString().c_str();
+        std::wstring wstr = src.toWString();
+        LPCWSTR str = wstr.c_str();
         webview->ExecuteScript(str, Callback<ICoreWebView2ExecuteScriptCompletedHandler>([cb](HRESULT err, LPCWSTR resAsWStr) -> HRESULT {
             if (cb != nullptr && resAsWStr) {
                 SK_String resAsStr = resAsWStr;

@@ -114,6 +114,7 @@ public:
 							wnd->config.data["width"]  = w;
 							wnd->config.data["height"] = h;
                             wnd->updateWindowByConfig();
+							wnd->updateWebView();
 						}
 					}
 				}

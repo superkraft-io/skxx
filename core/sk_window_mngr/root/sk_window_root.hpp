@@ -36,11 +36,19 @@ public:
     
     std::optional<int> zIndex = NULL;
 
-	bool resizing;
-    bool isMaximized;
-	bool frameless_drag;
-    bool frameless_resize;
-    bool canClose;
+	bool resizing = false;
+	bool isMaximized = false;
+	bool isMinimized = false;
+
+	bool isMoving = false;
+	bool isResizing = false;
+
+
+	bool frameless_drag = false;
+    bool frameless_resize = false;
+
+    bool shouldClose = true;
+	bool shouldClose_2ndPass = false;
 
 	SK_Color backgroundColor = "black";
 
@@ -84,20 +92,17 @@ public:
     
     
     
-    void emitEvent(const SK_String& eventID, const nlohmann::json& data, SK_Window_Root_windowEventMsg_CB cb = NULL){
+    static void emitWndEvent(SK_Window_Root* wnd, const SK_String& eventID, const nlohmann::json& data, SK_Window_Root_windowEventMsg_CB cb = NULL){
         nlohmann::json payload {
             {"action", "windowEvent"},
-            {"windowID", tag},
+            {"windowID", wnd->tag},
             {"eventID", eventID},
             {"data", data}
         };
         
-        SK_Global::sb_ipc->request("sk:viewIPC", "sk:sb", "sk:proton.js::windowEvent::" + tag, payload, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
-            
+        SK_Global::sb_ipc->request("sk:viewIPC", "sk:sb", "sk:proton.js::windowEvent::" + wnd->tag, payload, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
             if (cb != NULL) cb(responsePacket->data);
         });
-        
-        ipc.message(payload);
     }
 private:
 

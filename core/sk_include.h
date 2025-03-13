@@ -75,20 +75,18 @@ public:
     
 
     static inline SK_IPC_v2* sb_ipc;
-    
+
+    static inline SK_Window* mainWindow;
+
     #if defined(SK_OS_windows)
-        static inline HWND mainWindowHandle;
+        //static inline HWND mainWindowHandle;
         static inline SK_WindowMngr_updateWebViewHWNDListForView updateWebViewHWNDListForView;
         static inline SK_WindowMngr_getWebview2HWNDForWindow getWebview2HWNDForWindow;
     #elif defined(SK_OS_macos)
-        static inline void* mainWindowHandle;
-    
-        #ifdef __OBJC__
-            static inline void* appInitializer;
-        #endif
+        //static inline void* mainWindowHandle;
     #endif
 
-	
+    static inline void* appInitializer;
 
 	static inline SK_Thread_Pool* threadPool = new SK_Thread_Pool(8);
 
@@ -107,17 +105,10 @@ public:
 END_SK_NAMESPACE
 
 
-#if defined(SK_OS_macos)
-    #ifdef __OBJC__
-        #include "sk_app/macos/sk_app_initializer.h"
-    #endif
-#endif
-
-
 #include "sk_webview/sk_webview.h"
 #include "sk_window_mngr/sk_window_mngr.hpp"
 
-
+#include "sk_app/sk_app_initializer.h"
 
 #include "../../sk_project_binarydata.hpp"
 

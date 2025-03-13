@@ -12,7 +12,7 @@ sk_api.__protonjs = {
     windows: {}
 }
 
-class NatoveImage {
+class NativeImage {
     createEmpty() {
         throw 'Not implemented yet'
     }
@@ -124,13 +124,14 @@ class BrowserWindow extends SK_Module_Root {
         
         
         sk_api.ipc.on('sk:proton.js::windowEvent::' + this.__moduleInstanceConfig.__uuid, (res, respondWith)=>{
+            console.log(res)
             this.emit(res, respondWith)
         })
         
         this.sync('construct', { constructorOpts: this.defOpt })
 
         sk_api.__protonjs.windows[this.__moduleInstanceConfig.__uuid] = this
-        sk_api.__protonjs.app.emit({eventID: 'browser-window-created', data: {}}, ()=>{})
+        sk_api.__protonjs.app.emit({eventID: 'browser-window-created', data: {window: this}}, ()=>{})
     }
 
     static getDefOpts(){
@@ -267,29 +268,37 @@ class BrowserWindow extends SK_Module_Root {
         if (res.eventID === 'focus') sk_api.__protonjs.app.emit({eventID: 'browser-window-focus', data: {window: this}}, ()=>{})
         
 
-
+       
         if (!listenerCB){
             respondWith({})
             return
         }
 
+        
+        var responseObj = {}
+
+
         var opt = {...res.data, ...{}}
 
-        if (res.eventID === 'close'){
-            opt.returnValue = '<null>'
-        }
-
-        listenerCB(opt)
+        var preventables = [
+            'close',
+            'will-resize',
+            'will-move',
+            'page-title-updated',
+            'system-context-menu'
+        ]
 
         var responseObj = {}
-        if (opt.returnValue){
-            responseObj.returnValue = opt.returnValue
-            if (responseObj.returnValue != false && responseObj.returnValue != true) responseObj.returnValue = '<null>'
-        }
-        
-        respondWith({returnValue: responseObj.returnValue})
 
         
+        if (preventables.includes(res.eventID)){
+            opt.preventDefault = ()=>{ responseObj.defaultPrevented = true }
+        }
+
+
+        listenerCB(opt)
+        
+        respondWith(responseObj)        
     }
 
     on(eventID, cb) {
@@ -391,6 +400,9 @@ class BrowserWindow extends SK_Module_Root {
     
     set maxHeight(val) { this.setAttrSync('maxHeight', val) }
     get maxHeight() { return this.getAttrSync('maxHeight') }
+
+    set alwaysOnTop(val) { this.setAttrSync('alwaysOnTop', val) }
+    get alwaysOnTop() { return this.getAttrSync('alwaysOnTop') }
 
     get webContents() {
         return;
@@ -716,7 +728,7 @@ class BrowserWindow extends SK_Module_Root {
 
     setAlwaysOnTop(flag, level, relativeLevel) { this.setAttrSync('setAlwaysOnTop', { flag: flag, level: level, relativeLevel: relativeLevel }) } //[OK] win
 
-    isAlwaysOnTop() { return this.getAttrSync('alwaysOnTop') } //[OK] win
+    isAlwaysOnTop() { return this.alwaysOnTop } //[OK] win
 
     moveAbove(mediaSourceId) {
         throw 'Not implemented yet'
@@ -1038,7 +1050,6 @@ class ProtonJS_App extends SK_Module_Root {
     
 
     emit(res, respondWith) {
-
         var handler = this['handle_' + res.eventID]
         if (handler) handler(res)
 
@@ -1065,13 +1076,13 @@ class ProtonJS_App extends SK_Module_Root {
         var responseObj = {}
 
         if (preventables.includes(res.eventID)){
-            opt.preventDefault = ()=>{ responseObj.preventDefault = true }
+            opt.preventDefault = ()=>{ responseObj.defaultPrevented = true }
         }
 
 
         listenerCB(opt)
         
-        respondWith({returnValue: responseObj.returnValue})
+        respondWith(responseObj)
     }
 
     on(eventID, cb) {

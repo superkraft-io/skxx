@@ -35,6 +35,8 @@ static inline RECT scaleRect(float x, float y, float w, float h, float scale) {
     };
 }
 
+using SK_Window_WndEvent_CB = std::function<void(const SK_String& eventID, nlohmann::json data)>;
+
 class SK_Window : public SK_Window_Root {
 public:
 
@@ -42,6 +44,12 @@ public:
     HWND wndHandle = NULL;
     WNDCLASS wc{};
     HINSTANCE hInstance;
+
+    bool sysCtxMenuTriggered = false;
+    bool shouldPreventSysCtxMenu = false;
+    bool shouldPreventSysCtxMenu_2ndPass = false;
+    SK_Point sysCtxMenuPos;
+
 
     SK_Window() {
         config.onChanged = [&](const std::string& key) {
@@ -54,6 +62,344 @@ public:
     ~SK_Window() {
 		UnregisterClass(windowClassName.c_str(), wc.hInstance);
 	}
+
+
+
+    static inline int handleWndEvents(SK_Window* wnd, HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+        int returnVal = -1;
+
+        switch (msg) {
+            case WM_QUIT: {
+                int y = 0;
+                break;
+            }
+
+            case WM_ENTERSIZEMOVE:
+                break;
+
+            case WM_MOVING:
+                if (!wnd->isMoving) {
+                    wnd->isMoving = true;
+                    SK_Window_Root::emitWndEvent(wnd, "will-move", {});
+                }
+
+                SK_Window_Root::emitWndEvent(wnd, "move", {});
+                SK_Window_Root::emitWndEvent(wnd, "moved", {});
+                break;
+
+
+            case WM_MOVE:
+                break;
+
+
+
+            case WM_SIZING: {
+                SK_String edge = "none";
+
+                switch (wParam) {
+                case WMSZ_LEFT:
+                    edge = "left";
+                    break;
+                case WMSZ_RIGHT:
+                    edge = "right";
+                    break;
+                case WMSZ_TOP:
+                    edge = "top";
+                    break;
+                case WMSZ_BOTTOM:
+                    edge = "bottom";
+                    break;
+                case WMSZ_TOPLEFT:
+                    edge = "top-left";
+                    break;
+                case WMSZ_TOPRIGHT:
+                    edge = "rop-right";
+                    break;
+                case WMSZ_BOTTOMLEFT:
+                    edge = "bottom-left";
+                    break;
+                case WMSZ_BOTTOMRIGHT:
+                    edge = "bottom-right";
+                    break;
+                }
+
+
+                LPRECT pRect = (LPRECT)lParam;
+
+                if (!wnd->isResizing) {
+                    wnd->isResizing = true;
+                    SK_Window_Root::emitWndEvent(wnd, "will-resize", {
+                        {"newBounds", {
+                            {"x", pRect->left},
+                            {"y", pRect->top},
+                            {"width", pRect->right - pRect->left},
+                            {"height", pRect->bottom - pRect->top},
+                        }},
+                        {"edge", edge}
+                        });
+                }
+
+                switch (wParam) {
+                case SIZE_MAXIMIZED:
+                    SK_Window_Root::emitWndEvent(wnd, "maximize", {});
+                    break;
+                case SIZE_MINIMIZED:
+                    SK_Window_Root::emitWndEvent(wnd, "minimize", {});
+                    break;
+                case SIZE_RESTORED:
+                    if (lParam != 0) SK_Window_Root::emitWndEvent(wnd, "resized", {});
+                    else SK_Window_Root::emitWndEvent(wnd, "restore", {});
+                    break;
+                }
+
+                SK_Window_Root::emitWndEvent(wnd, "resize", {});
+                break;
+            }
+
+            case WM_EXITSIZEMOVE:
+                if (wnd->isMoving) SK_Window_Root::emitWndEvent(wnd, "move-end", {});
+                if (wnd->isResizing) SK_Window_Root::emitWndEvent(wnd, "resize-end", {});
+
+                wnd->isMoving = false;
+                wnd->isResizing = false;
+                break;
+
+            case WM_SYSCOMMAND:
+                if (wParam == SC_MAXIMIZE) {
+                    wnd->isMaximized = true;
+                    wnd->isMinimized = false;
+                    SK_Window_Root::emitWndEvent(wnd, "maximize", {});
+                }
+                else if (wParam == SC_MINIMIZE) {
+                    wnd->isMaximized = false;
+                    wnd->isMinimized = true;
+                    SK_Window_Root::emitWndEvent(wnd, "minimize", {});
+                }
+                else if (wParam == SC_RESTORE) {
+                    if (wnd->isMaximized) SK_Window_Root::emitWndEvent(wnd, "unmaximize", {});
+                    if (wnd->isMinimized) SK_Window_Root::emitWndEvent(wnd, "restore", {});
+                    wnd->isMaximized = false;
+                    wnd->isMinimized = false;
+                }
+                break;
+
+
+
+            case WM_NCRBUTTONDOWN:
+                if (wParam == HTSYSMENU || wParam == HTCAPTION) {
+                    wnd->sysCtxMenuTriggered = true;
+                }
+                break;
+
+
+            case WM_CLOSE:
+                if (!wnd->shouldClose_2ndPass) {
+                    SK_Window_Root::emitWndEvent(wnd, "close", {}, [wnd](nlohmann::json response) {
+                        if (response.contains("defaultPrevented") && response["defaultPrevented"] == true) {
+                            wnd->shouldClose = false;
+                        }
+
+                        wnd->shouldClose_2ndPass = true;
+                        PostMessage(wnd->wndHandle, WM_CLOSE, 0, 0);
+                    });
+                } else {
+                    if (wnd->shouldClose) {
+                        DestroyWindow(wnd->wndHandle);
+                        SK_Window_Root::emitWndEvent(wnd, "closed", {});
+                    }
+                }
+
+                wnd->shouldClose_2ndPass = false;
+                wnd->shouldClose = true;
+
+                break;
+
+            case WM_DESTROY:
+                SK_Window_Root::emitWndEvent(wnd, "closed", {});
+                break;
+
+            case WM_KILLFOCUS:
+                SK_Window_Root::emitWndEvent(wnd, "blur", {});
+                break;
+
+            case WM_SETFOCUS:
+                SK_Window_Root::emitWndEvent(wnd, "focus", {});
+                break;
+
+            case WM_SHOWWINDOW:
+                //if (wParam) emitEvent("show", {});
+                //else emitEvent("hide", {});
+                break;
+
+
+
+
+
+            case WM_GETMINMAXINFO:
+
+                break;
+
+            case WM_DISPLAYCHANGE:
+                //SK_Window_Root::emitWndEvent(wnd, "enter-full-screen", {});
+                break;
+
+            case WM_WINDOWPOSCHANGED:
+                if (((WINDOWPOS*)lParam)->flags & SWP_FRAMECHANGED) {
+                    //if (IsZoomed(hwnd)) SK_Window_Root::emitWndEvent(wnd, "enter-full-screen", {});
+                    //else SK_Window_Root::emitWndEvent(wnd, "leave-full-screen", {});
+                }
+                break;
+
+            case WM_ENDSESSION:
+                SK_Window_Root::emitWndEvent(wnd, "session-end", {});
+                break;
+
+            case WM_WINDOWPOSCHANGING:
+                if (((WINDOWPOS*)lParam)->flags & SWP_NOZORDER) {
+                    //SK_Window_Root::emitWndEvent(wnd, "always-on-top-changed", {});
+                }
+                break;
+
+            case WM_APPCOMMAND: {
+                int cmdRes = GET_APPCOMMAND_LPARAM(lParam);
+
+                SK_String cmd = "unknown";
+
+                switch (cmdRes) {
+                    case APPCOMMAND_BROWSER_BACKWARD: cmd = "BROWSER_BACKWARD"; break;
+                    case APPCOMMAND_BROWSER_FORWARD: cmd = "BROWSER_FORWARD"; break;
+                    case APPCOMMAND_BROWSER_REFRESH: cmd = "BROWSER_REFRESH"; break;
+                    case APPCOMMAND_BROWSER_STOP: cmd = "BROWSER_STOP"; break;
+                    case APPCOMMAND_BROWSER_SEARCH: cmd = "BROWSER_SEARCH"; break;
+                    case APPCOMMAND_BROWSER_FAVORITES: cmd = "BROWSER_FAVORITES"; break;
+                    case APPCOMMAND_BROWSER_HOME: cmd = "BROWSER_HOME"; break;
+                    case APPCOMMAND_VOLUME_MUTE: cmd = "VOLUME_MUTE"; break;
+                    case APPCOMMAND_VOLUME_DOWN: cmd = "VOLUME_DOWN"; break;
+                    case APPCOMMAND_VOLUME_UP: cmd = "VOLUME_UP"; break;
+                    case APPCOMMAND_MEDIA_NEXTTRACK: cmd = "MEDIA_NEXTTRACK"; break;
+                    case APPCOMMAND_MEDIA_PREVIOUSTRACK: cmd = "MEDIA_PREVIOUSTRACK"; break;
+                    case APPCOMMAND_MEDIA_STOP: cmd = "MEDIA_STOP"; break;
+                    case APPCOMMAND_MEDIA_PLAY_PAUSE: cmd = "MEDIA_PLAY_PAUSE"; break;
+                    case APPCOMMAND_LAUNCH_MAIL: cmd = "LAUNCH_MAIL"; break;
+                    case APPCOMMAND_LAUNCH_MEDIA_SELECT: cmd = "LAUNCH_MEDIA_SELECT"; break;
+                    case APPCOMMAND_LAUNCH_APP1: cmd = "LAUNCH_APP1"; break;
+                    case APPCOMMAND_LAUNCH_APP2: cmd = "LAUNCH_APP2"; break;
+                    case APPCOMMAND_BASS_DOWN: cmd = "BASS_DOWN"; break;
+                    case APPCOMMAND_BASS_BOOST: cmd = "BASS_BOOST"; break;
+                    case APPCOMMAND_BASS_UP: cmd = "BASS_UP"; break;
+                    case APPCOMMAND_TREBLE_DOWN: cmd = "TREBLE_DOWN"; break;
+                    case APPCOMMAND_TREBLE_UP: cmd = "TREBLE_UP"; break;
+                    case APPCOMMAND_MICROPHONE_VOLUME_MUTE: cmd = "MICROPHONE_VOLUME_MUTE"; break;
+                    case APPCOMMAND_MICROPHONE_VOLUME_DOWN: cmd = "MICROPHONE_VOLUME_DOWN"; break;
+                    case APPCOMMAND_MICROPHONE_VOLUME_UP: cmd = "MICROPHONE_VOLUME_UP"; break;
+                    case APPCOMMAND_HELP: cmd = "HELP"; break;
+                    case APPCOMMAND_FIND: cmd = "FIND"; break;
+                    case APPCOMMAND_NEW: cmd = "NEW"; break;
+                    case APPCOMMAND_OPEN: cmd = "OPEN"; break;
+                    case APPCOMMAND_CLOSE: cmd = "CLOSE"; break;
+                    case APPCOMMAND_SAVE: cmd = "SAVE"; break;
+                    case APPCOMMAND_PRINT: cmd = "PRINT"; break;
+                    case APPCOMMAND_UNDO: cmd = "UNDO"; break;
+                    case APPCOMMAND_REDO: cmd = "REDO"; break;
+                    case APPCOMMAND_COPY: cmd = "COPY"; break;
+                    case APPCOMMAND_CUT: cmd = "CUT"; break;
+                    case APPCOMMAND_PASTE: cmd = "PASTE"; break;
+                    case APPCOMMAND_REPLY_TO_MAIL: cmd = "REPLY_TO_MAIL"; break;
+                    case APPCOMMAND_FORWARD_MAIL: cmd = "FORWARD_MAIL"; break;
+                    case APPCOMMAND_SEND_MAIL: cmd = "SEND_MAIL"; break;
+                    case APPCOMMAND_SPELL_CHECK: cmd = "SPELL_CHECK"; break;
+                    case APPCOMMAND_DICTATE_OR_COMMAND_CONTROL_TOGGLE: cmd = "DICTATE_OR_COMMAND_CONTROL_TOGGLE"; break;
+                    case APPCOMMAND_MIC_ON_OFF_TOGGLE: cmd = "MIC_ON_OFF_TOGGLE"; break;
+                    case APPCOMMAND_CORRECTION_LIST: cmd = "CORRECTION_LIST"; break;
+                    case APPCOMMAND_MEDIA_PLAY: cmd = "MEDIA_PLAY"; break;
+                    case APPCOMMAND_MEDIA_PAUSE: cmd = "MEDIA_PAUSE"; break;
+                    case APPCOMMAND_MEDIA_RECORD: cmd = "MEDIA_RECORD"; break;
+                    case APPCOMMAND_MEDIA_FAST_FORWARD: cmd = "MEDIA_FAST_FORWARD"; break;
+                    case APPCOMMAND_MEDIA_REWIND: cmd = "MEDIA_REWIND"; break;
+                    case APPCOMMAND_MEDIA_CHANNEL_UP: cmd = "MEDIA_CHANNEL_UP"; break;
+                    case APPCOMMAND_MEDIA_CHANNEL_DOWN: cmd = "MEDIA_CHANNEL_DOWN"; break;
+                    case APPCOMMAND_DELETE: cmd = "DELETE"; break;
+                    case APPCOMMAND_DWM_FLIP3D: cmd = "DWM_FLIP3D"; break;
+                    default: cmd = "unknown"; break;
+                }
+
+                SK_Window_Root::emitWndEvent(wnd, "app-command", { {"command", cmd.toLowerCase()}});
+            }
+        }
+
+
+
+
+
+
+
+        if (wnd->sysCtxMenuTriggered) {
+            if (wParam == HTSYSMENU || wParam == HTCAPTION) {
+                // Extract the X and Y coordinates from lParam
+                int x = GET_X_LPARAM(lParam);
+                int y = GET_Y_LPARAM(lParam);
+
+
+                if (!wnd->shouldPreventSysCtxMenu_2ndPass && !wnd->shouldPreventSysCtxMenu) {
+                    wnd->sysCtxMenuPos.x = x;
+                    wnd->sysCtxMenuPos.y = y;
+
+                    SK_Window_Root::emitWndEvent(wnd, "system-context-menu",
+                        {
+                            {"point", {
+                                {"x", x},
+                                {"y", y}
+                            }}
+                        },
+
+                        [wnd, x, y](nlohmann::json response) {
+                            if (response.contains("defaultPrevented") && response["defaultPrevented"] == true) {
+                                wnd->shouldPreventSysCtxMenu = true;
+                            }
+                            else {
+                                wnd->shouldPreventSysCtxMenu = false;
+                            }
+
+                            wnd->shouldPreventSysCtxMenu_2ndPass = true;
+                            SendMessage(wnd->wndHandle, WM_NCRBUTTONDOWN, HTCAPTION, 0);
+                        }
+                    );
+                }
+            }
+
+            wnd->sysCtxMenuTriggered = false;
+
+            if (wnd->shouldPreventSysCtxMenu_2ndPass) {
+                wnd->shouldPreventSysCtxMenu_2ndPass = false;
+                if (wnd->shouldPreventSysCtxMenu) {
+                    wnd->shouldPreventSysCtxMenu = false;
+                    return 0;
+                }
+
+                // Get the system menu handle
+                HMENU hSystemMenu = GetSystemMenu(hwnd, FALSE);
+
+                // Display the system menu at the specified position
+                TrackPopupMenu(
+                    hSystemMenu,            // Handle to the system menu
+                    TPM_LEFTALIGN | TPM_TOPALIGN | TPM_RIGHTBUTTON, // Flags
+                    wnd->sysCtxMenuPos.x,                      // X-coordinate (screen coordinates)
+                    wnd->sysCtxMenuPos.y,                      // Y-coordinate (screen coordinates)
+                    0,                      // Reserved (must be 0)
+                    hwnd,                   // Handle to the owner window
+                    nullptr                 // Ignored
+                );
+            }
+            else {
+                wnd->shouldPreventSysCtxMenu_2ndPass = false;
+                return 0;
+            }
+        }
+
+
+        return returnVal;
+    }
+
 
 
 
@@ -94,7 +440,10 @@ public:
             wnd = reinterpret_cast<SK_Window*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
         }
 
-
+        if (wnd) {
+            int wndEventReturnVal = handleWndEvents(wnd, hwnd, uMsg, wParam, lParam);
+            if (wndEventReturnVal > -1) return wndEventReturnVal;
+        }
 
         switch (uMsg) {
             case WM_KEYDOWN: {
@@ -184,12 +533,10 @@ public:
             
 
             case WM_DESTROY: {
-                PostQuitMessage(0);
                 return 0;
             }
 
             case WM_CLOSE: {
-                DestroyWindow(hwnd);
                 return 0;
             }
 
@@ -414,6 +761,7 @@ public:
 
 	void createWebView() {
         webview.callResize = [&]() { update(); };
+        webview.notifyReadyToShow = [this]() { SK_Window_Root::emitWndEvent(this, "ready-to-show", {}); };
 
         webview.parentHwnd = &wndHandle;
         webview.parentClassName = windowClassName;
@@ -437,12 +785,18 @@ public:
         RECT rect = scaleRect(x, y, clientRect.right, clientRect.bottom, config.data["scale"]);
         if (webview.webview != nullptr) {
             webview.updateStyling(rect);
-            webview.controller->SetBoundsAndZoomFactor(rect, 1);
-            //webview.environment->TriggerRepaint();
+            updateWebView();
             RedrawWindow(wndHandle, &rect, nullptr, RDW_UPDATENOW | RDW_INVALIDATE | RDW_ALLCHILDREN);
         }
     }
 
+    void updateWebView() {
+        if (webview.webview == nullptr) return;
+        RECT clientRect;
+        GetClientRect(wndHandle, &clientRect);
+        RECT rect = scaleRect(0, 0, clientRect.right, clientRect.bottom, 1);
+        webview.controller->SetBoundsAndZoomFactor(rect, 1);
+    }
 
 
     /********/
@@ -604,11 +958,14 @@ public:
         if (checkNeedsUpdateAndReset("fullscreen")) setFullscreen(config.data["fullscreen"]);
         if (checkNeedsUpdateAndReset("kiosk")) setFullscreen(config.data["kiosk"]);
     }
-
+    
     void setAlwaysOnTop(bool flag, int level = 0, int relativeLevel = 0) {
         config.data["alwaysOnTop"] = flag;
         if (flag == true) SetWindowPos(wndHandle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
         else SetWindowPos(wndHandle, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+
+
+        SK_Window_Root::emitWndEvent(this, "always-on-top-changed", { {"isAlwaysOnTop", flag} });
     }
 
     void setFullscreen(bool activate) {
@@ -621,6 +978,12 @@ public:
             config_updateTracker["width"] = true;
             config_updateTracker["height"] = true;
             updateWindowByConfig();
+
+            updateWebView();
+
+            if (config.data["fullscreen"]) SK_Window_Root::emitWndEvent(this, "leave-fullscreen", {});
+            config.data["fullscreen"] = false;
+
             return;
         }
 
@@ -636,6 +999,11 @@ public:
                 monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top,
                 SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
         }
+
+        updateWebView();
+
+        SK_Window_Root::emitWndEvent(this, "enter-fullscreen", {});
+        config.data["fullscreen"] = true;
     }
 private:
 
