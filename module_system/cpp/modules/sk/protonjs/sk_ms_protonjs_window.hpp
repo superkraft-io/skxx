@@ -26,7 +26,9 @@ public:
 
     void construct(SK_Window* wnd, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
         
-        if (wnd != nullptr) return;
+        if (wnd != nullptr) {
+            return;
+        }
         
         SK_String wndID = payload["__moduleInstanceConfig"]["__uuid"];
 
@@ -47,7 +49,7 @@ public:
                         newWnd->wndHandle = SK_Global::mainWindow->wndHandle;
                     #endif
                 #endif
-
+                
                 newWnd->windowClassName = "SK_Window_" + wndID;
                 
                 SK_Global::setMainWindowSize(newWnd->config["width"], newWnd->config["height"]);

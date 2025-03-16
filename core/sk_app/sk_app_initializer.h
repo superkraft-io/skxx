@@ -48,6 +48,20 @@ public:
                 // Set up Objective-C observer
                 observer = [[NSObject alloc] init];
         
+                
+                CFRunLoopObserverContext context = {0, nullptr, nullptr, nullptr, nullptr};
+                CFRunLoopObserverRef sk_observer = CFRunLoopObserverCreate(
+                    kCFAllocatorDefault,
+                    kCFRunLoopAllActivities, // Listen to all states
+                    true, // Repeats
+                    0,
+                    runLoopCallback,
+                    &context
+                );
+
+                CFRunLoopAddObserver(CFRunLoopGetCurrent(), sk_observer, kCFRunLoopCommonModes);
+                CFRelease(sk_observer);
+                
                 // Dynamically add methods to the observer
         
                 if (!bypasses.contains("applicationWillFinishLaunching")){
@@ -113,8 +127,12 @@ public:
                 return SK_App_Initializer::shouldTerminate;
          
                 */
+                return false;
             }
 
+            static inline void runLoopCallback(CFRunLoopObserverRef observer, CFRunLoopActivity activity, void *info) {
+                SK_Global::threadPool_processMainThreadTasks();
+            }
         #endif
     #endif
 };

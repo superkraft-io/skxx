@@ -16,12 +16,15 @@ BEGIN_SK_NAMESPACE
 
 class SK_Module_ProtonJS_App {
 public:
+    SK_Window_Mngr* wndMngr;
+    
     void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
         
         SK_String target = payload["__moduleInstanceConfig"]["__target"];
         
              if (operation == "quit") quit(payload, respondWith);
        else if (operation == "getSystemLocale") getSystemLocale(payload, respondWith);
+       else if (operation == "haveAllWindowsClosed") haveAllWindowsClosed(payload, respondWith);
     };
 
     void quit(const nlohmann::json& payload, SK_Communication_Response& respondWith) {
@@ -47,6 +50,14 @@ public:
         respondWith.JSON({
             {"sysLocale", sysLocale}
         });
+    }
+    
+    void haveAllWindowsClosed(const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+        size_t total = wndMngr->list.size();
+        
+        
+        
+        respondWith.JSON({{"allClosed", false}});
     }
 };
 

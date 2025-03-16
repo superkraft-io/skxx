@@ -136,8 +136,11 @@
 
 - (void)windowWillClose:(NSNotification *)notification {
     if (!self.skWindow->shouldClose) return;
+    
     SK::SK_Window_Root::emitWndEvent(self.skWindow, "closed",{});
     self.skWindow->shouldClose = false;
+    
+    self.skWindow->isClosed = true;
 }
 
 - (void)windowDidResignKey:(NSNotification *)notification {

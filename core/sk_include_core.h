@@ -1,7 +1,7 @@
 #pragma once
 
 
-#include "../../sk_project_includes.hpp"
+
 
 #include <unordered_map>
 #include <optional>
@@ -39,6 +39,7 @@
 #include "../libs/general/debugbreak.h"
 #include "sk_var.hpp"
 
+#include "../../sk_project_includes.hpp"
 
 #include "json.hpp"
 

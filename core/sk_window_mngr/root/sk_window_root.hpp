@@ -36,6 +36,9 @@ public:
     
     std::optional<int> zIndex = NULL;
 
+    
+    bool isClosed = false;
+    
 	bool resizing = false;
 	bool isMaximized = false;
 	bool isMinimized = false;

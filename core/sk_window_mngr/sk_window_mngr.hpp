@@ -207,6 +207,18 @@ public:
 			}
 		}
 	#endif
+    
+    
+    /*void removeWindow(const SK_String& wndTag){
+        for (auto it = list.begin(); it != list.end(); ++it) {
+            if (it->second) {
+                SK_Window* wnd = it->second;
+                if (wnd->tag == wndTag){
+                    
+                    return;
+                };
+            }
+    }*/
 private:
 
 };

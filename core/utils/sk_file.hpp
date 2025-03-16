@@ -69,19 +69,23 @@ public:
 
 	bool loadFromBDFS(const SK_String& path){
 		//Load from binsry data
+        return false;
 	}
 
 	bool loadFromVFS(const SK_String& path) {
 		//Load from virtual filesystem
+        return false;
 	}
 
 
 	bool saveToDisk(const SK_String& path) {
 		//Save to disk
+        return false;
 	}
 
 	bool saveToVFS(const SK_String& path) {
 		//Save to virtual fileaystem
+        return false;
 	}
 
 	static bool unlink(const SK_String& path) {
