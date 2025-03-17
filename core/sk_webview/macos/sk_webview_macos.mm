@@ -121,10 +121,19 @@ NS_ASSUME_NONNULL_END
 
 BEGIN_SK_NAMESPACE
 
-void SK_WebView::create() {
-    NSRect frame = parentHandle.contentView.frame;
-    //frame.size.width = 100;
-    //frame.size.height = 100;
+void SK_WebView::create(bool offsetWhenDebugging) {
+    NSRect frame = parentWndHandle.contentView.frame;
+    
+    #if defined(SK_MODE_DEBUG)
+        if (offsetWhenDebugging){
+            //when we are debugging, we want to expose a bit of the soft backend so that we can right click on it to open its dev tools
+            int offset = 64;
+            int width = frame.size.width;
+            width = width - offset;
+            frame.origin.x = offset;
+            frame.size.width = width;
+        }
+    #endif
     
     // Create WKWebViewConfiguration and set preferences
     WKWebViewConfiguration* config = [[WKWebViewConfiguration alloc] init];
@@ -160,7 +169,7 @@ void SK_WebView::create() {
     webview = [[WKWebView alloc] initWithFrame:frame configuration:config];
     
     webviewDelegate = [[SK_Webview_MacOS_Delegate alloc] init];
-    webviewDelegate.windowHandle = parentHandle;
+    webviewDelegate.windowHandle = parentWndHandle;
     [webview setUIDelegate:webviewDelegate];
     
     webview.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
@@ -179,7 +188,7 @@ void SK_WebView::create() {
     [webview setAllowsMagnification:NO];
 
     // Add WKWebView to the parent window's content view
-    [parentHandle.contentView addSubview:webview];
+    [parentContentView addSubview:webview];
 
     SK_Global::onWebViewReady(static_cast<void*>(webview), false);
 

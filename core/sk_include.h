@@ -59,6 +59,7 @@ public:
     
 	static inline SK_String runningAs = SK_String("unknown");
 
+    static inline SK_Window_preConfig_Callback preConfigWnd = NULL;
 	static inline SK_Window_onWindowFocusChanged_Callback onWindowFocusChanged;
 
 	static inline SK_WindowMngr_onFindWindowByString onFindWindowByClassName;
@@ -96,7 +97,7 @@ public:
 
 	static inline SK_showSoftBackendDevTools showSoftBackendDevTools;
 
-	static inline SK_resizeAllMainWindowView resizeAllMainWindowView;
+	static inline SK_resizeAllMainWindowViews resizeAllMainWindowViews;
 
 	static inline SK_getMainWindowSize getMainWindowSize;
 	static inline SK_setMainWindowSize setMainWindowSize;

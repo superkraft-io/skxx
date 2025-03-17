@@ -101,7 +101,7 @@ public:
 			};
 		#endif
 
-        SK_Global::resizeAllMainWindowView = [&](int x, int y, int w, int h, float scale) {
+        SK_Global::resizeAllMainWindowViews = [&](int x, int y, int w, int h, float scale) {
 			#if defined(SK_MODE_DEBUG)
 				for (auto it = list.begin(); it != list.end(); ++it) {
 					if (it->second) {

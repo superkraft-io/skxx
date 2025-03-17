@@ -36,7 +36,13 @@ public:
             newWnd->tag = wndID;
             newWnd->ipc.sender_id = wndID;
 
-            newWnd->configWithInfo(payload["constructorOpts"]);
+            nlohmann::json constructorOpts = payload["constructorOpts"];
+            
+            if (SK_Global::preConfigWnd){
+                SK_Global::preConfigWnd(newWnd, constructorOpts);
+            }
+            
+            newWnd->configWithInfo(constructorOpts);
 
             //newWnd->webview.navigate(SK_Base_URL + "/sk:view/" + wndID);
 
@@ -47,6 +53,7 @@ public:
                 #elif defined(SK_OS_apple)
                     #ifdef __OBJC__
                         newWnd->wndHandle = SK_Global::mainWindow->wndHandle;
+                        newWnd->contentView = SK_Global::mainWindow->contentView;
                     #endif
                 #endif
                 

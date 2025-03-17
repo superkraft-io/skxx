@@ -7,6 +7,8 @@ BEGIN_SK_NAMESPACE
 class SK_Window;
 class SK_Communication_Packet;
 
+using SK_Window_preConfig_Callback = std::function<void(SK_Window* wnd, nlohmann::json constructorOpts)>;
+
 using SK_Window_onWindowFocusChanged_Callback = std::function<void(SK_Window* wnd, const bool& focused)>;
 
 using SK_WindowMngr_onFindWindowByString = std::function<SK_Window* (const SK_String& string)>;
@@ -20,7 +22,7 @@ using SK_WindowMngr_onFindWindowByString = std::function<SK_Window* (const SK_St
     //for linux and android
 #endif
 
-using SK_onMainWindowHWNDAcquired = std::function<void(void* handle)>;
+using SK_onMainWindowHWNDAcquired = std::function<void(void* handle, bool isView)>;
 
 
 	
@@ -59,7 +61,7 @@ using SK_ThreadPool_ProcessMainThreadTasks = std::function<void()>;
 
 using SK_showSoftBackendDevTools = std::function<void()>;
 
-using SK_resizeAllMainWindowView = std::function<void(int x, int y, int w, int h, float scale)>;
+using SK_resizeAllMainWindowViews = std::function<void(int x, int y, int w, int h, float scale)>;
 
 using SK_getMainWindowSize = std::function<SK_Point()>;
 using SK_setMainWindowSize = std::function<void(int w, int h)>;

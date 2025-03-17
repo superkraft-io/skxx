@@ -30,7 +30,8 @@ public:
     
     #if defined(SK_OS_macos)
         #ifdef __OBJC__
-            NSWindow* parentHandle;
+            NSWindow* parentWndHandle;
+            NSView* parentContentView;
             WKWebView* webview;
             __strong SK_Webview_MacOS_Delegate* webviewDelegate;
         #endif
@@ -39,7 +40,7 @@ public:
     SK_String tag = "some_id";
     SK_String currentURL = "";
     
-    void create();
+    void create(bool offsetWhenDebugging);
     void update();
     void navigate(const SK_String& url);
     void evaluateScript_mainThread(void* _webview, const SK_String& src, SK_WebView_EvaluationComplete_Callback cb);

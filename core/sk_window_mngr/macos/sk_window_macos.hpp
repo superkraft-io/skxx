@@ -120,11 +120,10 @@ public:
 
     void createWebView() {
         #ifdef __OBJC__
-            //webview.callResize = [&]() { update(); };
             webview.tag = tag;
-            webview.parentHandle = wndHandle;
-            webview.create();
-            //SK_Common::updateWebViewHWNDListForView(windowClassName);
+            webview.parentWndHandle = wndHandle;
+            webview.parentContentView = contentView;
+            webview.create(config.data["mainWindow"]);
         #endif
     }
 
