@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../sk_common.hpp"
+#include "IPlugLogger.h"
 
 using namespace Microsoft::WRL;
 
@@ -31,7 +32,19 @@ public:
     SK_WebView_Simple_Callback callResize;
     SK_WebView_Simple_Callback notifyReadyToShow;
 
+    SK_WebView_onGetUserDataPath onGetUserDataPath;
+
     std::string ipcTestStr = "{\"L1_obj1\":{\"L2_str1\":\"another string - level 2 object of obj 1 at level 1 - but this is much longer\",\"L2_obj1\":{\"string\":\"another string but not as long\"}},\"L1_obj2\":{\"L2_str1ng\":\"short string\",\"L2_str1\":\"this is a very long string - this is a very long string - this is a very long string - this is a very long string - this is a very long string\",\"L2_obj1\":{\"string\":\"kind of a lonigsh string - this is a story all about how mynlife got flipped upside down\"}}}";
+
+
+    ~SK_WebView() {
+        if (controller.get() != nullptr) {
+            controller->Close();
+            controller = nullptr;
+            webview = nullptr;
+            environment = nullptr;
+        }
+    }
 
 
     /*
@@ -121,13 +134,32 @@ public:
         controller->put_Bounds(rect); //DO NOT TOUCH!
     }
 
+    SK_String getUserDataPath() {
+        SK_String udPath = "";
+        if (onGetUserDataPath) udPath = onGetUserDataPath(nullptr);
+
+        if (udPath == "") {
+            udPath = SK_Path_Utils::GetOSFolder("appdata") + "\\" + SK_String(SK_Global::sk_config["product_info"]["name"]) + "\\wvc\\" + parentClassName;
+        }
+
+        return udPath;
+    }
+
 	void create() {
-
         auto options = Microsoft::WRL::Make<CoreWebView2EnvironmentOptions>();
-        //options->put_AdditionalBrowserArguments(L"--enable-features=EnableGPUAcceleration");
-        //options->put_AdditionalBrowserArguments(L"--disable-software-rasterizer");
 
-        CreateCoreWebView2EnvironmentWithOptions(nullptr, nullptr, options.Get(),
+        bool imt = SK_Thread_Pool::thisFunctionRunningInMainThread();
+
+        SK_String udPath = getUserDataPath();
+        std::wstring udPathWStr = udPath.toWString();
+
+        PCWSTR _udPath = nullptr;
+
+        if (udPath != "") {
+            _udPath = udPathWStr.c_str();
+        }
+
+        HRESULT hr = CreateCoreWebView2EnvironmentWithOptions(nullptr, _udPath, options.Get(),
             Callback<ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>(
                 [this](HRESULT result, ICoreWebView2Environment* env) -> HRESULT {
                     if (FAILED(result)) {
@@ -277,6 +309,11 @@ public:
             ).Get()
         );
 
+        if (FAILED(hr)) {
+            std::wstring logMessage = L"CreateCoreWebView2EnvironmentWithOptions failed. HRESULT: " + std::to_wstring(hr) + L"\n";
+            OutputDebugStringW(logMessage.c_str());
+            __debugbreak;
+        }
     };
 
     void PostWindowMessage(_In_ UINT Msg, _In_ WPARAM wParam, _In_ LPARAM lParam) {

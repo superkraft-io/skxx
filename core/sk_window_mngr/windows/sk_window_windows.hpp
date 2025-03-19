@@ -40,9 +40,9 @@ using SK_Window_WndEvent_CB = std::function<void(const SK_String& eventID, nlohm
 class SK_Window : public SK_Window_Root {
 public:
 
-    SK_String windowClassName = "SK_Window";
+    SK_String windowClassName = "SK_Window_" + SK_Global::newUUID();
     HWND wndHandle = NULL;
-    WNDCLASS wc{};
+    WNDCLASSW wc = { 0 };
     HINSTANCE hInstance;
 
     bool sysCtxMenuTriggered = false;
@@ -60,7 +60,7 @@ public:
     }
 
     ~SK_Window() {
-		UnregisterClass(windowClassName.c_str(), wc.hInstance);
+		UnregisterClassW(windowClassName.toWString().c_str(), wc.hInstance);
 	}
 
 
@@ -713,11 +713,18 @@ public:
         wc.hCursor = LoadCursor(NULL, IDC_ARROW);
         wc.lpfnWndProc = WindowProc;
         wc.hInstance = hInstance;
-        wc.lpszClassName = windowClassName.c_str();
+
+        std::wstring classNameWStr = windowClassName.toWString();
+        wc.lpszClassName = classNameWStr.c_str();
         
 
-        if (!RegisterClass(&wc)) {
-            MessageBox(nullptr, "Failed to register window class.", "Error", MB_OK | MB_ICONERROR);
+        if (!RegisterClassW(&wc)) {
+            DWORD error = GetLastError();
+
+            wchar_t errorMsg[256];
+            swprintf(errorMsg, 256, L"Failed to register window class. Error code: %lu", error);
+
+            MessageBoxW(nullptr, errorMsg, L"Error", MB_OK | MB_ICONERROR);
             return 1;
         }
 
@@ -726,11 +733,11 @@ public:
         
 
         // Create the window
-        wndHandle = CreateWindowEx(
+        wndHandle = CreateWindowExW(
             0,
 
-            windowClassName.c_str(),
-            SK_String(config["title"]).c_str(),
+            classNameWStr.c_str(),
+            SK_String(config["title"]).toWString().c_str(),
 
             wndStyle,
 
@@ -746,8 +753,8 @@ public:
         );
 
         if (!wndHandle) {
-            std::string errorMessage = "Failed to create window. Error: " + GetLastErrorAsString();
-            MessageBox(nullptr, errorMessage.c_str(), "Error", MB_OK | MB_ICONERROR);
+            SK_String errorMessage = "Failed to create window. Error: " + GetLastErrorAsString();
+            MessageBoxW(nullptr, errorMessage.toWString().c_str(), L"Error", MB_OK | MB_ICONERROR);
         }
 
         updateWindowByConfig();
@@ -759,9 +766,17 @@ public:
 
     };
 
-	void createWebView() {
+	void createWebView(SK_wndCreated cb = NULL) {
         webview.callResize = [&]() { update(); };
-        webview.notifyReadyToShow = [this]() { SK_Window_Root::emitWndEvent(this, "ready-to-show", {}); };
+        webview.notifyReadyToShow = [this, cb]() {
+            SK_Window_Root::emitWndEvent(this, "ready-to-show", {});
+            if (cb) cb(this);
+        };
+
+        webview.onGetUserDataPath = [this](SK_Window* _null_) {
+            if (SK_Global::onGetWebViewUserDataPath) return SK_Global::onGetWebViewUserDataPath(this);
+            return SK_String("");
+        };
 
         webview.parentHwnd = &wndHandle;
         webview.parentClassName = windowClassName;
@@ -866,7 +881,7 @@ public:
         float scale = getHWNDScale(wndHandle);
 
         //movable: handled in WindowProc
-        if (checkNeedsUpdateAndReset("title")) SetWindowText(wndHandle, SK_String(config.data["title"]).c_str());
+        if (checkNeedsUpdateAndReset("title")) SetWindowTextW(wndHandle, SK_String(config.data["title"]).toWString().c_str());
         if (checkNeedsUpdateAndReset("resizable")) setStyle(WS_SIZEBOX, config.data["resizable"]);
         if (checkNeedsUpdateAndReset("alwaysOnTop")) setAlwaysOnTop(config.data["alwaysOnTop"]);
         if (checkNeedsUpdateAndReset("maximizable")) setStyle(WS_MAXIMIZEBOX, config.data["maximizable"]);

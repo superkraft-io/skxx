@@ -304,7 +304,7 @@ public:
             fileInfo.size = static_cast<uint64_t>(std::filesystem::file_size(std::filesystem::path(path)));
             
 #			if defined(SK_OS_windows)
-				HANDLE hFile = CreateFile(path.data.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+				HANDLE hFile = CreateFileW(path.toWString().c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 				if (hFile == INVALID_HANDLE_VALUE) {
 					//return error "ENOENT"
 					return statInfo;

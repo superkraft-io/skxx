@@ -126,10 +126,7 @@ public:
 	}
 
 	~SK_Window_Mngr() {
-		for (auto& [key, wnd] : list) {
-			delete wnd;
-		}
-		list.clear();
+		destroyAllWindows();
 	}
 
 	SK_Window* newWindow(SK_Window_Create_Callback cb = nullptr) {
@@ -145,8 +142,6 @@ public:
 		if (cb != nullptr) (*cb)(wnd);
 
 		return wnd;
-
-		return nullptr;
 	};
 
 	SK_Window* findWindowByTag(const SK_String& tag) {
@@ -219,6 +214,15 @@ public:
                 };
             }
     }*/
+
+
+	void destroyAllWindows() {
+		for (auto& [key, wnd] : list) {
+			delete wnd;
+		}
+
+		list.clear();
+	}
 private:
 
 };

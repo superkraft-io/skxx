@@ -7,7 +7,6 @@ BEGIN_SK_NAMESPACE
 class SK_Window;
 class SK_Communication_Packet;
 
-using SK_Window_preConfig_Callback = std::function<void(SK_Window* wnd, nlohmann::json constructorOpts)>;
 
 using SK_Window_onWindowFocusChanged_Callback = std::function<void(SK_Window* wnd, const bool& focused)>;
 
@@ -65,5 +64,13 @@ using SK_resizeAllMainWindowViews = std::function<void(int x, int y, int w, int 
 
 using SK_getMainWindowSize = std::function<SK_Point()>;
 using SK_setMainWindowSize = std::function<void(int w, int h)>;
+
+
+
+using SK_onPreConfigWnd = std::function<void(SK_Window* wnd, nlohmann::json constructorOpts)>;
+using SK_onPostConfigWnd = std::function<void(SK_Window* wnd)>;
+using SK_wndCreated = std::function<void(SK_Window* wnd)>;
+
+using SK_WebView_onGetUserDataPath = std::function<SK_String(SK_Window* wnd)>;
 
 END_SK_NAMESPACE

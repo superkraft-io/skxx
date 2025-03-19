@@ -35,9 +35,17 @@ public:
     static inline std::vector<SK_CPUInfo> cpuInfo;
 
     static void init() {
-        SK_Machine::cpuModel = cpuInfo[0].model;//;SK_Machine::getCPUModel();
-        SK_Machine::cpuSpeed = cpuInfo[0].speed;//SK_Machine::getCPUSpeed();
-        SK_Machine::staticInfo = SK_Machine::getStaticInfo();
+        SK_String _cpuModel = "N/A";
+        int _cpuSpeed = -1;
+
+        if (cpuInfo.size() > 0) {
+            _cpuModel = cpuInfo[0].model;
+            _cpuSpeed = cpuInfo[0].speed;
+        }
+
+        SK_Machine::cpuModel = _cpuModel;
+        SK_Machine::cpuSpeed = _cpuSpeed;
+        SK_Machine::staticInfo = SK_Machine::getStaticInfo();  
     };
 
     static inline nlohmann::json staticInfo;
@@ -187,7 +195,7 @@ public:
             osvi.dwOSVersionInfoSize = sizeof(RTL_OSVERSIONINFOEXW);
 
             // Load ntdll.dll dynamically
-            HMODULE hMod = GetModuleHandle("ntdll.dll");
+            HMODULE hMod = GetModuleHandleW(L"ntdll.dll");
             if (hMod != nullptr) {
                 // Get address of RtlGetVersion function
                 RtlGetVersionFunc pRtlGetVersion = reinterpret_cast<RtlGetVersionFunc>(GetProcAddress(hMod, "RtlGetVersion"));
@@ -233,7 +241,7 @@ public:
         std::vector<SK_CPUInfo> cpus;
         
         #if defined(SK_OS_windows)
-            //THIS FUNCTION DOES NOT WORK IN WINDOWS BECAUSE APPARENTLY IT MNUST BE CALLED IN THE PROGRAIM main() FUNCTION
+            //THIS FUNCTION DOES NOT WORK IN WINDOWS BECAUSE APPARENTLY IT MUST BE CALLED IN THE PROGRAIM main() FUNCTION
             //IN OTHER WORDS IT MUST BE CALLED AS SOON AS THE PROGRAM STARTS AND THUS THIS FUNCTION CANNOT BE CALLED
             //AT A LATER STAGE OF RUNTIME
 
@@ -441,7 +449,7 @@ public:
             DWORD size = sizeof(buffer) / sizeof(buffer[0]);
 
             if (GetComputerNameEx(ComputerNameDnsHostname, buffer, &size)) {
-                return std::string(buffer);
+                return SK_String(buffer);
             }
             else {
                 return "<unknown>";

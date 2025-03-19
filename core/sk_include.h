@@ -55,11 +55,36 @@ class SK_Project_Ready;
 
 class SK_Global {
 public:
+
+    static inline SK_String newUUID() {
+        #if defined(SK_OS_windows)
+            UUID uuid;
+            if (CoCreateGuid(&uuid) != S_OK) {
+                return "´<newUUID() error>";
+            }
+
+            std::stringstream ss;
+            ss << std::hex << std::setfill('0')
+                << std::setw(8) << uuid.Data1 << "-"
+                << std::setw(4) << uuid.Data2 << "-"
+                << std::setw(4) << uuid.Data3 << "-"
+                << std::setw(2) << static_cast<int>(uuid.Data4[0])
+                << std::setw(2) << static_cast<int>(uuid.Data4[1]) << "-"
+                << std::setw(2) << static_cast<int>(uuid.Data4[2])
+                << std::setw(2) << static_cast<int>(uuid.Data4[3])
+                << std::setw(2) << static_cast<int>(uuid.Data4[4])
+                << std::setw(2) << static_cast<int>(uuid.Data4[5])
+                << std::setw(2) << static_cast<int>(uuid.Data4[6])
+                << std::setw(2) << static_cast<int>(uuid.Data4[7]);
+
+            return ss.str();
+        #endif
+    }
+
     static inline nlohmann::json sk_config;
     
 	static inline SK_String runningAs = SK_String("unknown");
 
-    static inline SK_Window_preConfig_Callback preConfigWnd = NULL;
 	static inline SK_Window_onWindowFocusChanged_Callback onWindowFocusChanged;
 
 	static inline SK_WindowMngr_onFindWindowByString onFindWindowByClassName;
@@ -101,6 +126,12 @@ public:
 
 	static inline SK_getMainWindowSize getMainWindowSize;
 	static inline SK_setMainWindowSize setMainWindowSize;
+
+    static inline SK_onPreConfigWnd onPreConfigWnd = NULL;
+    static inline SK_onPostConfigWnd onPostConfigWnd = NULL;
+    static inline SK_wndCreated onWndCreated = NULL;
+
+    static inline SK_WebView_onGetUserDataPath onGetWebViewUserDataPath;
 };
 
 END_SK_NAMESPACE

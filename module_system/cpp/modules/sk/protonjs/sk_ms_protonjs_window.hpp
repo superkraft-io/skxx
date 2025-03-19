@@ -24,50 +24,49 @@ public:
          else if (operation == "loadURL") loadURL(wnd, payload, respondWith);
     };
 
-    void construct(SK_Window* wnd, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+    void construct(SK_Window* _wnd, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
         
-        if (wnd != nullptr) {
-            return;
-        }
+        if (_wnd != nullptr) return;
         
         SK_String wndID = payload["__moduleInstanceConfig"]["__uuid"];
 
-        SK_Window* newWnd = wndMngr->newWindow([&](SK_Window* newWnd) {
-            newWnd->tag = wndID;
-            newWnd->ipc.sender_id = wndID;
+        
+        SK_Window* wnd = wndMngr->newWindow();
+      
 
-            nlohmann::json constructorOpts = payload["constructorOpts"];
+        wnd->tag = wndID;
+        wnd->ipc.sender_id = wndID;
+
+        nlohmann::json constructorOpts = payload["constructorOpts"];
             
-            if (SK_Global::preConfigWnd){
-                SK_Global::preConfigWnd(newWnd, constructorOpts);
-            }
+        if (SK_Global::onPreConfigWnd) SK_Global::onPreConfigWnd(wnd, constructorOpts);
+           
+        wnd->configWithInfo(constructorOpts);
             
-            newWnd->configWithInfo(constructorOpts);
+        if (SK_Global::onPostConfigWnd) SK_Global::onPostConfigWnd(wnd);
+            
+        //newWnd->webview.navigate(SK_Base_URL + "/sk:view/" + wndID);
 
-            //newWnd->webview.navigate(SK_Base_URL + "/sk:view/" + wndID);
+        if (wnd->config.data.contains("mainWindow") && wnd->config.data["mainWindow"] == true) {
 
-            if (newWnd->config.data.contains("mainWindow") && newWnd->config.data["mainWindow"] == true) {
-
-                #if defined(SK_OS_windows)
-                    newWnd->wndHandle = SK_Global::mainWindow->wndHandle;
-                #elif defined(SK_OS_apple)
-                    #ifdef __OBJC__
-                        newWnd->wndHandle = SK_Global::mainWindow->wndHandle;
-                        newWnd->contentView = SK_Global::mainWindow->contentView;
-                    #endif
+            #if defined(SK_OS_windows)
+                wnd->wndHandle = SK_Global::mainWindow->wndHandle;
+            #elif defined(SK_OS_apple)
+                #ifdef __OBJC__
+                    wnd->wndHandle = SK_Global::mainWindow->wndHandle;
+                    wnd->contentView = SK_Global::mainWindow->contentView;
                 #endif
+            #endif
                 
-                newWnd->windowClassName = "SK_Window_" + wndID;
+            wnd->windowClassName = "SK_Window_" + wndID;
                 
-                SK_Global::setMainWindowSize(newWnd->config["width"], newWnd->config["height"]);
+            SK_Global::setMainWindowSize(wnd->config["width"], wnd->config["height"]);
 
-                newWnd->createWebView();
-            }
-            else {
-                newWnd->create();
-            }
-        });
-
+            wnd->createWebView();
+        }
+        else {
+            wnd->create();
+        }
 
         respondWith.JSON_OK();
     }
