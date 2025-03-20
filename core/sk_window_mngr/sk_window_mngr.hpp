@@ -18,10 +18,10 @@ class SK_WebViewResourceHandler;
 class SK_Window_WebView_Counter {
 public:
     #if defined(SK_OS_windows)
-        static inline std::unordered_map<std::string, std::vector<HWND>> list;
+        std::unordered_map<std::string, std::vector<HWND>> list;
    
 
-        static inline bool addWebviewToCounterList(const SK_String& windowClassName, HWND hwnd) {
+        bool addWebviewToCounterList(const SK_String& windowClassName, HWND hwnd) {
             auto it = list.find(windowClassName);
 
             if (it == list.end()) {
@@ -40,7 +40,7 @@ public:
             }
         }
 
-        static inline HWND getWebViewForWindow(const SK_String& windowClassName) {
+        HWND getWebViewForWindow(const SK_String& windowClassName) {
             auto it = list.find(windowClassName);
 
             if (it == list.end() || it->second.empty()) {
@@ -56,6 +56,8 @@ public:
 
 class SK_Window_Mngr {
 public:
+	SK_Window_WebView_Counter wvCounter;
+
 	unsigned int wndIdx = 0;
 	
 	std::unordered_map<std::string, SK_Window*> list;
@@ -75,15 +77,15 @@ public:
 	SK_Window_Mngr() {
         int x = 0;
         
-        SK_Global::onWindowFocusChanged = [&](SK_Window* wnd, const bool& focused) {
+        SK_Global::GetInstance().onWindowFocusChanged = [&](SK_Window* wnd, const bool& focused) {
 			if (focused) updateAllWindows(); //This will fix the ussue
 		};
 
-        SK_Global::onFindWindowByClassName = [&](const SK_String& windowClassName) {
+        SK_Global::GetInstance().onFindWindowByClassName = [&](const SK_String& windowClassName) {
 			return findWindowByClassName(windowClassName);
 		};
 
-        SK_Global::onFindWindowByTag = [&](const SK_String& windowTag) {
+        SK_Global::GetInstance().onFindWindowByTag = [&](const SK_String& windowTag) {
 			return findWindowByTag(windowTag);
 		};
 
@@ -92,16 +94,16 @@ public:
 
 
 		#if defined(SK_OS_windows)
-            SK_Global::updateWebViewHWNDListForView = [&](const SK_String& windowClassName) {
+            SK_Global::GetInstance().updateWebViewHWNDListForView = [&](const SK_String& windowClassName) {
 				updateAllWebViewHandlesForView(windowClassName);
 			};
 
-            SK_Global::getWebview2HWNDForWindow = [&](const SK_String& windowClassName) {
-				return SK_Window_WebView_Counter::getWebViewForWindow(windowClassName);
+            SK_Global::GetInstance().getWebview2HWNDForWindow = [&](const SK_String& windowClassName) {
+				return wvCounter.getWebViewForWindow(windowClassName);
 			};
 		#endif
 
-        SK_Global::resizeAllMainWindowViews = [&](int x, int y, int w, int h, float scale) {
+        SK_Global::GetInstance().resizeAllMainWindowViews = [&](int x, int y, int w, int h, float scale) {
 			#if defined(SK_MODE_DEBUG)
 				for (auto it = list.begin(); it != list.end(); ++it) {
 					if (it->second) {
@@ -188,7 +190,7 @@ public:
 				std::string _className = std::string(className);
 
 				if (_className == "Chrome_WidgetWin_0") {
-					if (!SK_Window_WebView_Counter::addWebviewToCounterList(window->windowClassName, child)) {
+					if (!wvCounter.addWebviewToCounterList(window->windowClassName, child)) {
 						//Failed to add to counter list
 					}
 					else {

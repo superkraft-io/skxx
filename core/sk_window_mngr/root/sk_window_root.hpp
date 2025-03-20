@@ -95,7 +95,7 @@ public:
     
     
     
-    static void emitWndEvent(SK_Window_Root* wnd, const SK_String& eventID, const nlohmann::json& data, SK_Window_Root_windowEventMsg_CB cb = NULL){
+    void emitWndEvent(SK_Window_Root* wnd, const SK_String& eventID, const nlohmann::json& data, SK_Window_Root_windowEventMsg_CB cb = NULL){
         nlohmann::json payload {
             {"action", "windowEvent"},
             {"windowID", wnd->tag},
@@ -103,7 +103,9 @@ public:
             {"data", data}
         };
         
-        SK_Global::sb_ipc->request("sk:viewIPC", "sk:sb", "sk:proton.js::windowEvent::" + wnd->tag, payload, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
+
+		SK_IPC_v2* ipc = static_cast<SK_IPC_v2*>(SK_Global::GetInstance().sb_ipc);
+		ipc->request("sk:viewIPC", "sk:sb", "sk:proton.js::windowEvent::" + wnd->tag, payload, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
             if (cb != NULL) cb(responsePacket->data);
         });
     }

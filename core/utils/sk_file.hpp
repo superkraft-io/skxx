@@ -55,7 +55,7 @@ public:
 
 			fclose(file);
 
-			mimeType = SK_Web_Utils::mime.fromFilename(path);
+			mimeType = SK_Web_MIME_utils::GetInstance().fromFilename(path);
 
 			if (includeFileInfo) fileInfo = getFileInfo(path);
 

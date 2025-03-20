@@ -464,7 +464,7 @@ public:
 
 
 
-    static inline const std::string base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+    std::string base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
     
     bool is_base64_char(unsigned char c) {
         return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||

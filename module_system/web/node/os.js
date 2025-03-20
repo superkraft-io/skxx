@@ -4,8 +4,8 @@ class SK_Module_os extends SK_Module_Root {
     arch() { return sk_api.staticInfo.machine.arch }
     get constants() { return '' }
     cpus() { return this.sync('getCPUInfo').cores }
-    get devNull() { return sk_juce_api.staticInfo.machine.devNull }
-    endianness() { return sk_juce_api.staticInfo.machine.endianess  }
+    get devNull() { return sk_api.staticInfo.machine.devNull }
+    endianness() { return sk_api.staticInfo.machine.endianess  }
 
 
     /* memory */
@@ -13,7 +13,7 @@ class SK_Module_os extends SK_Module_Root {
     meminfo() { return this.sync('getMemoryInfo') }
     totalmem() { return this.sync('getMemoryInfo').physical.total }
     freemem() { return this.sync('getMemoryInfo').physical.free }
-    usedmem() { return sk_juce_api.fetch('getMemoryInfo').physical.used }
+    usedmem() { return this.sync('getMemoryInfo').physical.used }
 
 
 

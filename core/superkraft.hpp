@@ -32,9 +32,9 @@ public:
 		if (!configFile.loadFromDisk(SK_Path_Utils::paths["config"])) {
 			throw std::runtime_error("[SK++] No config file found!");
 		}
-        SK_Global::sk_config = nlohmann::json::parse(std::string(configFile));
+        SK_Global::GetInstance().sk_config = nlohmann::json::parse(std::string(configFile));
 
-		SK_Machine::init();
+		SK_Global::GetInstance().machine->init();
 
 
 		comm.modsys = &modsys;
@@ -45,8 +45,7 @@ public:
 	}
     
     
-    static inline void* _sk = nullptr;
-    static inline Superkraft* sk(){ return static_cast<Superkraft*>(_sk); }
+    static inline Superkraft* sk(){ return static_cast<Superkraft*>(SK_Global::GetInstance().sk); }
 };
 
 END_SK_NAMESPACE

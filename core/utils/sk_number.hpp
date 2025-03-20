@@ -271,11 +271,11 @@ public:
 
 
 
-    static inline SK_Number map(float value, float aMin, float aMax, float bMin, float bMax) {
+    static SK_Number map(float value, float aMin, float aMax, float bMin, float bMax) {
         return (value - aMin) * (bMax - bMin) / (aMax - aMin) + bMin;
     }
 
-    static inline SK_Number clamp(float value, float min, float max) {
+    static SK_Number clamp(float value, float min, float max) {
         float clamped = value;
         if (clamped < min) clamped = min;
         if (clamped > max) clamped = max;

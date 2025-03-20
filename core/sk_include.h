@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "sk_include_core.h"
 
@@ -38,7 +38,6 @@
 
 #include "sk_communication/sk_communication_response.hpp"
 #include "sk_communication/sk_communication_packet.hpp"
-#include "sk_ipc/sk_ipc_v2.hpp"
 
 
 #if defined(SK_OS_macos)
@@ -51,16 +50,19 @@
 
 BEGIN_SK_NAMESPACE
 
-class SK_Project_Ready;
 
 class SK_Global {
 public:
+    static SK_Global& GetInstance() {
+        static SK_Global instance;
+        return instance;
+    }
 
-    static inline SK_String newUUID() {
+    SK_String newUUID() {
         #if defined(SK_OS_windows)
             UUID uuid;
             if (CoCreateGuid(&uuid) != S_OK) {
-                return "�<newUUID() error>";
+                return "´<newUUID() error>";
             }
 
             std::stringstream ss;
@@ -81,61 +83,77 @@ public:
         #endif
     }
 
-    static inline nlohmann::json sk_config;
+    SK_Machine* machine;
+
+    nlohmann::json sk_config;
     
-	static inline SK_String runningAs = SK_String("unknown");
+    long long ipc_msg_id = 0;
 
-	static inline SK_Window_onWindowFocusChanged_Callback onWindowFocusChanged;
+	SK_String runningAs = SK_String("unknown");
 
-	static inline SK_WindowMngr_onFindWindowByString onFindWindowByClassName;
-	static inline SK_WindowMngr_onFindWindowByString onFindWindowByTag;
+    void* project;
+
+    void* sk = nullptr;
+
+
+	SK_Window_onWindowFocusChanged_Callback onWindowFocusChanged;
+
+	SK_WindowMngr_onFindWindowByString onFindWindowByClassName;
+	SK_WindowMngr_onFindWindowByString onFindWindowByTag;
 	
+    SK_WebView_SendMsgToFrontend_CB sendMsgToWebview;
+	SK_WebView_OnReady onWebViewReady;
 
-	static inline SK_WebView_OnReady onWebViewReady;
-
-	static inline SK_Communication_onRequest onCommunicationRequest;
+	SK_Communication_onRequest onCommunicationRequest;
 
     
     
-    static inline SK_onMainWindowHWNDAcquired onMainWindowHWNDAcquired;
+    SK_onMainWindowHWNDAcquired onMainWindowHWNDAcquired;
     
 
-    static inline SK_IPC_v2* sb_ipc;
+    void* sb_ipc;
 
-    static inline SK_Window* mainWindow;
+    SK_Window* mainWindow;
 
     #if defined(SK_OS_windows)
-        //static inline HWND mainWindowHandle;
-        static inline SK_WindowMngr_updateWebViewHWNDListForView updateWebViewHWNDListForView;
-        static inline SK_WindowMngr_getWebview2HWNDForWindow getWebview2HWNDForWindow;
+        //HWND mainWindowHandle;
+        SK_WindowMngr_updateWebViewHWNDListForView updateWebViewHWNDListForView;
+        SK_WindowMngr_getWebview2HWNDForWindow getWebview2HWNDForWindow;
     #elif defined(SK_OS_macos)
-        //static inline void* mainWindowHandle;
+        //void* mainWindowHandle;
     #endif
 
-    static inline void* appInitializer;
+    void* appInitializer;
 
-	static inline SK_Thread_Pool* threadPool = new SK_Thread_Pool(8);
+	SK_Thread_Pool* threadPool = new SK_Thread_Pool(8);
 
-	static inline SK_ThreadPool_ProcessMainThreadTasks threadPool_processMainThreadTasks = []() {
-		threadPool->processMainThreadTasks();
+	SK_ThreadPool_ProcessMainThreadTasks threadPool_processMainThreadTasks = []() {
+        SK_Global::GetInstance().threadPool->processMainThreadTasks();
 	};
 
-	static inline SK_showSoftBackendDevTools showSoftBackendDevTools;
+	SK_showSoftBackendDevTools showSoftBackendDevTools;
 
-	static inline SK_resizeAllMainWindowViews resizeAllMainWindowViews;
+	SK_resizeAllMainWindowViews resizeAllMainWindowViews;
 
-	static inline SK_getMainWindowSize getMainWindowSize;
-	static inline SK_setMainWindowSize setMainWindowSize;
+	SK_getMainWindowSize getMainWindowSize;
+	SK_setMainWindowSize setMainWindowSize;
 
-    static inline SK_onPreConfigWnd onPreConfigWnd = NULL;
-    static inline SK_onPostConfigWnd onPostConfigWnd = NULL;
-    static inline SK_wndCreated onWndCreated = NULL;
+    SK_onPreConfigWnd onPreConfigWnd = NULL;
+    SK_onPostConfigWnd onPostConfigWnd = NULL;
+    SK_wndCreated onWndCreated = NULL;
 
-    static inline SK_WebView_onGetUserDataPath onGetWebViewUserDataPath;
+    SK_WebView_onGetUserDataPath onGetWebViewUserDataPath;
+private:
+    SK_Global() {}
+    ~SK_Global() {}
+    SK_Global(const SK_Global&) = delete;
+    SK_Global& operator=(const SK_Global&) = delete;
 };
 
 END_SK_NAMESPACE
 
+
+#include "sk_ipc/sk_ipc_v2.hpp"
 
 #include "sk_webview/sk_webview.h"
 #include "sk_window_mngr/sk_window_mngr.hpp"

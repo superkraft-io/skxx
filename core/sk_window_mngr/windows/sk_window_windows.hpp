@@ -5,28 +5,7 @@
 BEGIN_SK_NAMESPACE
 
 
-inline UINT(WINAPI* sk__GetDpiForWindow)(HWND);
-
-static inline float getHWNDScale(HWND hwnd)
-{
-    if (!sk__GetDpiForWindow) {
-        HINSTANCE h = LoadLibraryW(L"user32.dll");
-        if (h) *(void**)&sk__GetDpiForWindow = GetProcAddress(h, "GetDpiForWindow");
-
-        if (!sk__GetDpiForWindow) return 1;
-    }
-
-    int dpi = sk__GetDpiForWindow(hwnd);
-
-    if (dpi != USER_DEFAULT_SCREEN_DPI) {
-        return static_cast<float>(dpi) / USER_DEFAULT_SCREEN_DPI;
-    }
-
-    return 1;
-}
-
-
-static inline RECT scaleRect(float x, float y, float w, float h, float scale) {
+static RECT scaleRect(float x, float y, float w, float h, float scale) {
     return {
         static_cast<LONG>(std::ceil(x * scale)),
         static_cast<LONG>(std::ceil(y * scale)),
@@ -40,7 +19,29 @@ using SK_Window_WndEvent_CB = std::function<void(const SK_String& eventID, nlohm
 class SK_Window : public SK_Window_Root {
 public:
 
-    SK_String windowClassName = "SK_Window_" + SK_Global::newUUID();
+    UINT(WINAPI* sk__GetDpiForWindow)(HWND) = nullptr;
+
+    float getHWNDScale(HWND hwnd)
+    {
+        if (!sk__GetDpiForWindow) {
+            HINSTANCE h = LoadLibraryW(L"user32.dll");
+            if (h) *(void**)&sk__GetDpiForWindow = GetProcAddress(h, "GetDpiForWindow");
+
+            if (!sk__GetDpiForWindow) return 1;
+        }
+
+        int dpi = sk__GetDpiForWindow(hwnd);
+
+        if (dpi != USER_DEFAULT_SCREEN_DPI) {
+            return static_cast<float>(dpi) / USER_DEFAULT_SCREEN_DPI;
+        }
+
+        return 1;
+    }
+
+
+
+    SK_String windowClassName = "SK_Window_" + SK_Global::GetInstance().GetInstance().newUUID();
     HWND wndHandle = NULL;
     WNDCLASSW wc = { 0 };
     HINSTANCE hInstance;
@@ -65,7 +66,7 @@ public:
 
 
 
-    static inline int handleWndEvents(SK_Window* wnd, HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    int handleWndEvents(SK_Window* wnd, HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         int returnVal = -1;
 
         switch (msg) {
@@ -80,11 +81,11 @@ public:
             case WM_MOVING:
                 if (!wnd->isMoving) {
                     wnd->isMoving = true;
-                    SK_Window_Root::emitWndEvent(wnd, "will-move", {});
+                    emitWndEvent(wnd, "will-move", {});
                 }
 
-                SK_Window_Root::emitWndEvent(wnd, "move", {});
-                SK_Window_Root::emitWndEvent(wnd, "moved", {});
+                emitWndEvent(wnd, "move", {});
+                emitWndEvent(wnd, "moved", {});
                 break;
 
 
@@ -128,7 +129,7 @@ public:
 
                 if (!wnd->isResizing) {
                     wnd->isResizing = true;
-                    SK_Window_Root::emitWndEvent(wnd, "will-resize", {
+                    emitWndEvent(wnd, "will-resize", {
                         {"newBounds", {
                             {"x", pRect->left},
                             {"y", pRect->top},
@@ -141,24 +142,24 @@ public:
 
                 switch (wParam) {
                 case SIZE_MAXIMIZED:
-                    SK_Window_Root::emitWndEvent(wnd, "maximize", {});
+                    emitWndEvent(wnd, "maximize", {});
                     break;
                 case SIZE_MINIMIZED:
-                    SK_Window_Root::emitWndEvent(wnd, "minimize", {});
+                    emitWndEvent(wnd, "minimize", {});
                     break;
                 case SIZE_RESTORED:
-                    if (lParam != 0) SK_Window_Root::emitWndEvent(wnd, "resized", {});
-                    else SK_Window_Root::emitWndEvent(wnd, "restore", {});
+                    if (lParam != 0) emitWndEvent(wnd, "resized", {});
+                    else emitWndEvent(wnd, "restore", {});
                     break;
                 }
 
-                SK_Window_Root::emitWndEvent(wnd, "resize", {});
+                emitWndEvent(wnd, "resize", {});
                 break;
             }
 
             case WM_EXITSIZEMOVE:
-                if (wnd->isMoving) SK_Window_Root::emitWndEvent(wnd, "move-end", {});
-                if (wnd->isResizing) SK_Window_Root::emitWndEvent(wnd, "resize-end", {});
+                if (wnd->isMoving) emitWndEvent(wnd, "move-end", {});
+                if (wnd->isResizing) emitWndEvent(wnd, "resize-end", {});
 
                 wnd->isMoving = false;
                 wnd->isResizing = false;
@@ -168,16 +169,16 @@ public:
                 if (wParam == SC_MAXIMIZE) {
                     wnd->isMaximized = true;
                     wnd->isMinimized = false;
-                    SK_Window_Root::emitWndEvent(wnd, "maximize", {});
+                    emitWndEvent(wnd, "maximize", {});
                 }
                 else if (wParam == SC_MINIMIZE) {
                     wnd->isMaximized = false;
                     wnd->isMinimized = true;
-                    SK_Window_Root::emitWndEvent(wnd, "minimize", {});
+                    emitWndEvent(wnd, "minimize", {});
                 }
                 else if (wParam == SC_RESTORE) {
-                    if (wnd->isMaximized) SK_Window_Root::emitWndEvent(wnd, "unmaximize", {});
-                    if (wnd->isMinimized) SK_Window_Root::emitWndEvent(wnd, "restore", {});
+                    if (wnd->isMaximized) emitWndEvent(wnd, "unmaximize", {});
+                    if (wnd->isMinimized) emitWndEvent(wnd, "restore", {});
                     wnd->isMaximized = false;
                     wnd->isMinimized = false;
                 }
@@ -194,7 +195,7 @@ public:
 
             case WM_CLOSE:
                 if (!wnd->shouldClose_2ndPass) {
-                    SK_Window_Root::emitWndEvent(wnd, "close", {}, [wnd](nlohmann::json response) {
+                    emitWndEvent(wnd, "close", {}, [wnd](nlohmann::json response) {
                         if (response.contains("defaultPrevented") && response["defaultPrevented"] == true) {
                             wnd->shouldClose = false;
                         }
@@ -205,7 +206,7 @@ public:
                 } else {
                     if (wnd->shouldClose) {
                         DestroyWindow(wnd->wndHandle);
-                        SK_Window_Root::emitWndEvent(wnd, "closed", {});
+                        emitWndEvent(wnd, "closed", {});
                     }
                 }
 
@@ -215,15 +216,15 @@ public:
                 break;
 
             case WM_DESTROY:
-                SK_Window_Root::emitWndEvent(wnd, "closed", {});
+                emitWndEvent(wnd, "closed", {});
                 break;
 
             case WM_KILLFOCUS:
-                SK_Window_Root::emitWndEvent(wnd, "blur", {});
+                emitWndEvent(wnd, "blur", {});
                 break;
 
             case WM_SETFOCUS:
-                SK_Window_Root::emitWndEvent(wnd, "focus", {});
+                emitWndEvent(wnd, "focus", {});
                 break;
 
             case WM_SHOWWINDOW:
@@ -240,23 +241,23 @@ public:
                 break;
 
             case WM_DISPLAYCHANGE:
-                //SK_Window_Root::emitWndEvent(wnd, "enter-full-screen", {});
+                //emitWndEvent(wnd, "enter-full-screen", {});
                 break;
 
             case WM_WINDOWPOSCHANGED:
                 if (((WINDOWPOS*)lParam)->flags & SWP_FRAMECHANGED) {
-                    //if (IsZoomed(hwnd)) SK_Window_Root::emitWndEvent(wnd, "enter-full-screen", {});
-                    //else SK_Window_Root::emitWndEvent(wnd, "leave-full-screen", {});
+                    //if (IsZoomed(hwnd)) emitWndEvent(wnd, "enter-full-screen", {});
+                    //else emitWndEvent(wnd, "leave-full-screen", {});
                 }
                 break;
 
             case WM_ENDSESSION:
-                SK_Window_Root::emitWndEvent(wnd, "session-end", {});
+                emitWndEvent(wnd, "session-end", {});
                 break;
 
             case WM_WINDOWPOSCHANGING:
                 if (((WINDOWPOS*)lParam)->flags & SWP_NOZORDER) {
-                    //SK_Window_Root::emitWndEvent(wnd, "always-on-top-changed", {});
+                    //emitWndEvent(wnd, "always-on-top-changed", {});
                 }
                 break;
 
@@ -323,7 +324,7 @@ public:
                     default: cmd = "unknown"; break;
                 }
 
-                SK_Window_Root::emitWndEvent(wnd, "app-command", { {"command", cmd.toLowerCase()}});
+                emitWndEvent(wnd, "app-command", { {"command", cmd.toLowerCase()}});
             }
         }
 
@@ -344,7 +345,7 @@ public:
                     wnd->sysCtxMenuPos.x = x;
                     wnd->sysCtxMenuPos.y = y;
 
-                    SK_Window_Root::emitWndEvent(wnd, "system-context-menu",
+                    emitWndEvent(wnd, "system-context-menu",
                         {
                             {"point", {
                                 {"x", x},
@@ -441,7 +442,7 @@ public:
         }
 
         if (wnd) {
-            int wndEventReturnVal = handleWndEvents(wnd, hwnd, uMsg, wParam, lParam);
+            int wndEventReturnVal = wnd->handleWndEvents(wnd, hwnd, uMsg, wParam, lParam);
             if (wndEventReturnVal > -1) return wndEventReturnVal;
         }
 
@@ -499,7 +500,7 @@ public:
                     if (wnd->maxSizeFull.x == -1) wnd->maxSizeFull.x = pMinMaxInfo->ptMaxSize.x;
                     if (wnd->maxSizeFull.y == -1) wnd->maxSizeFull.y = pMinMaxInfo->ptMaxSize.y;
 
-                    float scale = getHWNDScale(hwnd);
+                    float scale = wnd->getHWNDScale(hwnd);
 
                     // Set the maximum size dynamically
                     pMinMaxInfo->ptMinTrackSize.x = wnd->config.data["minWidth"] * scale;
@@ -513,7 +514,7 @@ public:
             case WM_DPICHANGED: {
                 WORD dpi = HIWORD(wParam);
                 RECT* rect = (RECT*)lParam;
-                float scale = getHWNDScale(hwnd);
+                float scale = wnd->getHWNDScale(hwnd);
 
                 POINT diff;
                 RECT clientRect, wndRect;
@@ -543,10 +544,10 @@ public:
 
             case WM_ACTIVATE: {
                 if (wParam == WA_INACTIVE) {
-                    SK_Global::onWindowFocusChanged(wnd, false);
+                    SK_Global::GetInstance().GetInstance().onWindowFocusChanged(wnd, false);
                 }
                 else {
-                    SK_Global::onWindowFocusChanged(wnd, true);
+                    SK_Global::GetInstance().GetInstance().onWindowFocusChanged(wnd, true);
                 }
 
                 return 0;
@@ -559,7 +560,7 @@ public:
 
                 if (wnd->config.data["movable"] == false){
 
-                    float scale = getHWNDScale(hwnd);
+                    float scale = wnd->getHWNDScale(hwnd);
 
                     // Prevent window from moving
                     int right = wnd->config.data["x"];
@@ -665,7 +666,7 @@ public:
                 int width = rect->right - rect->left;
                 int height = rect->bottom - rect->top;
 
-                float scale = getHWNDScale(hwnd);
+                float scale = wnd->getHWNDScale(hwnd);
 
                 float floatScaledWidth = width / scale;
                 float floatScaledHeight = height / scale;
@@ -761,7 +762,7 @@ public:
         UpdateWindow(wndHandle);
         createWebView();
 
-        SK_Global::updateWebViewHWNDListForView(windowClassName);
+        SK_Global::GetInstance().GetInstance().updateWebViewHWNDListForView(windowClassName);
 
 
     };
@@ -769,19 +770,19 @@ public:
 	void createWebView(SK_wndCreated cb = NULL) {
         webview.callResize = [&]() { update(); };
         webview.notifyReadyToShow = [this, cb]() {
-            SK_Window_Root::emitWndEvent(this, "ready-to-show", {});
+            emitWndEvent(this, "ready-to-show", {});
             if (cb) cb(this);
         };
 
         webview.onGetUserDataPath = [this](SK_Window* _null_) {
-            if (SK_Global::onGetWebViewUserDataPath) return SK_Global::onGetWebViewUserDataPath(this);
+            if (SK_Global::GetInstance().GetInstance().onGetWebViewUserDataPath) return SK_Global::GetInstance().GetInstance().onGetWebViewUserDataPath(this);
             return SK_String("");
         };
 
         webview.parentHwnd = &wndHandle;
         webview.parentClassName = windowClassName;
         webview.create();
-        SK_Global::updateWebViewHWNDListForView(windowClassName);
+        SK_Global::GetInstance().GetInstance().updateWebViewHWNDListForView(windowClassName);
     };
 
 
@@ -980,7 +981,7 @@ public:
         else SetWindowPos(wndHandle, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 
 
-        SK_Window_Root::emitWndEvent(this, "always-on-top-changed", { {"isAlwaysOnTop", flag} });
+        emitWndEvent(this, "always-on-top-changed", { {"isAlwaysOnTop", flag} });
     }
 
     void setFullscreen(bool activate) {
@@ -996,7 +997,7 @@ public:
 
             updateWebView();
 
-            if (config.data["fullscreen"]) SK_Window_Root::emitWndEvent(this, "leave-fullscreen", {});
+            if (config.data["fullscreen"]) emitWndEvent(this, "leave-fullscreen", {});
             config.data["fullscreen"] = false;
 
             return;
@@ -1017,7 +1018,7 @@ public:
 
         updateWebView();
 
-        SK_Window_Root::emitWndEvent(this, "enter-fullscreen", {});
+        emitWndEvent(this, "enter-fullscreen", {});
         config.data["fullscreen"] = true;
     }
 private:

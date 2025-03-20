@@ -39,28 +39,28 @@ public:
 
         nlohmann::json constructorOpts = payload["constructorOpts"];
             
-        if (SK_Global::onPreConfigWnd) SK_Global::onPreConfigWnd(wnd, constructorOpts);
+        if (SK_Global::GetInstance().onPreConfigWnd) SK_Global::GetInstance().onPreConfigWnd(wnd, constructorOpts);
            
         wnd->configWithInfo(constructorOpts);
             
-        if (SK_Global::onPostConfigWnd) SK_Global::onPostConfigWnd(wnd);
+        if (SK_Global::GetInstance().onPostConfigWnd) SK_Global::GetInstance().onPostConfigWnd(wnd);
             
         //newWnd->webview.navigate(SK_Base_URL + "/sk:view/" + wndID);
 
         if (wnd->config.data.contains("mainWindow") && wnd->config.data["mainWindow"] == true) {
 
             #if defined(SK_OS_windows)
-                wnd->wndHandle = SK_Global::mainWindow->wndHandle;
+                wnd->wndHandle = SK_Global::GetInstance().mainWindow->wndHandle;
             #elif defined(SK_OS_apple)
                 #ifdef __OBJC__
-                    wnd->wndHandle = SK_Global::mainWindow->wndHandle;
-                    wnd->contentView = SK_Global::mainWindow->contentView;
+                    wnd->wndHandle = SK_Global::GetInstance().mainWindow->wndHandle;
+                    wnd->contentView = SK_Global::GetInstance().mainWindow->contentView;
                 #endif
             #endif
                 
             wnd->windowClassName = "SK_Window_" + wndID;
                 
-            SK_Global::setMainWindowSize(wnd->config["width"], wnd->config["height"]);
+            SK_Global::GetInstance().setMainWindowSize(wnd->config["width"], wnd->config["height"]);
 
             wnd->createWebView();
         }

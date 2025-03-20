@@ -91,8 +91,8 @@ public:
     }
     
     nlohmann::json getAppInfo() {
-        SK_String appName = SK_Global::sk_config["product_info"]["name"];
-        SK_String appVersion = SK_Global::sk_config["product_info"]["version"];
+        SK_String appName = SK_Global::GetInstance().sk_config["product_info"]["name"];
+        SK_String appVersion = SK_Global::GetInstance().sk_config["product_info"]["version"];
 
         SK_String argv0 = "";
         //if (SK_Superkraft_App::app_argv.length() > 0) argv0 = SK_Superkraft_App::app_argv[0]; //ignoring this for now
@@ -120,7 +120,7 @@ public:
     SK_String getStaticInfo() {
         nlohmann::json res {
             {"application", getAppInfo()},
-            {"machine", SK_Machine::getStaticInfo()}
+            {"machine", SK_Global::GetInstance().machine->getStaticInfo()}
         };
 
 

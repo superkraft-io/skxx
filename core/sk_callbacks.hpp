@@ -26,7 +26,7 @@ using SK_onMainWindowHWNDAcquired = std::function<void(void* handle, bool isView
 
 	
 using SK_WebView_OnReady = std::function<void(void* webview, bool isHardBackend)>;
-
+using SK_WebView_SendMsgToFrontend_CB = std::function<void(const SK_String& target, const SK_String& data)>;
 
 enum SK_Communication_Packet_Type {
 	sk_comm_pt_ipc = 0,

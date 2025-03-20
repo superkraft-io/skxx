@@ -112,7 +112,7 @@ public:
         controller2->put_DefaultBackgroundColor(color); //DO NOT TOUCH!
 
         // 2. Get the webview handle
-        HWND webviewHwnd = SK_Global::getWebview2HWNDForWindow(parentClassName); //DO NOT TOUCH!
+        HWND webviewHwnd = SK_Global::GetInstance().GetInstance().getWebview2HWNDForWindow(parentClassName); //DO NOT TOUCH!
 
         //  3. Bring webview to top
         if (webviewHwnd) { //DO NOT TOUCH!
@@ -139,7 +139,7 @@ public:
         if (onGetUserDataPath) udPath = onGetUserDataPath(nullptr);
 
         if (udPath == "") {
-            udPath = SK_Path_Utils::GetOSFolder("appdata") + "\\" + SK_String(SK_Global::sk_config["product_info"]["name"]) + "\\wvc\\" + parentClassName;
+            udPath = SK_Path_Utils::GetOSFolder("appdata") + "\\" + SK_String(SK_Global::GetInstance().GetInstance().sk_config["product_info"]["name"]) + "\\wvc\\" + parentClassName;
         }
 
         return udPath;
@@ -223,7 +223,7 @@ public:
                             webview->add_WebResourceRequested(Callback<ICoreWebView2WebResourceRequestedEventHandler>([&](ICoreWebView2* sender, ICoreWebView2WebResourceRequestedEventArgs* args) -> HRESULT {
 
                                 SK_Communication_Config config{ "sk.sb", SK_Communication_Packet_Type::sk_comm_pt_web, args, environment };
-                                SK_Global::onCommunicationRequest(&config, NULL, NULL);
+                                SK_Global::GetInstance().onCommunicationRequest(&config, NULL, NULL);
 
                                 return S_OK;
                             }).Get(), nullptr);
@@ -277,7 +277,7 @@ public:
                                 nlohmann::json payload = nlohmann::json::parse(jsonStr.data);
 
                                 SK_Communication_Config config { "sk.view", SK_Communication_Packet_Type::sk_comm_pt_ipc, &payload };
-                                SK_Global::onCommunicationRequest(&config, [&](const SK_String& ipcResponseData) {
+                                SK_Global::GetInstance().onCommunicationRequest(&config, [&](const SK_String& ipcResponseData) {
                                     SK_String data = "sk_api.ipc.handleIncoming(" + ipcResponseData + ")";
                                     evaluateScript(data, NULL);
                                 }, NULL);
@@ -293,7 +293,7 @@ public:
                             //----  Lets make the webview transparent  ----//
                             callResize();
 
-                            SK_Global::onWebViewReady(static_cast<void*>(webview.get()), false);
+                            SK_Global::GetInstance().onWebViewReady(static_cast<void*>(webview.get()), false);
 
                             //  8. Finally we can navigate to the desired URL
                             //webview->Navigate(L"data:text/html, <html style=\"background:transparent;\"><body style=\"background:transparent; color: white;\">WebView 2</body></html>");
@@ -351,7 +351,7 @@ public:
 
         wil::com_ptr<ICoreWebView2> _webview = webview;
         
-        SK_Global::threadPool->queueOnMainThread([this, src, cb, _webview]() {
+        SK_Global::GetInstance().GetInstance().threadPool->queueOnMainThread([this, src, cb, _webview]() {
             evaluateScript_mainThread(_webview, src, cb);
         });
     };

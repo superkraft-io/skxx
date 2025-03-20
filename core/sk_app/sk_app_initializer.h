@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "../sk_common.hpp"
 
@@ -13,22 +13,37 @@ using SK_App_Initializer_AppEvent_CB = std::function<void(nlohmann::json data)>;
 
 class SK_App_Initializer {
 public:
+
     #ifdef __OBJC__
         NSObject* observer;
     #endif
     
-    static inline nlohmann::json bypasses;
-    static inline bool isInitialized;
-    static inline bool shouldTerminate;
+    nlohmann::json bypasses;
+    bool isInitialized;
+    bool shouldTerminate;
     
+    using SK_Get_SK_SB_IPC = std::function<SK_IPC_v2*()>;
+    SK_Get_SK_SB_IPC get_SK_SB_IPC_CB;
 
-    static void emitAppEvent(const SK_String& eventID, const nlohmann::json& data, SK_App_Initializer_AppEvent_CB cb = NULL) {
+    static SK_App_Initializer& GetInstance() {
+        static SK_App_Initializer instance;
+        return instance;
+    }
+
+
+    void init() {
+        SK_Global* skg = &SK_Global::GetInstance();
+        skg->machine = new SK_Machine();
+        skg->machine->init();
+    }
+
+    void emitAppEvent(const SK_String& eventID, const nlohmann::json& data, SK_App_Initializer_AppEvent_CB cb = NULL) {
         nlohmann::json payload{
             {"eventID", eventID},
             {"data", data}
         };
 
-        SK_IPC_v2* sb_ipc = SK_Global::sb_ipc;
+        SK_IPC_v2* sb_ipc = get_SK_SB_IPC_CB();
         if (sb_ipc == nullptr) return;
 
         sb_ipc->request("sk:viewIPC", "sk:sb", "sk:appEvent", payload, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
@@ -37,12 +52,17 @@ public:
     }
 
     #if defined(SK_OS_windows)
-        SK_App_Initializer(const nlohmann::json& _bypasses = {}) {
+        SK_App_Initializer(const nlohmann::json& _bypasses = {}, SK_Get_SK_SB_IPC _Get_SK_SB_IPC_CB = NULL) {
+            init();
+
             bypasses = _bypasses;
+            get_SK_SB_IPC_CB = _Get_SK_SB_IPC_CB;
         }
     #elif defined(SK_OS_apple)
         #ifdef __OBJC__
             SK_App_Initializer(const nlohmann::json& _bypasses = {}) {
+                init();
+
                 bypasses = _bypasses;
 
                 // Set up Objective-C observer
@@ -130,11 +150,14 @@ public:
                 return false;
             }
 
-            static inline void runLoopCallback(CFRunLoopObserverRef observer, CFRunLoopActivity activity, void *info) {
-                SK_Global::threadPool_processMainThreadTasks();
+            void runLoopCallback(CFRunLoopObserverRef observer, CFRunLoopActivity activity, void *info) {
+                SK_Global::GetInstance().threadPool_processMainThreadTasks();
             }
         #endif
     #endif
+private:
+    SK_App_Initializer(const SK_App_Initializer&) = delete;
+    SK_App_Initializer& operator=(const SK_App_Initializer&) = delete;
 };
 
 END_SK_NAMESPACE

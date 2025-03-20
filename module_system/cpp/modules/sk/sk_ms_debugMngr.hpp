@@ -15,14 +15,14 @@ public:
 
         if (target == "sb") {
             #if defined(SK_OS_windows)
-                SK_Global::showSoftBackendDevTools();
+                SK_Global::GetInstance().GetInstance().showSoftBackendDevTools();
             #elif defined(SK_OS_apple)
                 respondWith.error(404, "Not possible to remotely open dev tools on MacOS");
             #endif
             return;
         }
 
-        SK_Window* wnd = SK_Global::onFindWindowByTag(target);
+        SK_Window* wnd = SK_Global::GetInstance().GetInstance().onFindWindowByTag(target);
 
         if (wnd == nullptr) {
             respondWith.error(404, "ENOENT");

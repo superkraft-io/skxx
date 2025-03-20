@@ -6,7 +6,12 @@ BEGIN_SK_NAMESPACE
 
 class SK_Web_MIME_utils {
 public:
-    static std::string fromFileExt(const std::string& ext, const std::string& defaultMimeType = "text/html") {
+    static SK_Web_MIME_utils& GetInstance() {
+        static SK_Web_MIME_utils instance;
+        return instance;
+    }
+
+    std::string fromFileExt(const std::string& ext, const std::string& defaultMimeType = "text/html") {
         if (auto iterator{ mimeTypes.find(ext) }; iterator != mimeTypes.end()) {
             return iterator->second;
         }
@@ -15,7 +20,7 @@ public:
         }
     };
 
-    static std::string fromFilename(const std::string& filename, const std::string& defaultMimeType = "text/html") {
+    std::string fromFilename(const std::string& filename, const std::string& defaultMimeType = "text/html") {
         std::string ext = defaultMimeType;
 
         auto step1 = std::filesystem::path(filename);
@@ -29,7 +34,7 @@ public:
         return result;
     }
 
-    static inline std::unordered_map<std::string, std::string> mimeTypes{
+    std::unordered_map<std::string, std::string> mimeTypes{
         {"*","application/octet-stream"},
         {"aac", "audio/aac"},
         {"aif", "audio/aiff"},
@@ -75,11 +80,12 @@ public:
         {"xml", "application/xml"},
         {"zip", "application/zip"},
     };
-};
 
-static class SK_Web_Utils {
-public:
-    static SK_Web_MIME_utils mime;
+private:
+    SK_Web_MIME_utils() {}
+    ~SK_Web_MIME_utils() {}
+    SK_Web_MIME_utils(const SK_Web_MIME_utils&) = delete;
+    SK_Web_MIME_utils& operator=(const SK_Web_MIME_utils&) = delete;
 };
 
 END_SK_NAMESPACE

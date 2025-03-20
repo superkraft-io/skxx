@@ -32,9 +32,9 @@ struct SK_CPUInfo {
 
 class SK_Machine {
 public:
-    static inline std::vector<SK_CPUInfo> cpuInfo;
+    std::vector<SK_CPUInfo> cpuInfo;
 
-    static void init() {
+    void init() {
         SK_String _cpuModel = "N/A";
         int _cpuSpeed = -1;
 
@@ -43,14 +43,14 @@ public:
             _cpuSpeed = cpuInfo[0].speed;
         }
 
-        SK_Machine::cpuModel = _cpuModel;
-        SK_Machine::cpuSpeed = _cpuSpeed;
-        SK_Machine::staticInfo = SK_Machine::getStaticInfo();  
+        cpuModel = _cpuModel;
+        cpuSpeed = _cpuSpeed;
+        staticInfo = getStaticInfo();  
     };
 
-    static inline nlohmann::json staticInfo;
+    nlohmann::json staticInfo;
 
-    static nlohmann::json respondError(std::string errorMsg){
+    nlohmann::json respondError(std::string errorMsg){
         nlohmann::json json {
             {"error", errorMsg}
         };
@@ -59,18 +59,18 @@ public:
     }
 
 
-    static bool isBigEndian() {
+    bool isBigEndian() {
         uint32_t num = 1;
         uint8_t* bytePtr = reinterpret_cast<uint8_t*>(&num);
         if (bytePtr[0] == 1) return false;
         return true;
     }
 
-    static std::string getCPUArch() {
+    std::string getCPUArch() {
         return TOSTRING(SK_CPU_ARCH);
     }
 
-    static std::string getMachineType(){
+    std::string getMachineType(){
         #if defined(SK_OS_windows)
             SYSTEM_INFO sysinfo;
             GetNativeSystemInfo(&sysinfo);
@@ -120,7 +120,7 @@ public:
     }
 
 
-    static std::string getOSType() {
+    std::string getOSType() {
         // Determine the platform using preprocessor macros
 
         #if defined(SK_OS_windows)
@@ -160,7 +160,7 @@ public:
         #endif
     }
 
-    static std::string getOSPlatform() {
+    std::string getOSPlatform() {
         // Determine the platform using preprocessor macros
         #if defined(_WIN32)
             return "win32";
@@ -188,7 +188,7 @@ public:
     }
 
 
-    static std::string getOSVersion(bool releaseVersion = true) {
+    std::string getOSVersion(bool releaseVersion = true) {
         #if defined(SK_OS_windows)
             RTL_OSVERSIONINFOEXW osvi;
             ZeroMemory(&osvi, sizeof(RTL_OSVERSIONINFOEXW));
@@ -237,7 +237,7 @@ public:
     }
 
 
-    static std::vector<SK_CPUInfo> getCPUInformation() {
+    std::vector<SK_CPUInfo> getCPUInformation() {
         std::vector<SK_CPUInfo> cpus;
         
         #if defined(SK_OS_windows)
@@ -245,7 +245,7 @@ public:
             //IN OTHER WORDS IT MUST BE CALLED AS SOON AS THE PROGRAM STARTS AND THUS THIS FUNCTION CANNOT BE CALLED
             //AT A LATER STAGE OF RUNTIME
 
-            //UPDATE: In iPlug2 this works by adding "std::vector<SK_CPUInfo> cpuInfo = SK::SK_Machine::getCPUInformation();" in the beginning of the file "IPlugAPP_main.cpp"
+            //UPDATE: In iPlug2 this works by adding "std::vector<SK_CPUInfo> cpuInfo = SK::getCPUInformation();" in the beginning of the file "IPlugAPP_main.cpp"
 
 
             HRESULT hres;
@@ -443,7 +443,7 @@ public:
     }
 
 
-    static std::string getHostname() {
+    std::string getHostname() {
         #if defined(SK_OS_windows)
             TCHAR buffer[MAX_COMPUTERNAME_LENGTH + 1];
             DWORD size = sizeof(buffer) / sizeof(buffer[0]);
@@ -466,20 +466,20 @@ public:
         #endif
     }
 
-    static nlohmann::json getStaticInfo(){
+    nlohmann::json getStaticInfo(){
         nlohmann::json json {
             {"EOL", "\\n"},
-            {"endianess", (SK_Machine::isBigEndian() ? "BE" : "LE")},
-            {"arch", SK_Machine::getCPUArch()},
-            {"machine", SK_Machine::getMachineType()},
-            {"platform", SK_Machine::getOSPlatform()},
-            {"release", SK_Machine::getOSVersion()}, //OS build
-            {"type", SK_Machine::getOSType()},
-            {"version", SK_Machine::getOSVersion(false)},
+            {"endianess", (isBigEndian() ? "BE" : "LE")},
+            {"arch", getCPUArch()},
+            {"machine", getMachineType()},
+            {"platform", getOSPlatform()},
+            {"release", getOSVersion()}, //OS build
+            {"type", getOSType()},
+            {"version", getOSVersion(false)},
 
             {"devNull", "/dev/null"},
 
-            { "hostname", SK_Machine::getHostname()},
+            { "hostname", getHostname()},
 
             { "homedir", SK::SK_Path_Utils::paths["home"] },
             { "tmpdir", SK::SK_Path_Utils::paths["temp"] }
@@ -505,8 +505,8 @@ public:
     }
 
 
-    static inline std::string cpuModel;
-    static std::string getCPUModel() {
+    std::string cpuModel;
+    std::string getCPUModel() {
         #if defined(SK_OS_windows)
             int cpuInfo[4] = {0};
             char cpuBrandString[49] = { 0 };
@@ -568,8 +568,8 @@ public:
         #endif
     }
 
-    static inline int cpuSpeed;
-    static int getCPUSpeed() {
+    int cpuSpeed;
+    int getCPUSpeed() {
         //This function needs A LOT of work. Numbers come out wrong on Windows, and in NodeJS the numbers are different for each CPU core
         #if defined(SK_OS_windows)
             // Windows: Use the QueryPerformanceFrequency or other methods
@@ -608,7 +608,7 @@ public:
         #endif
     }
 
-    static SK_CPUInfo getCPUTimes() {
+    SK_CPUInfo getCPUTimes() {
         SK_CPUInfo _cpuInfo;
         #if defined(_WIN32) || defined(_WIN64)
             // Windows: Using GetSystemTimes
@@ -692,7 +692,7 @@ public:
         return _cpuInfo;
     }
 
-    static nlohmann::json getCPUInfo() {
+    nlohmann::json getCPUInfo() {
         int coreCount = 0;
 
         #if defined(SK_OS_windows)
@@ -744,7 +744,7 @@ public:
         return cpu;
     }
 
-    static nlohmann::json getMemoryInfo() {
+    nlohmann::json getMemoryInfo() {
         #if defined(SK_OS_windows)
             MEMORYSTATUSEX memoryStatus;
             memoryStatus.dwLength = sizeof(MEMORYSTATUSEX);
@@ -837,7 +837,7 @@ public:
         return info;
     }
 
-    static nlohmann::json getNetworkInfo() {
+    nlohmann::json getNetworkInfo() {
         nlohmann::json json {
 
         };
@@ -845,7 +845,7 @@ public:
         return json;
     }
 
-    static nlohmann::json getMachineTime() {
+    nlohmann::json getMachineTime() {
         #if defined(SK_OS_windows)
             double number = GetTickCount64();
         #elif defined(SK_OS_macos) || defined(SK_OS_ios)
@@ -884,7 +884,7 @@ public:
         return json;
     }
 
-    static nlohmann::json getUserInfo() {
+    nlohmann::json getUserInfo() {
         nlohmann::json info = {
             {"uid", -1},
             {"gid", -1},
@@ -897,7 +897,7 @@ public:
     }
 
 
-    static SK_String getUsername() {
+    SK_String getUsername() {
         #if defined(SK_OS_windows)
             char username[UNLEN + 1];
             DWORD usernameLen = UNLEN + 1;

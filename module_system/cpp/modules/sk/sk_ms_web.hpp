@@ -60,7 +60,7 @@ public:
             {"headers", payload["headers"]}
         };
 
-        SK_Global::threadPool->newAsync([&, reqTask, respondWith](SK_Thread_Pool_MainThreadRunner runOnMainThread) mutable {
+        SK_Global::GetInstance().threadPool->newAsync([&, reqTask, respondWith](SK_Thread_Pool_MainThreadRunner runOnMainThread) mutable {
             reqTask->response = sk_curl.post(reqTask->opt);
             
             respondWith.JSON(reqTask->response);

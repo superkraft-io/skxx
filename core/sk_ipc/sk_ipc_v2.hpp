@@ -8,7 +8,6 @@ BEGIN_SK_NAMESPACE
 using SK_IPC_v2_forwardCallback = std::function<void(SK_Communication_Packet* packet)>;
 
 using SK_IPC_v2_FrontendCallback = std::function<void(nlohmann::json data, SK_Communication_Packet* packet)>;
-using SK_IPC_v2_sendToFrontend_CB = std::function<void(const SK_String& target, const SK_String& data)>;
 using SK_IPC_v2_BackendCallback = std::function<void(const SK_String& target, SK_Communication_Packet* packet)>;
 
 class SK_IPC_v2_awaiter {
@@ -20,11 +19,8 @@ public:
 class SK_IPC_v2 {
 public:
     SK_String sender_id = "sk:sb";
-    static inline long long msg_id = 0;
 
 
-
-    static inline SK_IPC_v2_sendToFrontend_CB onSendToFrontend;
     SK_IPC_v2_BackendCallback onMessage;
     
     std::unordered_map<std::string, SK_IPC_v2_BackendCallback> awaitList;
@@ -35,21 +31,6 @@ public:
     std::unordered_map<std::string, SK_IPC_v2_awaiter*> forwardAwaitList;
 
 
-    /** Returns a standard OK IPC message*/
-    static inline const SK_String OK = "{}";
-
-    /** Returns an ERROR IPC object
-    * @param error Error code
-    * @param message A human readable message
-    * @return Returns a stringified JSON object, e.g {error: "failed", message: "This request failed"}*/
-    static inline const SK_String Error(SK_String error, SK_String message = ""){
-        nlohmann::json json;
-
-        json["error"] = error;
-        json["message"] = message;
-
-        return json.dump();
-    }
 
     static nlohmann::json createResponseJSON(SK_Communication_Packet* packet, const SK_String& data) {
         nlohmann::json responseJSON;
@@ -190,11 +171,12 @@ public:
 
         if (event_id == "") throw "[SK IPC.sendToFE] Event ID cannot be empty";
 
-        msg_id++;
+        
 
         nlohmann::json req;
 
-        req["msg_id"] = std::to_string(msg_id);
+        SK_Global::GetInstance().ipc_msg_id++;
+        req["msg_id"] = std::to_string(SK_Global::GetInstance().ipc_msg_id);
         req["type"] = _type;
         req["sender"] = sender;
         req["target"] = target;
@@ -206,7 +188,7 @@ public:
             awaitList[req["msg_id"]] = cb;
         }
 
-        onSendToFrontend(sender_id, req.dump());
+        SK_Global::GetInstance().sendMsgToWebview(sender_id, req.dump());
 
         return req["msg_id"];
     }
@@ -214,7 +196,7 @@ public:
 
     void sendResponse(SK_Communication_Packet* packet) {
         nlohmann::json req;
-        onSendToFrontend(sender_id, packet->asIPCMessage());
+        SK_Global::GetInstance().sendMsgToWebview(sender_id, packet->asIPCMessage());
     }
   
     /** Makes a request to the frontend and awaits a response (currently indefinitely)
@@ -244,7 +226,7 @@ public:
             awaitList[req["msg_id"]] = cb;
         }
 
-        onSendToFrontend(sender_id, req.dump());
+        SK_Global::GetInstance().sendMsgToWebview(sender_id, req.dump());
     }
 
 
