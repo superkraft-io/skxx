@@ -10,9 +10,9 @@ using SK_Thread_Pool_MainThreadRunner = std::function<void(SK_Thread_Pool_MainTh
 
 class SK_Thread_Pool {
 public:
-    static inline std::thread::id mainThreadId = std::this_thread::get_id();
+    std::thread::id mainThreadId = std::this_thread::get_id();
 
-    static inline bool thisFunctionRunningInMainThread() {
+    bool thisFunctionRunningInMainThread() {
         if (std::this_thread::get_id() == mainThreadId) {
             return true;
         }

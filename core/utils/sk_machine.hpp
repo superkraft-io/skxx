@@ -481,8 +481,8 @@ public:
 
             { "hostname", getHostname()},
 
-            { "homedir", SK::SK_Path_Utils::paths["home"] },
-            { "tmpdir", SK::SK_Path_Utils::paths["temp"] }
+            { "homedir", SK_Global::GetInstance().pathUtils.paths["home"] },
+            { "tmpdir", SK_Global::GetInstance().pathUtils.paths["temp"] }
         };
         
         
@@ -889,7 +889,7 @@ public:
             {"uid", -1},
             {"gid", -1},
             {"username", getUsername()},
-            {"homedir", SK_Path_Utils::paths["home"]},
+            {"homedir", SK_Global::GetInstance().pathUtils.paths["home"]},
             {"shell", "null"},
         };
 

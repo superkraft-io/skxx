@@ -30,10 +30,12 @@ public:
             if (!sk__GetDpiForWindow) return 1;
         }
 
-        int dpi = sk__GetDpiForWindow(hwnd);
+        if (hwnd) {
+            int dpi = sk__GetDpiForWindow(hwnd);
 
-        if (dpi != USER_DEFAULT_SCREEN_DPI) {
-            return static_cast<float>(dpi) / USER_DEFAULT_SCREEN_DPI;
+            if (dpi != USER_DEFAULT_SCREEN_DPI) {
+                return static_cast<float>(dpi) / USER_DEFAULT_SCREEN_DPI;
+            }
         }
 
         return 1;

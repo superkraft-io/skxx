@@ -35,13 +35,14 @@ public:
         
         injectData("window.sk_api = {}");
 
+        SK_Path_Utils* pathUtils = &SK_Global::GetInstance().pathUtils;
         SK_String payload = generateFromFiles(std::vector<SK_String>{
-            SK_Path_Utils::paths["global_js_core"] + "/sk_ipc.js",
-            SK_Path_Utils::paths["module_system"] + "/sk_module.js",
-            SK_Path_Utils::paths["module_system"] + "/sk_module_root.js",
-            SK_Path_Utils::paths["global_js_core"] + "/sk_global_js_core.js",
+            pathUtils->paths["global_js_core"] + "/sk_ipc.js",
+            pathUtils->paths["module_system"] + "/sk_module.js",
+            pathUtils->paths["module_system"] + "/sk_module_root.js",
+            pathUtils->paths["global_js_core"] + "/sk_global_js_core.js",
             
-            SK_Path_Utils::paths["global_js_core"] + "/sk_debug_mode.js"
+            pathUtils->paths["global_js_core"] + "/sk_debug_mode.js"
         })
         .replace("<sk_base_url>", SK_Base_URL)
         .replace("'<sk_static_info>'", getStaticInfo())
@@ -120,7 +121,7 @@ public:
     SK_String getStaticInfo() {
         nlohmann::json res {
             {"application", getAppInfo()},
-            {"machine", SK_Global::GetInstance().machine->getStaticInfo()}
+            {"machine", static_cast<SK_Machine*>(SK_Global::GetInstance().machine)->getStaticInfo()}
         };
 
 

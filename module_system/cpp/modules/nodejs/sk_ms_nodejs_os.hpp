@@ -18,23 +18,23 @@ public:
 
     
     void getCPUInfo(SK_Communication_Response& respondWith) {
-        respondWith.JSON(SK_Global::GetInstance().machine->getCPUInfo());
+        respondWith.JSON(static_cast<SK_Machine*>(SK_Global::GetInstance().machine)->getCPUInfo());
     };
 
     void getMemoryInfo(SK_Communication_Response& respondWith) {
-        respondWith.JSON(SK_Global::GetInstance().machine->getMemoryInfo());
+        respondWith.JSON(static_cast<SK_Machine*>(SK_Global::GetInstance().machine)->getMemoryInfo());
     };
 
     void getMachineTime(SK_Communication_Response& respondWith) {
-        respondWith.JSON(SK_Global::GetInstance().machine->getMachineType());
+        respondWith.JSON(static_cast<SK_Machine*>(SK_Global::GetInstance().machine)->getMachineType());
     };
 
     void getNetworInfo(SK_Communication_Response& respondWith) {
-        respondWith.JSON(SK_Global::GetInstance().machine->getNetworkInfo());
+        respondWith.JSON(static_cast<SK_Machine*>(SK_Global::GetInstance().machine)->getNetworkInfo());
     };
 
     void getUserInfo(SK_Communication_Response& respondWith) {
-        respondWith.JSON(SK_Global::GetInstance().machine->getUserInfo());
+        respondWith.JSON(static_cast<SK_Machine*>(SK_Global::GetInstance().machine)->getUserInfo());
     };
 };
 

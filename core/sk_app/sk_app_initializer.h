@@ -34,7 +34,11 @@ public:
     void init() {
         SK_Global* skg = &SK_Global::GetInstance();
         skg->machine = new SK_Machine();
-        skg->machine->init();
+        static_cast<SK_Machine*>(skg->machine)->init();
+
+        SK_Global::GetInstance().pathUtils.init();
+
+        SK_Color::SK_Colors_Init();
     }
 
     void emitAppEvent(const SK_String& eventID, const nlohmann::json& data, SK_App_Initializer_AppEvent_CB cb = NULL) {

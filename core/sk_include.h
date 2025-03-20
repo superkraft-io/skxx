@@ -9,7 +9,6 @@
 #include "utils/sk_datetime.hpp"
 #include "utils/sk_str_utils.hpp"
 #include "utils/sk_color.hpp"
-#include "utils/sk_machine.hpp"
 
 #include "utils/sk_logger.h"
 
@@ -50,6 +49,7 @@
 
 BEGIN_SK_NAMESPACE
 
+//class SK_Machine;
 
 class SK_Global {
 public:
@@ -83,7 +83,8 @@ public:
         #endif
     }
 
-    SK_Machine* machine;
+    SK_Path_Utils pathUtils;
+    void* machine;
 
     nlohmann::json sk_config;
     
@@ -152,6 +153,7 @@ private:
 
 END_SK_NAMESPACE
 
+#include "utils/sk_machine.hpp"
 
 #include "sk_ipc/sk_ipc_v2.hpp"
 

@@ -139,7 +139,7 @@ public:
         if (onGetUserDataPath) udPath = onGetUserDataPath(nullptr);
 
         if (udPath == "") {
-            udPath = SK_Path_Utils::GetOSFolder("appdata") + "\\" + SK_String(SK_Global::GetInstance().GetInstance().sk_config["product_info"]["name"]) + "\\wvc\\" + parentClassName;
+            udPath = SK_Global::GetInstance().pathUtils.GetOSFolder("appdata") + "\\" + SK_String(SK_Global::GetInstance().GetInstance().sk_config["product_info"]["name"]) + "\\wvc\\" + parentClassName;
         }
 
         return udPath;
@@ -147,8 +147,6 @@ public:
 
 	void create() {
         auto options = Microsoft::WRL::Make<CoreWebView2EnvironmentOptions>();
-
-        bool imt = SK_Thread_Pool::thisFunctionRunningInMainThread();
 
         SK_String udPath = getUserDataPath();
         std::wstring udPathWStr = udPath.toWString();
@@ -344,7 +342,7 @@ public:
 
     void evaluateScript(const SK_String& src, SK_WebView_EvaluationComplete_Callback cb) {
 
-        if (SK_Thread_Pool::thisFunctionRunningInMainThread()) {
+        if (SK_Global::GetInstance().threadPool->thisFunctionRunningInMainThread()) {
             evaluateScript_mainThread(webview, src, cb);
             return;
         }

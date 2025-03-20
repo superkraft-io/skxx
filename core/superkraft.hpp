@@ -18,9 +18,6 @@ public:
    
     
 	Superkraft() {
-		SK_Path_Utils::init();
-		SK_Colors_Init();
-
 		modsys.bdfs->binaryData = &binaryData;
         
         modsys.proton.app.wndMngr = &wndMngr;
@@ -29,12 +26,12 @@ public:
 		wvinit.modsys = &modsys;
 
 		SK_File configFile;
-		if (!configFile.loadFromDisk(SK_Path_Utils::paths["config"])) {
+		if (!configFile.loadFromDisk(SK_Global::GetInstance().pathUtils.paths["config"])) {
 			throw std::runtime_error("[SK++] No config file found!");
 		}
         SK_Global::GetInstance().sk_config = nlohmann::json::parse(std::string(configFile));
 
-		SK_Global::GetInstance().machine->init();
+		static_cast<SK_Machine*>(SK_Global::GetInstance().machine)->init();
 
 
 		comm.modsys = &modsys;
@@ -45,7 +42,10 @@ public:
 	}
     
     
-    static inline Superkraft* sk(){ return static_cast<Superkraft*>(SK_Global::GetInstance().sk); }
+    static inline Superkraft* sk(){
+		Superkraft* instance = static_cast<Superkraft*>(SK_Global::GetInstance().sk);
+		return instance ? instance : nullptr;
+	}
 };
 
 END_SK_NAMESPACE

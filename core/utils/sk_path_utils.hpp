@@ -8,9 +8,9 @@ BEGIN_SK_NAMESPACE
 
 static class SK_Path_Utils {
 public:
-	static inline std::map<std::string, std::string> paths;
+	std::map<std::string, std::string> paths;
 
-    static std::string getAbsoluteFilePath() {
+    std::string getAbsoluteFilePath() {
         std::filesystem::path filePath(__FILE__);
 
         try {
@@ -21,7 +21,7 @@ public:
         }
     }
     
-	static std::string pathBackwardsUntilNeighbour(const std::string& neighbourName){
+	std::string pathBackwardsUntilNeighbour(const std::string& neighbourName){
 		std::filesystem::path currentPath(getAbsoluteFilePath());
 
 		bool stop = false;
@@ -51,12 +51,12 @@ public:
 	}
 
 
-	static void add(const SK_String& id, const SK_String& path) {
+	void add(const SK_String& id, const SK_String& path) {
 		paths[id] = path.replaceAll("\\", "/");
 	}
 
 
-	static void init() {
+	void init() {
 		#ifdef SK_MODE_DEBUG
 			//In DEBUG mode the projectRoot will be set to the root folder of your project.
 			SK_String projectRoot = SK_String(SK_Path_Utils::pathBackwardsUntilNeighbour("skxx")).replaceAll("\\", "/");
@@ -80,7 +80,7 @@ public:
 		add("temp", getTempFolder());
 	}
 
-	static SK_String getTempFolder() {
+	SK_String getTempFolder() {
 		#if defined(SK_OS_windows)
 			char tempPath[MAX_PATH];
 			if (GetTempPathA(MAX_PATH, tempPath)) {
@@ -122,7 +122,7 @@ public:
 		#endif
 	}
 
-	static SK_String getHomeFolder() {
+	SK_String getHomeFolder() {
 		#if defined(SK_OS_windows)
 			char homePath[MAX_PATH];
 			if (SUCCEEDED(SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, 0, homePath))) {
@@ -176,7 +176,7 @@ public:
 		#endif
 	}
 
-	static inline SK_String GetOSFolder(const SK_String& __id, int flags = 0) {
+	SK_String GetOSFolder(const SK_String& __id, int flags = 0) {
 
 		SK_String _id = __id.toUpperCase();
 

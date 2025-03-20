@@ -1,5 +1,7 @@
 #pragma once
 
+/*
+* 
 #include "../sk_common.hpp"
 
 BEGIN_SK_NAMESPACE
@@ -116,3 +118,5 @@ public:
 };
 
 END_SK_NAMESPACE
+
+*/

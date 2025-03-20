@@ -11,7 +11,7 @@ public:
     };
 
     void getStaticInfo(SK_Communication_Response& respondWith) {
-        respondWith.JSON(SK_Global::GetInstance().machine->getStaticInfo());
+        respondWith.JSON(static_cast<SK_Machine*>(SK_Global::GetInstance().machine)->getStaticInfo());
     };
 };
 
