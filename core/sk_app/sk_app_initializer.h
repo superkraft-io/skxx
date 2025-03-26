@@ -13,7 +13,7 @@ using SK_App_Initializer_AppEvent_CB = std::function<void(nlohmann::json data)>;
 
 class SK_App_Initializer {
 public:
-
+    SK_Global* skg;
     #ifdef __OBJC__
         NSObject* observer;
     #endif
@@ -32,13 +32,7 @@ public:
 
 
     void init() {
-        SK_Global* skg = &SK_Global::GetInstance();
-        skg->machine = new SK_Machine();
-        static_cast<SK_Machine*>(skg->machine)->init();
-
-        SK_Global::GetInstance().pathUtils.init();
-
-        SK_Color::SK_Colors_Init();
+        SK_Colors_Init();
     }
 
     void emitAppEvent(const SK_String& eventID, const nlohmann::json& data, SK_App_Initializer_AppEvent_CB cb = NULL) {

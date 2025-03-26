@@ -13,10 +13,12 @@ class SK_Window;
 
 class SK_Window_Root {
 public:
+	SK_Global* skg;
+
 	unsigned int wndIdx;
     SK_String windowClassName = "SK_Window";
 	SK_String tag;
-	SK_IPC_v2 ipc;
+	SK_IPC_v2* ipc = new SK_IPC_v2();
 
 	SK_JSON_Callback config {
 		{"mainWindow", false},
@@ -37,6 +39,7 @@ public:
     std::optional<int> zIndex = NULL;
 
     
+	bool isReady = false;
     bool isClosed = false;
     
 	bool resizing = false;
@@ -53,12 +56,10 @@ public:
     bool shouldClose = true;
 	bool shouldClose_2ndPass = false;
 
-	SK_Color backgroundColor = "black";
+	SK_Color backgroundColor = "greenyellow";
 
     SK_WebView webview;
 
-	SK_Window_Root() {
-	}
 
 	virtual void initialize(const unsigned int& _wndIdx) {
         wndIdx = _wndIdx;
@@ -104,10 +105,14 @@ public:
         };
         
 
-		SK_IPC_v2* ipc = static_cast<SK_IPC_v2*>(SK_Global::GetInstance().sb_ipc);
-		ipc->request("sk:viewIPC", "sk:sb", "sk:proton.js::windowEvent::" + wnd->tag, payload, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
+		SK_IPC_v2* sb_ipc = static_cast<SK_IPC_v2*>(skg->sb_ipc);
+		sb_ipc->request("sk:viewIPC", "sk:sb", "sk::windowEvent::" + wnd->tag, payload, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
             if (cb != NULL) cb(responsePacket->data);
         });
+
+		ipc->request("sk:viewIPC", tag, "sk::windowEvent", payload, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
+			//do nothing
+		});
     }
 private:
 

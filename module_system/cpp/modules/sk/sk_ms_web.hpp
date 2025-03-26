@@ -12,14 +12,16 @@ typedef struct {
 
 class SK_Module_web {
 public:
+    SK_Global* skg;
+
     SK_CURL sk_curl;
 
     unsigned long taskIdx = 0;
 
 
-    SK_Module_web() {
-
-    };
+    SK_Module_web(SK_Global* _skg) {
+        skg = _skg;
+    }
 
     void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
        // if (operation == "createProgressCallback") createProgressCallback(payload, respondWith);
@@ -60,7 +62,7 @@ public:
             {"headers", payload["headers"]}
         };
 
-        SK_Global::GetInstance().threadPool->newAsync([&, reqTask, respondWith](SK_Thread_Pool_MainThreadRunner runOnMainThread) mutable {
+        skg->threadPool->newAsync([&, reqTask, respondWith](SK_Thread_Pool_MainThreadRunner runOnMainThread) mutable {
             reqTask->response = sk_curl.post(reqTask->opt);
             
             respondWith.JSON(reqTask->response);

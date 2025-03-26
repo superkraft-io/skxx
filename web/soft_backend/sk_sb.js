@@ -10,7 +10,9 @@ function sleep(delay = 1000) {
 
 
 var __start = async () => {
-
+    console.log('Sleeeping for 5 seconds...')
+    //await sleep(5000)
+    console.log('Woke up!')
 
     
     window.global = window

@@ -16,8 +16,14 @@ BEGIN_SK_NAMESPACE
 
 class SK_Module_ProtonJS_App {
 public:
+    SK_Global* skg;
+
     SK_Window_Mngr* wndMngr;
     
+    SK_Module_ProtonJS_App(SK_Global* _skg) {
+        skg = _skg;
+    }
+
     void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
         
         SK_String target = payload["__moduleInstanceConfig"]["__target"];

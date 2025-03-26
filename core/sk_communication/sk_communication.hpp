@@ -6,15 +6,20 @@ BEGIN_SK_NAMESPACE
 
 class SK_Communication {
 public:
+    SK_Global* skg;
+
 	SK_IPC_v2* sb_ipc;
 	SK_Module_System* modsys;
 	SK_Window_Mngr* wndMngr;
 
-	SK_Communication() {
+	SK_Communication(SK_Global* _skg) {
+        skg = _skg;
+
+
     #if defined(SK_OS_windows)
-		SK_Global::GetInstance().onCommunicationRequest = [&](SK_Communication_Config* config, SK_Communication_handlePacket_Response_IPC_CB ipcResponseCallback, void* resHandler) {
+		skg->onCommunicationRequest = [&](SK_Communication_Config* config, SK_Communication_handlePacket_Response_IPC_CB ipcResponseCallback, void* resHandler) {
     #elif defined(SK_OS_apple)
-		SK_Global::GetInstance().onCommunicationRequest = [&](SK_Communication_Config* config, SK_Communication_handlePacket_Response_IPC_CB ipcResponseCallback, SK_Communication_AppleCB_CB resHandler) {
+		skg->onCommunicationRequest = [&](SK_Communication_Config* config, SK_Communication_handlePacket_Response_IPC_CB ipcResponseCallback, SK_Communication_AppleCB_CB resHandler) {
     #endif
 			SK_Communication_Packet* packet;
 			
@@ -87,7 +92,7 @@ public:
 			}
 			else {
 				#if defined SK_MODE_DEBUG
-					SK_String filePath = SK_Global::GetInstance().pathUtils.paths["soft_backend"] + SK_String(packet->info["path"]);
+					SK_String filePath = skg->pathUtils.paths["soft_backend"] + SK_String(packet->info["path"]);
 					packet->response()->file(filePath);
 				#else
 
@@ -96,7 +101,7 @@ public:
 		}
 		else if (packet->target == "sk:modsys") {
 			#if defined SK_MODE_DEBUG
-				SK_String filePath = SK_Global::GetInstance().pathUtils.paths["module_system"] + SK_String(packet->info["path"]);
+				SK_String filePath = skg->pathUtils.paths["module_system"] + SK_String(packet->info["path"]);
 				packet->response()->file(filePath);
 			#else
 
@@ -138,7 +143,7 @@ public:
 			}
 
 			#if defined SK_MODE_DEBUG
-				SK_String filePath = SK_Global::GetInstance().pathUtils.paths["project"] + path;
+				SK_String filePath = skg->pathUtils.paths["project"] + path;
 				packet->response()->file(filePath);
 			#else
 
@@ -158,7 +163,7 @@ public:
 		}
 		else {
 			#if defined SK_MODE_DEBUG
-				std::string filePath = SK_Global::GetInstance().pathUtils.paths["project"] + SK_String(packet->info["path"]);
+				std::string filePath = skg->pathUtils.paths["project"] + SK_String(packet->info["path"]);
 				packet->response()->file(filePath);
 			#else
 
@@ -172,7 +177,8 @@ public:
 		}
 		else {
 			SK_Window* view = wndMngr->findWindowByTag(id);
-			return &view->ipc;
+            if (!view) return nullptr;
+			return view->ipc;
 		}
 	}
 

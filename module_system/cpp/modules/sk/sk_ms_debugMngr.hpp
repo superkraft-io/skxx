@@ -6,6 +6,12 @@ BEGIN_SK_NAMESPACE
 
 class SK_Module_debugMngr {
 public:
+    SK_Global* skg;
+
+    SK_Module_debugMngr(SK_Global* _skg) {
+        skg = _skg;
+    }
+
     void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
              if (operation == "showDevTools") showDevTools(payload, respondWith);
     };
@@ -15,14 +21,14 @@ public:
 
         if (target == "sb") {
             #if defined(SK_OS_windows)
-                SK_Global::GetInstance().GetInstance().showSoftBackendDevTools();
+            skg->showSoftBackendDevTools();
             #elif defined(SK_OS_apple)
                 respondWith.error(404, "Not possible to remotely open dev tools on MacOS");
             #endif
             return;
         }
 
-        SK_Window* wnd = SK_Global::GetInstance().GetInstance().onFindWindowByTag(target);
+        SK_Window* wnd = skg->onFindWindowByTag(target);
 
         if (wnd == nullptr) {
             respondWith.error(404, "ENOENT");

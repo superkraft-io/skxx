@@ -56,6 +56,8 @@ public:
 
 class SK_Window_Mngr {
 public:
+	SK_Global* skg;
+
 	SK_Window_WebView_Counter wvCounter;
 
 	unsigned int wndIdx = 0;
@@ -74,18 +76,18 @@ public:
 
 	using SK_Window_Create_Callback = std::optional<std::function<void(SK_Window*)>>;
 
-	SK_Window_Mngr() {
-        int x = 0;
+	SK_Window_Mngr(SK_Global* _skg) {
+		skg = _skg;
         
-        SK_Global::GetInstance().onWindowFocusChanged = [&](SK_Window* wnd, const bool& focused) {
+        skg->onWindowFocusChanged = [&](SK_Window* wnd, const bool& focused) {
 			if (focused) updateAllWindows(); //This will fix the ussue
 		};
 
-        SK_Global::GetInstance().onFindWindowByClassName = [&](const SK_String& windowClassName) {
+        skg->onFindWindowByClassName = [&](const SK_String& windowClassName) {
 			return findWindowByClassName(windowClassName);
 		};
 
-        SK_Global::GetInstance().onFindWindowByTag = [&](const SK_String& windowTag) {
+        skg->onFindWindowByTag = [&](const SK_String& windowTag) {
 			return findWindowByTag(windowTag);
 		};
 
@@ -94,16 +96,16 @@ public:
 
 
 		#if defined(SK_OS_windows)
-            SK_Global::GetInstance().updateWebViewHWNDListForView = [&](const SK_String& windowClassName) {
+            skg->updateWebViewHWNDListForView = [&](const SK_String& windowClassName) {
 				updateAllWebViewHandlesForView(windowClassName);
 			};
 
-            SK_Global::GetInstance().getWebview2HWNDForWindow = [&](const SK_String& windowClassName) {
+            skg->getWebview2HWNDForWindow = [&](const SK_String& windowClassName) {
 				return wvCounter.getWebViewForWindow(windowClassName);
 			};
 		#endif
 
-        SK_Global::GetInstance().resizeAllMainWindowViews = [&](int x, int y, int w, int h, float scale) {
+        skg->resizeAllMainWindowViews = [&](int x, int y, int w, int h, float scale) {
 			#if defined(SK_MODE_DEBUG)
 				for (auto it = list.begin(); it != list.end(); ++it) {
 					if (it->second) {
@@ -135,6 +137,9 @@ public:
 		wndIdx++;
 
 		SK_Window* wnd = new SK_Window();
+		wnd->skg = skg;
+		wnd->ipc->skg = skg;
+		wnd->webview.skg = skg;
 
 		wnd->initialize(wndIdx);
 

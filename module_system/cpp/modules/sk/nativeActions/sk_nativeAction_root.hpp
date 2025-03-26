@@ -8,6 +8,8 @@ using SK_NativeAction_Root_CB = std::function<void(const nlohmann::json& payload
 
 class SK_NativeAction_Root {
 public:
+    SK_Global* skg;
+
     SK_NativeAction_Root_CB run;
 };
 

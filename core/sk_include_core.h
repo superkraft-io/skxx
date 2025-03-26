@@ -1,8 +1,6 @@
 #pragma once
 
 
-
-
 #include <unordered_map>
 #include <optional>
 #include <filesystem>
@@ -92,7 +90,11 @@
 	#include <sys/stat.h>
 
 	#if defined (SK_OS_apple)
-		#include <TargetConditionals.h>
+		#ifdef __OBJC__
+			#import <Foundation/Foundation.h>
+			#import <AppKit/AppKit.h>
+			#import <WebKit/WebKit.h>
+		#endif
 	#elif defined (SK_OS_linux) || defined (SK_OS_android)
 		// Linux specific includes
 	#endif

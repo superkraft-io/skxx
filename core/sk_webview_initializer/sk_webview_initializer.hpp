@@ -6,6 +6,8 @@ BEGIN_SK_NAMESPACE
 
 class SK_WebView_Initializer {
 public:
+    SK_Global* skg;
+
     SK_Module_System* modsys;
 
     #if defined(SK_OS_windows)
@@ -35,7 +37,7 @@ public:
         
         injectData("window.sk_api = {}");
 
-        SK_Path_Utils* pathUtils = &SK_Global::GetInstance().pathUtils;
+        SK_Path_Utils* pathUtils = &skg->pathUtils;
         SK_String payload = generateFromFiles(std::vector<SK_String>{
             pathUtils->paths["global_js_core"] + "/sk_ipc.js",
             pathUtils->paths["module_system"] + "/sk_module.js",
@@ -46,7 +48,7 @@ public:
         })
         .replace("<sk_base_url>", SK_Base_URL)
         .replace("'<sk_static_info>'", getStaticInfo())
-        .replace("'<sk_native_actions>'", modsys->nativeActions.listActions());
+        .replace("'<sk_native_actions>'", modsys->nativeActions->listActions());
 
         injectData(payload);
     }
@@ -92,8 +94,8 @@ public:
     }
     
     nlohmann::json getAppInfo() {
-        SK_String appName = SK_Global::GetInstance().sk_config["product_info"]["name"];
-        SK_String appVersion = SK_Global::GetInstance().sk_config["product_info"]["version"];
+        SK_String appName = skg->sk_config["product_info"]["name"];
+        SK_String appVersion = skg->sk_config["product_info"]["version"];
 
         SK_String argv0 = "";
         //if (SK_Superkraft_App::app_argv.length() > 0) argv0 = SK_Superkraft_App::app_argv[0]; //ignoring this for now
@@ -121,7 +123,7 @@ public:
     SK_String getStaticInfo() {
         nlohmann::json res {
             {"application", getAppInfo()},
-            {"machine", static_cast<SK_Machine*>(SK_Global::GetInstance().machine)->getStaticInfo()}
+            {"machine", static_cast<SK_Machine*>(skg->machine)->getStaticInfo()}
         };
 
 

@@ -6,9 +6,18 @@ BEGIN_SK_NAMESPACE
 
 class SK_Module_ProtonJS {
 public:
-    SK_Module_ProtonJS_App app;
-    SK_Module_ProtonJS_Window window;
+    SK_Global* skg;
+
+    SK_Module_ProtonJS_App* app;
+    SK_Module_ProtonJS_Window* window;
     
+    SK_Module_ProtonJS(SK_Global* _skg) {
+        skg = _skg;
+
+        app = new SK_Module_ProtonJS_App(_skg);
+        window = new SK_Module_ProtonJS_Window(_skg);
+    }
+
     /*void config(SK_Window_Mngr* wndMngr){
         window.wndMngr = wndMngr;
     }*/
@@ -18,8 +27,8 @@ public:
         
         SK_String target = payload["__moduleInstanceConfig"]["__target"];
         
-        if (target == "app") app.handleOperation(operation, payload, respondWith);
-        else if (target == "window") window.handleOperation(operation, payload, respondWith);
+        if (target == "app") app->handleOperation(operation, payload, respondWith);
+        else if (target == "window") window->handleOperation(operation, payload, respondWith);
     };
 };
 

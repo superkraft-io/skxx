@@ -12,8 +12,11 @@ class SK_Window;
 
 class SK_WebView {
 public:
+    SK_Global* skg;
+
     using SK_WebView_EvaluationComplete_Callback = std::function<void(const SK_String& result)>;
     using SK_WebView_Simple_Callback = std::function<void()>;
+    using SK_WebView_isReady_CB = std::function<bool()>;
 
     SK_WebViewResourceHandler* wvrh;
 
@@ -31,6 +34,8 @@ public:
 
     SK_WebView_Simple_Callback callResize;
     SK_WebView_Simple_Callback notifyReadyToShow;
+
+    SK_WebView_isReady_CB get_isReady = nullptr;
 
     SK_WebView_onGetUserDataPath onGetUserDataPath;
 
@@ -112,7 +117,7 @@ public:
         controller2->put_DefaultBackgroundColor(color); //DO NOT TOUCH!
 
         // 2. Get the webview handle
-        HWND webviewHwnd = SK_Global::GetInstance().GetInstance().getWebview2HWNDForWindow(parentClassName); //DO NOT TOUCH!
+        HWND webviewHwnd = skg->getWebview2HWNDForWindow(parentClassName); //DO NOT TOUCH!
 
         //  3. Bring webview to top
         if (webviewHwnd) { //DO NOT TOUCH!
@@ -139,7 +144,7 @@ public:
         if (onGetUserDataPath) udPath = onGetUserDataPath(nullptr);
 
         if (udPath == "") {
-            udPath = SK_Global::GetInstance().pathUtils.GetOSFolder("appdata") + "\\" + SK_String(SK_Global::GetInstance().GetInstance().sk_config["product_info"]["name"]) + "\\wvc\\" + parentClassName;
+            udPath = skg->pathUtils.GetOSFolder("appdata") + "\\" + SK_String(skg->sk_config["product_info"]["name"]) + "\\wvc\\" + parentClassName;
         }
 
         return udPath;
@@ -156,6 +161,15 @@ public:
         if (udPath != "") {
             _udPath = udPathWStr.c_str();
         }
+
+        HRESULT iniHR = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+        if (FAILED(iniHR))
+        {
+            __debugbreak;
+            throw "Could not initialize webview";
+            return;
+        }
+
 
         HRESULT hr = CreateCoreWebView2EnvironmentWithOptions(nullptr, _udPath, options.Get(),
             Callback<ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>(
@@ -221,7 +235,7 @@ public:
                             webview->add_WebResourceRequested(Callback<ICoreWebView2WebResourceRequestedEventHandler>([&](ICoreWebView2* sender, ICoreWebView2WebResourceRequestedEventArgs* args) -> HRESULT {
 
                                 SK_Communication_Config config{ "sk.sb", SK_Communication_Packet_Type::sk_comm_pt_web, args, environment };
-                                SK_Global::GetInstance().onCommunicationRequest(&config, NULL, NULL);
+                                skg->onCommunicationRequest(&config, NULL, NULL);
 
                                 return S_OK;
                             }).Get(), nullptr);
@@ -275,7 +289,7 @@ public:
                                 nlohmann::json payload = nlohmann::json::parse(jsonStr.data);
 
                                 SK_Communication_Config config { "sk.view", SK_Communication_Packet_Type::sk_comm_pt_ipc, &payload };
-                                SK_Global::GetInstance().onCommunicationRequest(&config, [&](const SK_String& ipcResponseData) {
+                                skg->onCommunicationRequest(&config, [&](const SK_String& ipcResponseData) {
                                     SK_String data = "sk_api.ipc.handleIncoming(" + ipcResponseData + ")";
                                     evaluateScript(data, NULL);
                                 }, NULL);
@@ -291,7 +305,7 @@ public:
                             //----  Lets make the webview transparent  ----//
                             callResize();
 
-                            SK_Global::GetInstance().onWebViewReady(static_cast<void*>(webview.get()), false);
+                            skg->onWebViewReady(static_cast<void*>(webview.get()), false);
 
                             //  8. Finally we can navigate to the desired URL
                             //webview->Navigate(L"data:text/html, <html style=\"background:transparent;\"><body style=\"background:transparent; color: white;\">WebView 2</body></html>");
@@ -327,6 +341,10 @@ public:
 	};
 
     void evaluateScript_mainThread(wil::com_ptr<ICoreWebView2> webview, const SK_String& src, SK_WebView_EvaluationComplete_Callback cb) {
+        if (!get_isReady || !get_isReady()) {
+            return;
+        }
+
         std::wstring wstr = src.toWString();
         LPCWSTR str = wstr.c_str();
         webview->ExecuteScript(str, Callback<ICoreWebView2ExecuteScriptCompletedHandler>([cb](HRESULT err, LPCWSTR resAsWStr) -> HRESULT {
@@ -342,14 +360,14 @@ public:
 
     void evaluateScript(const SK_String& src, SK_WebView_EvaluationComplete_Callback cb) {
 
-        if (SK_Global::GetInstance().threadPool->thisFunctionRunningInMainThread()) {
+        if (skg->threadPool->thisFunctionRunningInMainThread()) {
             evaluateScript_mainThread(webview, src, cb);
             return;
         }
 
         wil::com_ptr<ICoreWebView2> _webview = webview;
         
-        SK_Global::GetInstance().GetInstance().threadPool->queueOnMainThread([this, src, cb, _webview]() {
+        skg->threadPool->queueOnMainThread([this, src, cb, _webview]() {
             evaluateScript_mainThread(_webview, src, cb);
         });
     };

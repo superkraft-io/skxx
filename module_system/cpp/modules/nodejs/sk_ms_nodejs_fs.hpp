@@ -7,7 +7,13 @@ BEGIN_SK_NAMESPACE
 
 class SK_Module_fs {
 public:
+    SK_Global* skg;
+
     SK_Module_vfs* vfs;
+
+    SK_Module_fs(SK_Global* _skg) {
+        skg = _skg;
+    }
 
     void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
         SK_String path = payload["path"];
@@ -28,7 +34,7 @@ public:
 
         SK_String fullPath = path;
 
-        SK_Path_Utils* pathUtils = &SK_Global::GetInstance().pathUtils;
+        SK_Path_Utils* pathUtils = &skg->pathUtils;
 
         //If the path is not absolute, then make the SK_Project folder the root folder
         if (path.substring(0, 1) == "/" || !SK_File::isPathAbsolute(path)) {

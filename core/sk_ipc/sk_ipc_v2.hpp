@@ -18,6 +18,8 @@ public:
 
 class SK_IPC_v2 {
 public:
+    SK_Global* skg;
+
     SK_String sender_id = "sk:sb";
 
 
@@ -175,8 +177,8 @@ public:
 
         nlohmann::json req;
 
-        SK_Global::GetInstance().ipc_msg_id++;
-        req["msg_id"] = std::to_string(SK_Global::GetInstance().ipc_msg_id);
+        skg->ipc_msg_id++;
+        req["msg_id"] = std::to_string(skg->ipc_msg_id);
         req["type"] = _type;
         req["sender"] = sender;
         req["target"] = target;
@@ -188,7 +190,7 @@ public:
             awaitList[req["msg_id"]] = cb;
         }
 
-        SK_Global::GetInstance().sendMsgToWebview(sender_id, req.dump());
+        skg->sendMsgToWebview(sender_id, req.dump());
 
         return req["msg_id"];
     }
@@ -196,7 +198,7 @@ public:
 
     void sendResponse(SK_Communication_Packet* packet) {
         nlohmann::json req;
-        SK_Global::GetInstance().sendMsgToWebview(sender_id, packet->asIPCMessage());
+        skg->sendMsgToWebview(sender_id, packet->asIPCMessage());
     }
   
     /** Makes a request to the frontend and awaits a response (currently indefinitely)
@@ -226,7 +228,7 @@ public:
             awaitList[req["msg_id"]] = cb;
         }
 
-        SK_Global::GetInstance().sendMsgToWebview(sender_id, req.dump());
+        skg->sendMsgToWebview(sender_id, req.dump());
     }
 
 

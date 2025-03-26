@@ -43,7 +43,7 @@ public:
 
 
 
-    SK_String windowClassName = "SK_Window_" + SK_Global::GetInstance().GetInstance().newUUID();
+    SK_String windowClassName = "SK_Window_" + skg->newUUID();
     HWND wndHandle = NULL;
     WNDCLASSW wc = { 0 };
     HINSTANCE hInstance;
@@ -60,6 +60,9 @@ public:
             updateWindowByConfig();
         };
 
+        ipc->on("isReady", [&](const nlohmann::json& data, SK_Communication_Packet* packet) {
+            packet->response()->JSON({ {"isReady", isReady} });
+        });
     }
 
     ~SK_Window() {
@@ -546,10 +549,10 @@ public:
 
             case WM_ACTIVATE: {
                 if (wParam == WA_INACTIVE) {
-                    SK_Global::GetInstance().GetInstance().onWindowFocusChanged(wnd, false);
+                    wnd->skg->onWindowFocusChanged(wnd, false);
                 }
                 else {
-                    SK_Global::GetInstance().GetInstance().onWindowFocusChanged(wnd, true);
+                    wnd->skg->onWindowFocusChanged(wnd, true);
                 }
 
                 return 0;
@@ -764,27 +767,29 @@ public:
         UpdateWindow(wndHandle);
         createWebView();
 
-        SK_Global::GetInstance().GetInstance().updateWebViewHWNDListForView(windowClassName);
+        skg->updateWebViewHWNDListForView(windowClassName);
 
 
     };
 
 	void createWebView(SK_wndCreated cb = NULL) {
+        webview.get_isReady = [&]() { return isReady; };
         webview.callResize = [&]() { update(); };
         webview.notifyReadyToShow = [this, cb]() {
+            isReady = true;
             emitWndEvent(this, "ready-to-show", {});
             if (cb) cb(this);
         };
 
         webview.onGetUserDataPath = [this](SK_Window* _null_) {
-            if (SK_Global::GetInstance().GetInstance().onGetWebViewUserDataPath) return SK_Global::GetInstance().GetInstance().onGetWebViewUserDataPath(this);
+            if (skg->onGetWebViewUserDataPath) return skg->onGetWebViewUserDataPath(this);
             return SK_String("");
         };
 
         webview.parentHwnd = &wndHandle;
         webview.parentClassName = windowClassName;
         webview.create();
-        SK_Global::GetInstance().GetInstance().updateWebViewHWNDListForView(windowClassName);
+        skg->updateWebViewHWNDListForView(windowClassName);
     };
 
 

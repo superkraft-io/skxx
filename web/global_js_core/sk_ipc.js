@@ -8,6 +8,8 @@ class SK_IPC {
         this.sender_id = opt.sender_id
 
         this.on('sk.sb.forwardedPacket', async data => {
+            console.log('FORWARDED PACKET')
+            console.log(data)
             return await this.handleRequest(data, true)
         })
 

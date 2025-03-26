@@ -1,3 +1,5 @@
+console.log('sk:application')
+
 class SK_Application {
     constructor(opt) {
         this.isReady = false

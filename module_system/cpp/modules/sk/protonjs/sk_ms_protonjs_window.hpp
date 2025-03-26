@@ -10,9 +10,13 @@ BEGIN_SK_NAMESPACE
 
 class SK_Module_ProtonJS_Window {
 public:
+    SK_Global* skg;
+
     SK_Window_Mngr* wndMngr;
     
-    
+    SK_Module_ProtonJS_Window(SK_Global* _skg) {
+        skg = _skg;
+    }
     
     void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
         
@@ -35,32 +39,32 @@ public:
       
 
         wnd->tag = wndID;
-        wnd->ipc.sender_id = wndID;
+        wnd->ipc->sender_id = wndID;
 
         nlohmann::json constructorOpts = payload["constructorOpts"];
             
-        if (SK_Global::GetInstance().onPreConfigWnd) SK_Global::GetInstance().onPreConfigWnd(wnd, constructorOpts);
+        if (skg->onPreConfigWnd) skg->onPreConfigWnd(wnd, constructorOpts);
            
         wnd->configWithInfo(constructorOpts);
             
-        if (SK_Global::GetInstance().onPostConfigWnd) SK_Global::GetInstance().onPostConfigWnd(wnd);
+        if (skg->onPostConfigWnd) skg->onPostConfigWnd(wnd);
             
         //newWnd->webview.navigate(SK_Base_URL + "/sk:view/" + wndID);
 
         if (wnd->config.data.contains("mainWindow") && wnd->config.data["mainWindow"] == true) {
 
             #if defined(SK_OS_windows)
-                wnd->wndHandle = SK_Global::GetInstance().mainWindow->wndHandle;
+                wnd->wndHandle = skg->mainWindow->wndHandle;
             #elif defined(SK_OS_apple)
                 #ifdef __OBJC__
-                    wnd->wndHandle = SK_Global::GetInstance().mainWindow->wndHandle;
-                    wnd->contentView = SK_Global::GetInstance().mainWindow->contentView;
+                    wnd->wndHandle = skg->mainWindow->wndHandle;
+                    wnd->contentView = skg->mainWindow->contentView;
                 #endif
             #endif
                 
             wnd->windowClassName = "SK_Window_" + wndID;
                 
-            SK_Global::GetInstance().setMainWindowSize(wnd->config["width"], wnd->config["height"]);
+            skg->setMainWindowSize(wnd->config["width"], wnd->config["height"]);
 
             wnd->createWebView();
         }

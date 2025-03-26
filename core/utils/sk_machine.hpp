@@ -32,7 +32,13 @@ struct SK_CPUInfo {
 
 class SK_Machine {
 public:
-    std::vector<SK_CPUInfo> cpuInfo;
+    SK_Global* skg;
+
+    std::vector<SK_CPUInfo> cpuInfo{};
+
+    SK_Machine(SK_Global* _skg) {
+        skg = _skg;
+    }
 
     void init() {
         SK_String _cpuModel = "N/A";
@@ -481,8 +487,8 @@ public:
 
             { "hostname", getHostname()},
 
-            { "homedir", SK_Global::GetInstance().pathUtils.paths["home"] },
-            { "tmpdir", SK_Global::GetInstance().pathUtils.paths["temp"] }
+            { "homedir", skg->pathUtils.paths["home"] },
+            { "tmpdir", skg->pathUtils.paths["temp"] }
         };
         
         
@@ -889,7 +895,7 @@ public:
             {"uid", -1},
             {"gid", -1},
             {"username", getUsername()},
-            {"homedir", SK_Global::GetInstance().pathUtils.paths["home"]},
+            {"homedir", skg->pathUtils.paths["home"]},
             {"shell", "null"},
         };
 

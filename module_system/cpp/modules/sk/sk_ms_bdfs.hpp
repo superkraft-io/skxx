@@ -6,7 +6,14 @@ BEGIN_SK_NAMESPACE
 
 class SK_Module_bdfs {
 public:
+    SK_Global* skg;
+
     SK_Project_BinaryData* binaryData;
+
+    SK_Module_bdfs(SK_Global* _skg) {
+        skg = _skg;
+    }
+
 
     void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
         SK_String path = payload["path"];

@@ -2,6 +2,7 @@
 
 #include "sk_include_core.h"
 
+
 #include "utils/sk_string.h"
 #include "utils/sk_number.hpp"
 #include "utils/sk_path_utils.hpp"
@@ -39,25 +40,11 @@
 #include "sk_communication/sk_communication_packet.hpp"
 
 
-#if defined(SK_OS_macos)
-    #ifdef __OBJC__
-        #import <Foundation/Foundation.h>
-        #import <AppKit/AppKit.h>
-        #import <WebKit/WebKit.h>
-    #endif
-#endif
 
 BEGIN_SK_NAMESPACE
 
-//class SK_Machine;
-
 class SK_Global {
 public:
-    static SK_Global& GetInstance() {
-        static SK_Global instance;
-        return instance;
-    }
-
     SK_String newUUID() {
         #if defined(SK_OS_windows)
             UUID uuid;
@@ -128,8 +115,8 @@ public:
 
 	SK_Thread_Pool* threadPool = new SK_Thread_Pool(8);
 
-	SK_ThreadPool_ProcessMainThreadTasks threadPool_processMainThreadTasks = []() {
-        SK_Global::GetInstance().threadPool->processMainThreadTasks();
+	SK_ThreadPool_ProcessMainThreadTasks threadPool_processMainThreadTasks = [&]() {
+        threadPool->processMainThreadTasks();
 	};
 
 	SK_showSoftBackendDevTools showSoftBackendDevTools;
@@ -144,11 +131,6 @@ public:
     SK_wndCreated onWndCreated = NULL;
 
     SK_WebView_onGetUserDataPath onGetWebViewUserDataPath;
-private:
-    SK_Global() {}
-    ~SK_Global() {}
-    SK_Global(const SK_Global&) = delete;
-    SK_Global& operator=(const SK_Global&) = delete;
 };
 
 END_SK_NAMESPACE

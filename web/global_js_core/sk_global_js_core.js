@@ -156,6 +156,25 @@ class SK_Global_Core {
         var res = await this.ipc.request('printProfiler', {}, undefined, { target: 'sk.profiler' })
         console.log(res)
     }
+
+    waitForWndReady(){
+        return new Promise(resolve => {
+            var isBusy = false
+            var timer = setInterval(async ()=>{
+                if (isBusy) return
+                isBusy = true
+                var res = await sk_api.ipc.request('isReady', {}, null)
+                
+                if (!res.isReady){
+                    isBusy = false
+                    return
+                }
+                
+                clearInterval(timer)
+                resolve()
+            }, 1)
+        })
+    }
 }
 
 window.sk_api = new SK_Global_Core({ id: Date.now().toString() })

@@ -6,6 +6,12 @@ BEGIN_SK_NAMESPACE
 
 class SK_Module_os {
 public:
+    SK_Global* skg;
+
+    SK_Module_os(SK_Global* _skg) {
+        skg = _skg;
+    }
+
     void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
              if (operation == "getCPUInfo"    ) getCPUInfo(respondWith);
         else if (operation == "getMemoryInfo" ) getMemoryInfo(respondWith);
@@ -18,23 +24,23 @@ public:
 
     
     void getCPUInfo(SK_Communication_Response& respondWith) {
-        respondWith.JSON(static_cast<SK_Machine*>(SK_Global::GetInstance().machine)->getCPUInfo());
+        respondWith.JSON(static_cast<SK_Machine*>(skg->machine)->getCPUInfo());
     };
 
     void getMemoryInfo(SK_Communication_Response& respondWith) {
-        respondWith.JSON(static_cast<SK_Machine*>(SK_Global::GetInstance().machine)->getMemoryInfo());
+        respondWith.JSON(static_cast<SK_Machine*>(skg->machine)->getMemoryInfo());
     };
 
     void getMachineTime(SK_Communication_Response& respondWith) {
-        respondWith.JSON(static_cast<SK_Machine*>(SK_Global::GetInstance().machine)->getMachineType());
+        respondWith.JSON(static_cast<SK_Machine*>(skg->machine)->getMachineType());
     };
 
     void getNetworInfo(SK_Communication_Response& respondWith) {
-        respondWith.JSON(static_cast<SK_Machine*>(SK_Global::GetInstance().machine)->getNetworkInfo());
+        respondWith.JSON(static_cast<SK_Machine*>(skg->machine)->getNetworkInfo());
     };
 
     void getUserInfo(SK_Communication_Response& respondWith) {
-        respondWith.JSON(static_cast<SK_Machine*>(SK_Global::GetInstance().machine)->getUserInfo());
+        respondWith.JSON(static_cast<SK_Machine*>(skg->machine)->getUserInfo());
     };
 };
 

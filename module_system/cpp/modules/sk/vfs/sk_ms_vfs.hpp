@@ -6,7 +6,13 @@ BEGIN_SK_NAMESPACE
 
 class SK_Module_vfs {
 public:
+    SK_Global* skg;
+
     std::vector<SK_Module_vfs_file*> entries;
+
+    SK_Module_vfs(SK_Global* _skg) {
+        skg = _skg;
+    }
 
     ~SK_Module_vfs() {
         for (int i = 0; i < entries.size(); i++) delete entries[i];

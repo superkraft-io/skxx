@@ -123,7 +123,7 @@ class BrowserWindow extends SK_Module_Root {
         this.defOpt = { ...BrowserWindow.getDefOpts(), ...opt }
         
         
-        sk_api.ipc.on('sk:proton.js::windowEvent::' + this.__moduleInstanceConfig.__uuid, (res, respondWith)=>{
+        sk_api.ipc.on('sk::windowEvent::' + this.__moduleInstanceConfig.__uuid, (res, respondWith)=>{
             console.log(res)
             this.emit(res, respondWith)
         })

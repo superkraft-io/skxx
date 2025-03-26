@@ -6,6 +6,8 @@ BEGIN_SK_NAMESPACE
 
 class SK_MS_cNA_handleParamComponentMouseEvent {
 public:
+    SK_Global* skg;
+
     void handleOperation(const nlohmann::json& payload, SK_Communication_Response& respondWith) {
 
         SK_String paramID = payload["paramID"];
@@ -29,7 +31,7 @@ public:
 
 
         if (event == "contextmenu") {
-            if (SK_Global::GetInstance().runningAs == "app") {
+            if (skg->runningAs == "app") {
                 respondWith.error(404, "standalone_runtime");
                 return;
             }

@@ -9,12 +9,20 @@ BEGIN_SK_NAMESPACE
 
 class SK_Module_NativeActions {
 public:
+    SK_Global* skg;
+
     SK_MS_cNA_handleParamComponentMouseEvent handleParamComponentMouseEvent;
     
-    SK_App_NativeActions appActions;
+    SK_App_NativeActions* appActions;
+
+    SK_Module_NativeActions(SK_Global* _skg) {
+        skg = _skg;
+
+        appActions = new SK_App_NativeActions();
+    }
 
     void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
-        if (appActions.handleOperation(operation, payload, respondWith)) return;
+        if (appActions->handleOperation(operation, payload, respondWith)) return;
 
         if (operation == "handleParamComponentMouseEvent") handleParamComponentMouseEvent.handleOperation(payload, respondWith);
 
@@ -23,7 +31,7 @@ public:
     SK_String listActions() {
         SK_String keysString;
 
-        for (const auto& pair : appActions.actions) {
+        for (const auto& pair : appActions->actions) {
             if (!keysString.data.empty()) {
                 keysString += ",";
             }
