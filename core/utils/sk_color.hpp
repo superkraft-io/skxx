@@ -450,12 +450,6 @@ static inline void SK_Colors_Init() {
         {"yellow", SK_Color(0xff, 0xff, 0x00)},
         {"yellowgreen", SK_Color(0x9a, 0xcd, 0x32)}
     });
-
-    int size = SK_Colors::list.size();
-    auto skcAddr = &SK_Colors::list;
-
-    int x = 0;
-
 };
 
 
