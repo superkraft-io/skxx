@@ -1,5 +1,7 @@
 #pragma once
 
+using SK_WebView_Simple_Callback = std::function<void()>;
+  
 #if defined(SK_OS_windows)
     #include "windows/sk_webview_windows.hpp"
 #elif defined(SK_OS_macos)

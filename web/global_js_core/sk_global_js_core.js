@@ -158,6 +158,7 @@ class SK_Global_Core {
     }
 
     waitForWndReady(){
+        console.log('-------- waitForWndReady')
         return new Promise(resolve => {
             var isBusy = false
             var timer = setInterval(async ()=>{

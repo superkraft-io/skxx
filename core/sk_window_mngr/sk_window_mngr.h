@@ -64,6 +64,10 @@ public:
 	
 	std::unordered_map<std::string, SK_Window*> list;
     
+    SK_Window_Mngr(){
+        int x = 0;
+    }
+    
 	SK_Window* findWindowByClassName(const SK_String& windowClassName) {
 		auto it = list.find(windowClassName);
 
@@ -223,10 +227,18 @@ public:
     }*/
 
 
-	void destroyAllWindows() {
-		for (auto& [key, wnd] : list) {
-			delete wnd;
-		}
+    void destroyAllWindows() {
+        if (list.size() == 0) return;
+        
+        for (std::unordered_map<std::string, SK_Window*>::iterator it = list.begin(); it != list.end(); ++it) {
+            SK_Window* wnd = it->second;
+            
+            #ifdef __OBJC__
+                delete wnd;
+            #endif
+            
+            it->second = nullptr;
+        }
 
 		list.clear();
 	}

@@ -207,7 +207,7 @@ public:
     * @param cb Callback of the response*/
     void request(const SK_String& sender, const SK_String& target, SK_String event_id, nlohmann::json data, SK_IPC_v2_BackendCallback cb) {
         #ifdef __OBJC__
-            SKLogInfo(SK_String("sender: " + sender + "    target: " + target + "    event_id: " + event_id + "    data: " + data.dump(4)));
+            //SKLogInfo(SK_String("sender: " + sender + "    target: " + target + "    event_id: " + event_id + "    data: " + data.dump(4)));
         #endif
         
         sendToFE(sender, target, event_id, data, "request", cb);

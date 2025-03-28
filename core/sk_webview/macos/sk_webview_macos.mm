@@ -3,6 +3,7 @@
 //#include "sk_webview_macos_v2.h"
 
 #include "../../sk_common.hpp"
+#include "../../superkraft.hpp"
 
 #import <Foundation/Foundation.h>
 #import <WebKit/WebKit.h>
@@ -13,23 +14,18 @@ NS_ASSUME_NONNULL_BEGIN
 
 using namespace SK;
 
-@interface SK_WebView_URLSchemeHandler : NSObject <WKURLSchemeHandler, WKScriptMessageHandler>
-@property (nonatomic, assign) SK_WebView* webView;
-@property (nonatomic, assign) SK_String tag;
-@end
+
 
 @implementation SK_WebView_URLSchemeHandler
 - (void)webView:(WKWebView *)webView startURLSchemeTask:(id <WKURLSchemeTask>)urlSchemeTask {
-    //a bare minimum test
-    
     SK_String url = urlSchemeTask.request.URL.absoluteString;
     SK_String path = urlSchemeTask.request.URL.path;
     
     
     SK_Communication_Config config{self.tag, SK_Communication_Packet_Type::sk_comm_pt_web, (__bridge void *)urlSchemeTask.request};
-    SK_Global::onCommunicationRequest(&config, NULL, [&](SK_Communication_Packet* packet) {
+    self.skg->onCommunicationRequest(&config, NULL, [&](SK_Communication_Packet* packet) -> void* {
         if (packet == nullptr){
-            return SK_Communication_Packet::packetFromWebRequest(urlSchemeTask.request, config.sender);
+            return (static_cast<Superkraft*>(self.skg->sk))->comm->packetFromWebRequest(urlSchemeTask.request, config.sender);
         }
         
         SK_Communication_Response_Web* responseObj = static_cast<SK_Communication_Response_Web*>(packet->response());
@@ -67,8 +63,8 @@ using namespace SK;
         if (isSK_IPC_call) {
             SK_Communication_Config config{self.tag, SK_Communication_Packet_Type::sk_comm_pt_ipc, &json};
             
-            SK_WebView* webview = self.webView;
-            SK_Global::onCommunicationRequest(&config, [&, webview](const SK_String& ipcResponseData) {
+            SK_WebView* webview = static_cast<SK_WebView*>(self.webView);
+            self.skg->onCommunicationRequest(&config, [&, webview](const SK_String& ipcResponseData) {
                 SK_String data = "sk_api.ipc.handleIncoming(" + ipcResponseData + ")";
                 webview->evaluateScript(data.c_str(), NULL);
             }, NULL);
@@ -121,6 +117,27 @@ NS_ASSUME_NONNULL_END
 
 BEGIN_SK_NAMESPACE
 
+SK_WebView::~SK_WebView(){
+    [webview.configuration.userContentController removeScriptMessageHandlerForName:@"SK_IPC_Handler"];
+    [webview.configuration.userContentController removeAllUserScripts];
+    
+    webview.UIDelegate = nil;
+    webview.navigationDelegate = nil;
+    webviewDelegate = nil;
+    
+    [webview removeFromSuperview];
+    
+    webview = nil;
+    
+    messageHandler.webView = nil;
+    messageHandler.skg = nil;
+    
+    urlHandler.webView = nil;
+    urlHandler.skg = nil;
+    
+    [webview.backForwardList performSelector:@selector(_removeAllItems)];
+}
+
 void SK_WebView::create(bool offsetWhenDebugging) {
     NSRect frame = parentWndHandle.contentView.frame;
     
@@ -149,15 +166,17 @@ void SK_WebView::create(bool offsetWhenDebugging) {
     config.preferences = preferences;
     
     // Create an instance of the Objective-C message handler
-    SK_WebView_URLSchemeHandler* messageHandler = [[SK_WebView_URLSchemeHandler alloc] init];
+    messageHandler = [[SK_WebView_URLSchemeHandler alloc] init];
     messageHandler.tag = tag;
     messageHandler.webView = this;
+    messageHandler.skg = skg;
     [config.userContentController addScriptMessageHandler:messageHandler name:@"SK_IPC_Handler"];
 
     // Register a custom URL scheme handler (for request interception)
-    SK_WebView_URLSchemeHandler* urlHandler = [[SK_WebView_URLSchemeHandler alloc] init];
+    urlHandler = [[SK_WebView_URLSchemeHandler alloc] init];
     urlHandler.tag = tag;
     urlHandler.webView = this;
+    urlHandler.skg = skg;
     [config setURLSchemeHandler:urlHandler forURLScheme: @"sk"];
 
     [config.userContentController  addUserScript:[[WKUserScript alloc] initWithSource:
@@ -190,10 +209,12 @@ void SK_WebView::create(bool offsetWhenDebugging) {
     // Add WKWebView to the parent window's content view
     [parentContentView addSubview:webview];
 
-    SK_Global::onWebViewReady(static_cast<void*>(webview), false);
+    skg->onWebViewReady(static_cast<void*>(webview), false);
 
     // Navigate to the initial URL
     navigate(currentURL);
+    
+    notifyReadyToShow();
 }
 
 
@@ -236,14 +257,14 @@ void SK_WebView::evaluateScript_mainThread(void* _webview, const SK_String& src,
 }
 
 void SK_WebView::evaluateScript(const SK_String& src, SK_WebView_EvaluationComplete_Callback cb) {
-    if (SK_Thread_Pool::thisFunctionRunningInMainThread()) {
+    if (skg->threadPool->thisFunctionRunningInMainThread()) {
         evaluateScript_mainThread(webview, src, cb);
         return;
     }
 
     WKWebView* _webview = webview;
     
-    SK_Global::threadPool->queueOnMainThread([this, src, cb, _webview]() {
+    skg->threadPool->queueOnMainThread([this, src, cb, _webview]() {
         evaluateScript_mainThread(_webview, src, cb);
     });
 }

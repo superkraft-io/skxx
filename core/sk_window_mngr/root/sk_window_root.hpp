@@ -6,7 +6,7 @@
 
 BEGIN_SK_NAMESPACE
 
-
+using SK_Window_Root_onDestroyed_CB = std::function<void()>;
 using SK_Window_Root_windowEventMsg_CB = std::function<void(nlohmann::json data)>;
 
 class SK_Window;
@@ -15,6 +15,8 @@ class SK_Window_Root {
 public:
 	SK_Global* skg;
 
+    SK_Window_Root_onDestroyed_CB onDestroyed;
+    
 	unsigned int wndIdx;
     SK_String windowClassName = "SK_Window";
 	SK_String tag;
@@ -59,8 +61,7 @@ public:
 	SK_Color backgroundColor = "greenyellow";
 
     SK_WebView webview;
-
-
+    
 	virtual void initialize(const unsigned int& _wndIdx) {
         wndIdx = _wndIdx;
     }
@@ -105,12 +106,14 @@ public:
         };
         
 
-		SK_IPC_v2* sb_ipc = static_cast<SK_IPC_v2*>(skg->sb_ipc);
-		sb_ipc->request("sk:viewIPC", "sk:sb", "sk::windowEvent::" + wnd->tag, payload, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
-            if (cb != NULL) cb(responsePacket->data);
-        });
+        if (skg->sb_ipc){
+            SK_IPC_v2* sb_ipc = static_cast<SK_IPC_v2*>(skg->sb_ipc);
+            sb_ipc->request("sk:viewIPC", "sk:sb", "sk::windowEvent::" + wnd->tag, payload, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
+                if (cb != NULL) cb(responsePacket->data);
+            });
+        }
 
-		ipc->request("sk:viewIPC", tag, "sk::windowEvent", payload, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
+		if (ipc) ipc->request("sk:viewIPC", tag, "sk::windowEvent", payload, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
 			//do nothing
 		});
     }

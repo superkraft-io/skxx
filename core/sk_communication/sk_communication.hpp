@@ -84,7 +84,7 @@ public:
         }
         else if (packet->target == "sk:viewIPC") {
             SK_IPC_v2* sender = getIPCForID(packet->sender);
-            sender->handle_IPC_Msg(packet);
+            if (sender) sender->handle_IPC_Msg(packet);
         }
 		else if (packet->target == "sk:sb") {
 			if (packet->info.contains("event_id")) {
@@ -346,7 +346,7 @@ public:
 
             // Request Headers
             NSDictionary<NSString*, NSString*>* headers = request.allHTTPHeaderFields;
-            packet->info["headers"] = packet->ExtractHeadersToJson(headers);
+            packet->info["headers"] = ExtractHeadersToJson(headers);
 
             // Request Body (if POST)
             if (packet->info["method"] == "POST") {

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "sk_include_core.h"
 
@@ -140,7 +140,7 @@ END_SK_NAMESPACE
 #include "sk_ipc/sk_ipc_v2.hpp"
 
 #include "sk_webview/sk_webview.h"
-#include "sk_window_mngr/sk_window_mngr.hpp"
+#include "sk_window_mngr/sk_window_mngr.h"
 
 #include "sk_app/sk_app_initializer.h"
 

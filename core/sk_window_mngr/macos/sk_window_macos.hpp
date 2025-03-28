@@ -31,16 +31,36 @@ public:
             config_updateTracker[key] = true;
             updateWindowByConfig();
         };
+        
+        ipc->on("isReady", [&](const nlohmann::json& data, SK_Communication_Packet* packet) {
+            packet->response()->JSON({ {"isReady", isReady} });
+        });
     }
 
     ~SK_Window() {
-        //if (window) {
-            //[window release];
-        //}
+        if (config.data["mainWindow"] == false){
+            #ifdef __OBJC__
+                if (wndHandle){
+                    [wndHandle close];
+                    wndHandle = nil;
+                }
+                
+                backgroundPanel = nil;
+                contentView = nil;
+                vibrantView = nil;
+            #endif
+            
+            int x = 0;
+        }
         
         #ifdef __OBJC__
+            wndDelegate.skWindow = nil;
             wndDelegate = nil;
         #endif
+        
+        delete ipc;
+        
+        if (onDestroyed != NULL) onDestroyed();
     }
 
     void initialize(const unsigned int& _wndIdx) override {
@@ -119,6 +139,11 @@ public:
     }
 
     void createWebView() {
+        webview.notifyReadyToShow = [this]() {
+            isReady = true;
+            emitWndEvent(this, "ready-to-show", {});
+        };
+        
         #ifdef __OBJC__
             webview.tag = tag;
             webview.parentWndHandle = wndHandle;

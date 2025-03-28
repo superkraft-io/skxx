@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "../sk_common.hpp"
 
@@ -14,6 +14,7 @@ using SK_App_Initializer_AppEvent_CB = std::function<void(nlohmann::json data)>;
 class SK_App_Initializer {
 public:
     SK_Global* skg;
+    
     #ifdef __OBJC__
         NSObject* observer;
     #endif
@@ -24,11 +25,6 @@ public:
     
     using SK_Get_SK_SB_IPC = std::function<SK_IPC_v2*()>;
     SK_Get_SK_SB_IPC get_SK_SB_IPC_CB;
-
-    static SK_App_Initializer& GetInstance() {
-        static SK_App_Initializer instance;
-        return instance;
-    }
 
 
     void init() {
@@ -58,16 +54,17 @@ public:
         }
     #elif defined(SK_OS_apple)
         #ifdef __OBJC__
-            SK_App_Initializer(const nlohmann::json& _bypasses = {}) {
+            SK_App_Initializer(const nlohmann::json& _bypasses = {}, SK_Get_SK_SB_IPC _Get_SK_SB_IPC_CB = NULL) {
                 init();
 
                 bypasses = _bypasses;
+                get_SK_SB_IPC_CB = _Get_SK_SB_IPC_CB;
 
                 // Set up Objective-C observer
                 observer = [[NSObject alloc] init];
         
                 
-                CFRunLoopObserverContext context = {0, nullptr, nullptr, nullptr, nullptr};
+                CFRunLoopObserverContext context = {0, static_cast<void*>(skg), nullptr, nullptr, nullptr};
                 CFRunLoopObserverRef sk_observer = CFRunLoopObserverCreate(
                     kCFAllocatorDefault,
                     kCFRunLoopAllActivities, // Listen to all states
@@ -121,16 +118,20 @@ public:
     
             // Static C++ functions to handle Objective-C callbacks
             static void applicationWillFinishLaunching(id self, SEL _cmd, NSNotification *notification) {
-                if (isInitialized) return;
-                isInitialized = true;
+                SK_App_Initializer* skai = (__bridge SK_App_Initializer*)self;
+                
+                if (skai->isInitialized) return;
+                skai->isInitialized = true;
                 //emitAppEvent("initialized", {});
             }
 
             static void applicationDidFinishLaunching(id self, SEL _cmd, NSNotification *notification) {
+                SK_App_Initializer* skai = (__bridge SK_App_Initializer*)self;
                 //emitAppEvent("ready", {});
             }
 
-            static BOOL applicationShouldTerminateAfterLastWindowClosed(id self, SEL _cmd, NSNotification *notification) {
+            static bool applicationShouldTerminateAfterLastWindowClosed(id self, SEL _cmd, NSNotification *notification) {
+                SK_App_Initializer* skai = (__bridge SK_App_Initializer*)self;
         
                 /*
                 if (!shouldTerminate){
@@ -148,14 +149,15 @@ public:
                 return false;
             }
 
-            void runLoopCallback(CFRunLoopObserverRef observer, CFRunLoopActivity activity, void *info) {
-                SK_Global::GetInstance().threadPool_processMainThreadTasks();
+            static void runLoopCallback(CFRunLoopObserverRef observer, CFRunLoopActivity activity, void *info) {
+                SK_Global* skg = static_cast<SK_Global*>(info);
+                
+                if (!skg) return;
+                
+                skg->threadPool_processMainThreadTasks();
             }
         #endif
     #endif
-private:
-    SK_App_Initializer(const SK_App_Initializer&) = delete;
-    SK_App_Initializer& operator=(const SK_App_Initializer&) = delete;
 };
 
 END_SK_NAMESPACE
