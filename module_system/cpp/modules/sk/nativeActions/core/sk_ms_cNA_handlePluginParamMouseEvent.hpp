@@ -4,7 +4,7 @@
 
 BEGIN_SK_NAMESPACE
 
-class SK_MS_cNA_handleParamComponentMouseEvent {
+class SK_MS_cNA_handlePluginParamMouseEvent {
 public:
     SK_Global* skg;
 
