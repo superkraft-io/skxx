@@ -27,6 +27,8 @@
 #include "sk_web/sk_web_utils.hpp"
 #include "utils/sk_file.hpp"
 
+
+
 #include "sk_callbacks.hpp"
 
 #include "sk_threads/sk_thread_pool.hpp"
@@ -77,7 +79,7 @@ public:
     
     long long ipc_msg_id = 0;
 
-	SK_String runningAs = SK_String("unknown");
+	SK_String runningAs = "unknown";
 
     void* project;
 
@@ -131,6 +133,11 @@ public:
     SK_wndCreated onWndCreated = NULL;
 
     SK_WebView_onGetUserDataPath onGetWebViewUserDataPath;
+    
+    SK_HandlePluginParamEvent_CB handlePluginParamEvent;
+    SK_GetPluginInstance_CB getPluginInstance;
+    SK_FindPluginParamByName_CB findPluginParamByName;
+    SK_FindPluginParamIdxByName_CB findPluginParamIdxByName;
 };
 
 END_SK_NAMESPACE

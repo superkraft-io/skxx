@@ -17,8 +17,10 @@ public:
 
     SK_Module_NativeActions(SK_Global* _skg) {
         skg = _skg;
-
-        appActions = new SK_App_NativeActions();
+        
+        handlePluginParamMouseEvent.skg = skg;
+        
+        appActions = new SK_App_NativeActions(skg);
     }
 
     void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {

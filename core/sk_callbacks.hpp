@@ -6,6 +6,7 @@ BEGIN_SK_NAMESPACE
 
 class SK_Window;
 class SK_Communication_Packet;
+class SK_Communication_Response;
 
 
 using SK_Window_onWindowFocusChanged_Callback = std::function<void(SK_Window* wnd, const bool& focused)>;
@@ -72,5 +73,7 @@ using SK_onPostConfigWnd = std::function<void(SK_Window* wnd)>;
 using SK_wndCreated = std::function<void(SK_Window* wnd)>;
 
 using SK_WebView_onGetUserDataPath = std::function<SK_String(SK_Window* wnd)>;
+
+using SK_HandlePluginParamEvent_CB = std::function<void(const nlohmann::json& payload, SK_Communication_Response& respondWith)>;
 
 END_SK_NAMESPACE
