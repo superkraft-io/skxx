@@ -173,7 +173,7 @@ public:
 		for (auto it = list.begin(); it != list.end(); ++it) {
 			if (it->second) {
 				SK_Window* wnd = it->second;
-				wnd->update();
+				wnd->updateWebView();
 			}
 		}
 

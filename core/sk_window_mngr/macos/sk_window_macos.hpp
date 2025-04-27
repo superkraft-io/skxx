@@ -152,7 +152,7 @@ public:
         #endif
     }
 
-    void update(bool manuallyResizing = false) {
+    void updateWebView(bool manuallyResizing = false) {
         /*NSRect frame = [window frame];
         frame.size.width = config["width"];
         frame.size.height = config["height"];
