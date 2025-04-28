@@ -37,6 +37,7 @@ public:
         
         SK_Window* wnd = wndMngr->newWindow();
       
+        wnd->webview.parentWnd = wnd;
 
         wnd->tag = wndID;
         wnd->ipc->sender_id = wndID;
