@@ -28,7 +28,8 @@ public:
     wil::com_ptr<ICoreWebView2Environment12> environment12;
 	wil::com_ptr<ICoreWebView2Settings> settings;
 	wil::com_ptr<ICoreWebView2Controller> controller = nullptr;
-	wil::com_ptr<ICoreWebView2> webview = nullptr;
+    wil::com_ptr<ICoreWebView2> webview = nullptr;
+    wil::com_ptr<ICoreWebView2_17> webview17 = nullptr;
     EventRegistrationToken mWebMessageReceivedToken;
     
 	SK_String currentURL = "";
@@ -194,7 +195,20 @@ public:
                                                        
                             if (_controller != nullptr) {
                                 controller = _controller;
-                                controller->get_CoreWebView2(&webview);
+
+                                HRESULT hr = controller->get_CoreWebView2(&webview);
+                                if (SUCCEEDED(hr) && webview != nullptr) {
+                                    hr = webview->QueryInterface(IID_PPV_ARGS(&webview17));
+                                    if (SUCCEEDED(hr)) {
+                                        // Successfully obtained ICoreWebView2_17 interface
+                                        // You can now use webview17 to access new features
+                                        int x = 0;
+                                    }
+                                    else {
+                                        // ICoreWebView2_17 not supported on this runtime version
+                                        int x = 0;
+                                    }
+                                }
                             }
 
 

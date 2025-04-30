@@ -10,6 +10,8 @@ public:
 
     SK_Module_System* modsys;
 
+    SK_String pluginParameters = "";
+
     #if defined(SK_OS_windows)
         wil::com_ptr<ICoreWebView2> webview;
     #elif defined(SK_OS_apple)
@@ -42,10 +44,16 @@ public:
             pathUtils->paths["global_js_core"] + "/sk_ipc.js",
             pathUtils->paths["module_system"] + "/sk_module.js",
             pathUtils->paths["module_system"] + "/sk_module_root.js",
+            
+            pathUtils->paths["global_js_core"] + "/sk_dawPluginMngr.js",
+
             pathUtils->paths["global_js_core"] + "/sk_global_js_core.js",
             
             pathUtils->paths["global_js_core"] + "/sk_debug_mode.js"
         })
+        #if defined(SK_APP_TYPE_plugin)
+            .replace("'<sk_plugin_parameters>'", pluginParameters)
+        #endif
         .replace("<sk_base_url>", SK_Base_URL)
         .replace("'<sk_static_info>'", getStaticInfo())
         .replace("'<sk_native_actions>'", modsys->nativeActions->listActions());
