@@ -138,6 +138,8 @@ public:
     SK_GetPluginInstance_CB getPluginInstance;
     SK_FindPluginParamByName_CB findPluginParamByName;
     SK_FindPluginParamIdxByName_CB findPluginParamIdxByName;
+
+    SK_PopupCtxMenu_CB popupContextMenu;
 };
 
 END_SK_NAMESPACE

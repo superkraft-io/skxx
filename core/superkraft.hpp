@@ -16,8 +16,6 @@ public:
 	SK_Module_System* modsys;
 
 	SK_Communication* comm;
-
-   
     
 	Superkraft() {
 		skg = new SK_Global();

@@ -86,12 +86,17 @@ class sk_dawPluginMngr {
             _e.preventDefault()
 
             if (_e.button === 2) {
+                var x = _e.screenX
+                var y = _e.screenY
+                console.log(_e.clientX + 'x' + _e.clientY)
+                console.log(x + 'x' + y)
+
                 try {
                     await sk.nativeActions.handlePluginParamMouseEvent({
                         pluginParamID: target.__pluginParamID,
                         event: 'contextmenu',
-                        left: _e.clientX,
-                        top: _e.clientY,
+                        left: x,
+                        top: y,
                     })
                 } catch (err) {
                     if (err.error) {
@@ -103,9 +108,9 @@ class sk_dawPluginMngr {
         })
 
         var mouseUpHandler = async _e => {
-            //console.log('mouseup', target.pluginParamID)
 
-
+            if (_e.button !== 0) return
+            
             target.dawPluginParamInfo.busyChanging = false
 
             if (target.disabled) return
@@ -124,8 +129,8 @@ class sk_dawPluginMngr {
         }
 
         target.element.addEventListener('mousedown', async _e => {
-            //console.log('mousedown', target.pluginParamID)
-
+            
+            if (_e.button !== 0) return
 
             target.dawPluginParamInfo.busyChanging = true
 
