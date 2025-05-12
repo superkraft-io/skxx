@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../sk_common.hpp"
-
+#include <wil/resource.h>
 BEGIN_SK_NAMESPACE
 
 class SK_WebView_Initializer {
@@ -23,15 +23,10 @@ public:
     
     
     #if defined(SK_OS_windows)
-        wil::com_ptr<ICoreWebView2> castWebView(void* webview) {
+        wil::com_ptr<ICoreWebView2> castWebview(void* webview) {
             if (!webview) return nullptr;
-            try {
-                auto p = static_cast<ICoreWebView2*>(webview);
-                if (p) p->AddRef(); // Explicit refcount management
-                return wil::com_ptr<ICoreWebView2>(p, wil::AddRefPolicy::No);
-            } catch (...) {
-                return nullptr;
-            }
+
+            return static_cast<ICoreWebView2*>(webview);
         }
     #elif defined(SK_OS_apple) && defined(__OBJC__)
         WKWebView* castWebView(void* webview) {
@@ -48,7 +43,7 @@ public:
 
     void inject_core(void* webview){
         #if defined(SK_OS_windows)
-            injectData("window.__SK_IPC_Send  = data => { window.chrome.webview.postMessage(data) }");
+            injectData(webview, "window.__SK_IPC_Send  = data => { window.chrome.webview.postMessage(data) }");
         #endif
         
         injectData(webview, "window.sk_api = {}");

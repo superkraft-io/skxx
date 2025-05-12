@@ -186,6 +186,7 @@ public:
                     HRESULT hr12 = env->QueryInterface(IID_PPV_ARGS(&environment12));
                     if (FAILED(hr12)) {
                         // Handle the error if the cast fails
+                        __debugbreak;
                         return hr12;
                     }
 
@@ -209,6 +210,10 @@ public:
                                         int x = 0;
                                     }
                                 }
+                            }
+                            else {
+                                __debugbreak;
+                                throw "[SK++ / sk_webview_windows.hpp] FAILED TO CREATE WEBVIEW CONTROLLER";
                             }
 
 
