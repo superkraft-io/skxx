@@ -70,6 +70,8 @@ public:
 
             return ss.str();
         #endif
+        
+        return "";
     }
 
     SK_Path_Utils pathUtils;
@@ -140,6 +142,15 @@ public:
     SK_FindPluginParamIdxByName_CB findPluginParamIdxByName;
 
     SK_PopupCtxMenu_CB popupContextMenu;
+    
+    SK_InitSK_CB initSK;
+    SK_DestroySK_CB destroySK;
+    SK_OBJCPPSafeTicker_CB OBJCPPSafeTicker;
+    SK_OBJCPPSafeInitializer_CB OBJCPPSafeInitializerCB;
+    
+    ~SK_Global(){
+        delete threadPool;
+    }
 };
 
 END_SK_NAMESPACE

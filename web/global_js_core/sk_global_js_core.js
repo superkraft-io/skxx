@@ -179,4 +179,6 @@ class SK_Global_Core {
     }
 }
 
+
+console.log('sk_api: ', Date.now())
 window.sk_api = new SK_Global_Core({ id: Date.now().toString() })

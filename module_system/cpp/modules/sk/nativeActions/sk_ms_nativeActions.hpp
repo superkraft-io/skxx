@@ -22,6 +22,12 @@ public:
         
         appActions = new SK_App_NativeActions(skg);
     }
+    
+    ~SK_Module_NativeActions(){
+        delete appActions;
+        
+        skg = nullptr;
+    }
 
     void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
         if (appActions->handleOperation(operation, payload, respondWith)) return;

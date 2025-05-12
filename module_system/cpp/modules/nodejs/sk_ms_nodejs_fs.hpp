@@ -14,6 +14,11 @@ public:
     SK_Module_fs(SK_Global* _skg) {
         skg = _skg;
     }
+    
+    ~SK_Module_fs(){
+        vfs = nullptr;
+        skg = nullptr;
+    }
 
     void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
         SK_String path = payload["path"];

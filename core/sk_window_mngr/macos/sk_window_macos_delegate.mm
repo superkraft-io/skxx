@@ -16,9 +16,9 @@
 
     // check occlusion binary flag
     if (window.occlusionState & NSWindowOcclusionStateVisible) {
-        if (self.skWindow->parent && self.skWindow->isMinimized()) {
+        /*if (self.skWindow->parent && self.skWindow->isMinimized()) {
             self.skWindow->restore();
-        }
+        }*/
 
         if (self.skWindow) self.skWindow->emitWndEvent(self.skWindow, "show",{});
     } else {

@@ -9,7 +9,7 @@ BEGIN_SK_NAMESPACE
 using SK_Window_Root_onDestroyed_CB = std::function<void()>;
 using SK_Window_Root_windowEventMsg_CB = std::function<void(nlohmann::json data)>;
 
-class SK_Window;
+//class SK_Window;
 
 class SK_Window_Root {
 public:
@@ -36,7 +36,7 @@ public:
 
 	SK_Point maxSizeFull {-1, -1};
 
-    SK_Window* parent;
+    //SK_Window* parent = nullptr;
     
     std::optional<int> zIndex = NULL;
 
@@ -62,6 +62,11 @@ public:
 
     SK_WebView webview;
     
+    
+    ~SK_Window_Root(){
+        int x = 0;
+    }
+    
 	virtual void initialize(const unsigned int& _wndIdx) {
         wndIdx = _wndIdx;
     }
@@ -69,11 +74,16 @@ public:
 	virtual void configWithInfo(const nlohmann::json& _info) {
 		config.combineWith(_info);
 
+        void* addr = &config_updateTracker;
+        
 		config_updateTracker.update(_info);
 		for (auto& [key, value] : config_updateTracker.items()) {
-			value = true;
+            if (key == "resizable"){
+                int x = 0;
+            }
+            
+            config_updateTracker[key] = true;
 		}
-
 	}
 
 	bool needsWindowUpdate() {
@@ -89,6 +99,13 @@ public:
 	}
 
 	bool checkNeedsUpdateAndReset(const SK_String& attribute) {
+        
+        void* addr = &config_updateTracker;
+        
+        if (attribute == "resizable") {
+            int x = 0;
+        }
+        
 		bool needsUpdate = config_updateTracker[attribute];
 		config_updateTracker[attribute] = false;
 		return needsUpdate;

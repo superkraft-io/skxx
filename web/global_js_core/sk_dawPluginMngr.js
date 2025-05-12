@@ -6,6 +6,9 @@ class sk_dawPluginMngr {
         this.parametersIdxByID = {}
         for (var i = 0; i < this.parameters.length; i++) this.parametersIdxByID[this.parameters[i].id] = i
         
+            
+        /* SK_OS_windows - START
+        //On windows, we use the shared buffer to send the parameters to the plugin
         window.chrome.webview.addEventListener('sharedbufferreceived', (event) => {
             const metadata = event.additionalData;
             if (metadata?.id === 'pluginParamUpdate') {
@@ -13,11 +16,12 @@ class sk_dawPluginMngr {
                 const floatArray = new Float32Array(arrayBuffer);
                 for (var i = 0; i < this.parameters.length; i++){
                     var newVal = floatArray[i]
-                    if (newVal !== this.parameters[i]) this.updateParameter(i, newVal)
-                    this.parameters[i].value = newVal                }
+                    updateParameter(idx, newVal)
+                }
                 chrome.webview.releaseBuffer(arrayBuffer);
             }
         })
+        SK_OS_windows - END */
 
         this.startReadMonitor()
     }
@@ -27,6 +31,10 @@ class sk_dawPluginMngr {
     }
 
     updateParameter(idx, value){
+        //This function will be called directly from the native code on Apple platforms since Apple does not support shared buffers
+        //On Windows, we use the shared buffer to send the parameters to the plugin
+
+        if (value === this.parameters[idx].value) return
         this.parameters[idx].value = value
     }
 
@@ -165,7 +173,6 @@ class sk_dawPluginMngr {
             if (sk_api.pluginMngr.onParameterWritten) sk_api.pluginMngr.onParameterWritten(target, opt)
 
             try {
-                //console.log(opt.value)
                 var res = await sk.nativeActions.handlePluginParamMouseEvent({
                     ...{
                         pluginParamID: target.__pluginParamID,

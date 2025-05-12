@@ -12,32 +12,46 @@ public:
 
     SK_String pluginParameters = "";
 
-    #if defined(SK_OS_windows)
-        wil::com_ptr<ICoreWebView2> webview;
-    #elif defined(SK_OS_apple)
-        #ifdef __OBJC__
-            WKWebView *webview;
-        #endif
-    #endif
+   
 
-    void init(void* _webview, bool isHardBackend){
-        #if defined(SK_OS_windows)
-            webview = static_cast<ICoreWebView2*>(_webview);
-        #elif defined(SK_OS_apple)
-            #ifdef __OBJC__
-                webview = (__bridge WKWebView*)_webview;
-            #endif
-        #endif
-        
-        inject_core();
+    
+    ~SK_WebView_Initializer(){
+        modsys = nullptr;
+        skg = nullptr;
+    }
+    
+    
+    
+    #if defined(SK_OS_windows)
+        wil::com_ptr<ICoreWebView2> castWebView(void* webview) {
+            if (!webview) return nullptr;
+            try {
+                auto p = static_cast<ICoreWebView2*>(webview);
+                if (p) p->AddRef(); // Explicit refcount management
+                return wil::com_ptr<ICoreWebView2>(p, wil::AddRefPolicy::No);
+            } catch (...) {
+                return nullptr;
+            }
+        }
+    #elif defined(SK_OS_apple) && defined(__OBJC__)
+        WKWebView* castWebView(void* webview) {
+            if (!webview) return nil;
+            return (__bridge WKWebView*)webview;
+        }
+    #endif
+    
+    
+    
+    void init(void* webview, bool isHardBackend){
+        inject_core(webview);
     }
 
-    void inject_core(){
+    void inject_core(void* webview){
         #if defined(SK_OS_windows)
             injectData("window.__SK_IPC_Send  = data => { window.chrome.webview.postMessage(data) }");
         #endif
         
-        injectData("window.sk_api = {}");
+        injectData(webview, "window.sk_api = {}");
 
         SK_Path_Utils* pathUtils = &skg->pathUtils;
         SK_String payload = generateFromFiles(std::vector<SK_String>{
@@ -53,12 +67,20 @@ public:
         })
         #if defined(SK_APP_TYPE_plugin)
             .replace("'<sk_plugin_parameters>'", pluginParameters)
+           
+                #if defined(SK_OS_windows)
+                    .replace("/* SK_OS_windows - START", "//SK_OS_windows - START")
+                    .replace("SK_OS_windows - END */", "//SK_OS_windows - END")
+                #elif defined(SK_OS_apple)
+                    //do nothing
+                #endif
+          
         #endif
         .replace("<sk_base_url>", SK_Base_URL)
         .replace("'<sk_static_info>'", getStaticInfo())
         .replace("'<sk_native_actions>'", modsys->nativeActions->listActions());
 
-        injectData(payload);
+        injectData(webview, payload);
     }
 
     SK_String generateFromFiles(const std::vector<SK_String>& paths){
@@ -70,6 +92,7 @@ public:
             #ifdef SK_MODE_DEBUG
                 file.loadFromDisk(paths[i]);
             #else
+                //..
             #endif
 
             data += "\n\r" + file;
@@ -79,9 +102,9 @@ public:
         return data;
     }
 
-    void injectData(const SK_String& data){
+    void injectData(void* webview, const SK_String& data){
         #if defined(SK_OS_windows)
-            webview->AddScriptToExecuteOnDocumentCreated(
+            castWebview(webview)->AddScriptToExecuteOnDocumentCreated(
                 data.toWString().c_str(),
                 Callback<ICoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler>(
                     [this](HRESULT error, PCWSTR id) -> HRESULT {
@@ -89,13 +112,13 @@ public:
                     }
                 ).Get()
            );
-        #elif defined(SK_OS_macos) || defined(SK_OS_ios)
+        #elif defined(SK_OS_apple)
             #ifdef __OBJC__
                 WKUserScript *userScript = [[WKUserScript alloc] initWithSource:data
                                                                   injectionTime:WKUserScriptInjectionTimeAtDocumentStart
                                                                forMainFrameOnly:NO];
 
-                [webview.configuration.userContentController addUserScript:userScript];
+                [castWebView(webview).configuration.userContentController addUserScript:userScript];
             #endif
         #endif
         

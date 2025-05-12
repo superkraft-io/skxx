@@ -117,15 +117,23 @@ public:
 						
 						if (wnd->config["mainWindow"] == true) {
                             wnd->config.data["scale"]  = scale;
-							wnd->config.data["left"]   = x;
-							wnd->config.data["top"]    = y;
-							wnd->config.data["width"]  = w;
-							wnd->config.data["height"] = h;
-                            wnd->updateWindowByConfig();
 							
-                            #if defined(SK_OS_windows)
-                                wnd->updateWebView();
-                            #endif
+                            wnd->config.data["left"] = x;
+                            wnd->config_updateTracker["left"] = true;
+                            
+                            wnd->config.data["top"] = y;
+                            wnd->config_updateTracker["top"] = true;
+                            
+                            
+							wnd->config.data["width"] = w;
+                            wnd->config_updateTracker["width"] = true;
+                            
+							wnd->config.data["height"] = h;
+                            wnd->config_updateTracker["height"] = true;
+                            
+                            wnd->updateWindowByConfig();
+                            
+                            wnd->updateWebView();
 						}
 					}
 				}
@@ -230,16 +238,17 @@ public:
     void destroyAllWindows() {
         if (list.size() == 0) return;
         
+        
         for (std::unordered_map<std::string, SK_Window*>::iterator it = list.begin(); it != list.end(); ++it) {
             SK_Window* wnd = it->second;
             
-            #ifdef __OBJC__
-                delete wnd;
-            #endif
+            delete wnd;
             
             it->second = nullptr;
         }
-
+        
+        skg->mainWindow = nullptr;
+        
 		list.clear();
 	}
 private:
