@@ -895,7 +895,7 @@ public:
         if (checkNeedsUpdateAndReset("maximizable")) setStyle(WS_MAXIMIZEBOX, config.data["maximizable"]);
         if (checkNeedsUpdateAndReset("minimizable")) setStyle(WS_MINIMIZEBOX, config.data["minimizable"]);
         if (checkNeedsUpdateAndReset("backgroundColor")) backgroundColor = config.data["backgroundColor"];
- /* WIP */ if (checkNeedsUpdateAndReset("focusable")) setStyle(WS_EX_NOACTIVATE, !config.data["focusable"], true);
+        /* WIP */ if (checkNeedsUpdateAndReset("focusable")) setStyle(WS_EX_NOACTIVATE, !config.data["focusable"], true);
         if (checkNeedsUpdateAndReset("skipTaskbar")) setStyle(WS_EX_APPWINDOW, config.data["skipTaskbar"], true);
         
         if (checkNeedsUpdateAndReset("frame")) {
@@ -932,10 +932,11 @@ public:
         }
 
 
-
+     
         //everything below this comment should come last
 
         if (!isMaximized) {
+            
             if (checkNeedsUpdateAndReset("center") && config.data["center"] == true) {
                 RECT  wndRect;
                 GetWindowRect(wndHandle, &wndRect);
@@ -958,21 +959,21 @@ public:
                 config.data["x"] = posx;
                 config.data["y"] = posy;
             }
-
+           
             bool needsReposition = false;
             bool needsResize = false;
             if (checkNeedsUpdateAndReset("x") || checkNeedsUpdateAndReset("y")) needsReposition = true;
             if (checkNeedsUpdateAndReset("width") || checkNeedsUpdateAndReset("width")) needsResize = true;
             
-            if (needsReposition || needsResize) SetWindowPos(wndHandle, NULL, config.data["x"], config.data["y"], config["width"] * scale, config["height"] * scale, SWP_NOZORDER);
-
+            if (config.data.contains("mainWindow") && config.data["mainWindow"] == false){
+                if (needsReposition || needsResize) SetWindowPos(wndHandle, NULL, config.data["x"], config.data["y"], config["width"] * scale, config["height"] * scale, SWP_NOZORDER);
+            }
+            
             if (needsResize) update();
 
             if (checkNeedsUpdateAndReset("show")) ShowWindow(wndHandle, (config["show"] ? SW_SHOW : SW_HIDE));
-
-            
         }
-
+        
         if (needsWindowUpdate()) {
             InvalidateRect(wndHandle, NULL, TRUE);
             UpdateWindow(wndHandle);
