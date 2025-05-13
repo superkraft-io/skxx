@@ -96,6 +96,12 @@ class sk_dawPluginMngr {
             if (_e.button === 2) {
                 var x = _e.clientX
                 var y = _e.clientY
+
+                if (sk_api.staticInfo.machine.os === 'windows'){
+                    x *= window.devicePixelRatio
+                    y *= window.devicePixelRatio
+                }
+
                 console.log(_e.clientX + 'x' + _e.clientY)
                 console.log(x + 'x' + y)
 
