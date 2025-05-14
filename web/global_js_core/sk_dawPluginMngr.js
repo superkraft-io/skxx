@@ -94,8 +94,8 @@ class sk_dawPluginMngr {
             _e.preventDefault()
 
             if (_e.button === 2) {
-                var x = _e.screenX
-                var y = _e.screenY
+                var x = _e.clientX
+                var y = _e.clientY
                 console.log(_e.clientX + 'x' + _e.clientY)
                 console.log(x + 'x' + y)
 
@@ -137,7 +137,7 @@ class sk_dawPluginMngr {
         }
 
         target.element.addEventListener('mousedown', async _e => {
-            
+
             if (_e.button !== 0) return
 
             target.dawPluginParamInfo.busyChanging = true

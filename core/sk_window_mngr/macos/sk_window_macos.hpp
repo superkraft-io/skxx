@@ -245,7 +245,10 @@ public:
                 [backgroundPanel.layer setBackgroundColor:backgroundColor];
             }
         
-            
+        
+        
+        
+        
             if (checkNeedsUpdateAndReset("focusable")) {
                 //incomplete
                 bool focusable = config["focusable"];
@@ -264,6 +267,7 @@ public:
                     [wndHandle setLevel:NSNormalWindowLevel];
                 }
             }
+        
         
             if (checkNeedsUpdateAndReset("frame")) {
                 bool hasFrame = config["frame"];
@@ -321,6 +325,8 @@ public:
                 }
             }
         
+        
+        
             if (checkNeedsUpdateAndReset("opacity")) {
                 [wndHandle setAlphaValue: config["opacity"]];
             }
@@ -347,20 +353,11 @@ public:
                     NSRect frame = [wndHandle frame];
                     frame.size.width = w;
                     frame.size.height = h;
-                    
                 
-                    /*if (w > 0 && h > 0 && wndHandle) {
-                        NSRect frame = [wndHandle frame];
-                        frame.size.width = w;
-                        frame.size.height = h;
-                        [wndHandle setStyleMask:[wndHandle styleMask] | NSWindowStyleMaskResizable];
-                        [wndHandle setFrame:frame display:YES animate:NO];
-                    }*/
-               
-                    //[wndHandle setContentView:nil]; // Temporarily remove constraints
-                    //[wndHandle setContentSize:NSMakeSize(w, h)];
+                    //NSRect parentWndFrame = [wndHandle.parentWindow frame];
                     
-                    [wndHandle setFrame:frame display:YES animate:NO];
+                   
+                    if (config.data.contains("mainWindow") && config.data["mainWindow"] == false) [wndHandle setFrame:frame display:YES animate:NO];
                     [wndHandle setContentSize:frame.size];
                     
                 //});
@@ -400,7 +397,7 @@ public:
                 
                 if (needsReposition || needsResize) {
                     NSPoint origin = NSMakePoint(config.data["x"], config.data["y"]);
-                    [wndHandle setFrameOrigin:origin];
+                    if (config.data.contains("mainWindow") && config.data["mainWindow"] == false) [wndHandle setFrameOrigin:origin];
                 }
 
                 if (checkNeedsUpdateAndReset("show")) {

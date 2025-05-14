@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../sk_common.hpp"
-#include <wil/resource.h>
+
 BEGIN_SK_NAMESPACE
 
 class SK_WebView_Initializer {
