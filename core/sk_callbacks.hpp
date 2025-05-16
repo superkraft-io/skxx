@@ -71,6 +71,7 @@ using SK_setMainWindowSize = std::function<void(int w, int h)>;
 using SK_onPreConfigWnd = std::function<void(SK_Window* wnd, nlohmann::json constructorOpts)>;
 using SK_onPostConfigWnd = std::function<void(SK_Window* wnd)>;
 using SK_wndCreated = std::function<void(SK_Window* wnd)>;
+using SK_onBeforeWndResize_CB = std::function<SK_Point(SK_Window* wnd)>;
 
 using SK_WebView_onGetUserDataPath = std::function<SK_String(SK_Window* wnd)>;
 

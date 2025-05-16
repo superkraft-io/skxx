@@ -354,12 +354,37 @@ public:
                     frame.size.width = w;
                     frame.size.height = h;
                 
-                    //NSRect parentWndFrame = [wndHandle.parentWindow frame];
-                    
+                
+                    __weak NSWindow* _wndHandle = wndHandle;
+                    __weak NSView* _contentView = contentView;
+                
+                
+                    __weak NSView* _contentViewParent = [contentView superview];
+                    NSRect _contentViewParent_frame = [_contentViewParent frame];
+                
+    
+                    //In some cases the NSView which our webview is created added to is not the first layer of our NSWindow.
+                    //This is especially true for some DAW plugin windows.
+                    //This will cause our webview to be smaller than expected because our frame size does not account for any potential X or Y pos offsets.
+                    //To handle this, we callback to our project class (SK_Project) if it exists and handle the frame thre
+                
+                    bool bypass = false;
+                
+                    if (skg){
+                        if (skg->onBeforeWndResize){
+                            SK_Point size = skg->onBeforeWndResize(this);
+                            
+                            if (size.x == -2) bypass = true;
+                            
+                            if (size.x > -1) frame.size.width = size.x;
+                            if (size.y > -1) frame.size.height = size.y;
+                        }
+                    }
                    
-                    if (config.data.contains("mainWindow") && config.data["mainWindow"] == false) [wndHandle setFrame:frame display:YES animate:NO];
-                    [wndHandle setContentSize:frame.size];
-                    
+                    if (!bypass){
+                        if (config.data.contains("mainWindow") && config.data["mainWindow"] == false) [wndHandle setFrame:frame display:YES animate:NO];
+                        [wndHandle setContentSize:frame.size];
+                    }
                 //});
             }
         

@@ -133,7 +133,8 @@ public:
     SK_onPreConfigWnd onPreConfigWnd = NULL;
     SK_onPostConfigWnd onPostConfigWnd = NULL;
     SK_wndCreated onWndCreated = NULL;
-
+    SK_onBeforeWndResize_CB onBeforeWndResize = NULL;
+    
     SK_WebView_onGetUserDataPath onGetWebViewUserDataPath;
     
     SK_HandlePluginParamEvent_CB handlePluginParamEvent;

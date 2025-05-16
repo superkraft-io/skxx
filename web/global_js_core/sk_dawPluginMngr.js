@@ -93,6 +93,8 @@ class sk_dawPluginMngr {
             _e.stopPropagation()
             _e.preventDefault()
 
+            target.__ctxMenuPopped = true
+
             if (_e.button === 2) {
                 var x = _e.clientX
                 var y = _e.clientY
@@ -143,7 +145,6 @@ class sk_dawPluginMngr {
         }
 
         target.element.addEventListener('mousedown', async _e => {
-
             if (_e.button !== 0) return
 
             target.dawPluginParamInfo.busyChanging = true
