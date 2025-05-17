@@ -19,6 +19,8 @@ using SK_Window_WndEvent_CB = std::function<void(const SK_String& eventID, nlohm
 class SK_Window : public SK_Window_Root {
 public:
 
+    bool ignoreUpdateByConfig = false;
+
     UINT(WINAPI* sk__GetDpiForWindow)(HWND) = nullptr;
 
     float getHWNDScale(HWND hwnd)
@@ -883,7 +885,7 @@ public:
     }
 
     void updateWindowByConfig() {
-        if (wndHandle == NULL) return;
+        if (wndHandle == NULL || ignoreUpdateByConfig == true) return;
 
        
         float scale = getHWNDScale(wndHandle);
@@ -965,8 +967,33 @@ public:
             if (checkNeedsUpdateAndReset("x") || checkNeedsUpdateAndReset("y")) needsReposition = true;
             if (checkNeedsUpdateAndReset("width") || checkNeedsUpdateAndReset("width")) needsResize = true;
             
-            if (config.data.contains("mainWindow") && config.data["mainWindow"] == false){
-                if (needsReposition || needsResize) SetWindowPos(wndHandle, NULL, config.data["x"], config.data["y"], config["width"] * scale, config["height"] * scale, SWP_NOZORDER);
+
+
+
+            int w = config["width"] * scale;
+            int h = config["height"] * scale;
+
+
+
+            bool bypass = false;
+
+            if (skg) {
+                if (skg->onBeforeWndResize) {
+                    ignoreUpdateByConfig = true;
+                    SK_Point size = skg->onBeforeWndResize(this);
+                    ignoreUpdateByConfig = false;
+
+                    if (size.x == -2) bypass = true;
+
+                    if (size.x > -1) w = size.x;
+                    if (size.y > -1) h = size.y;
+                }
+            }
+
+            if (!bypass) {
+                if (config.data.contains("mainWindow") && config.data["mainWindow"] == false) {
+                    if (needsReposition || needsResize) SetWindowPos(wndHandle, NULL, config.data["x"], config.data["y"], w, h, SWP_NOZORDER);
+                }
             }
             
             if (needsResize) update();
