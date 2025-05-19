@@ -24,6 +24,7 @@ public:
         NSVisualEffectView* vibrantView;
     #endif
     
+    bool ignoreUpdateByConfig = false;
     bool isFullscreened = false;
     bool isZooming = false;
     bool blockResizing = false;
@@ -191,7 +192,7 @@ public:
 
     void updateWindowByConfig() {
         #ifdef __OBJC__
-            if (!wndHandle) return;
+            if (wndHandle == NULL || ignoreUpdateByConfig == true) return;
         
             if (checkNeedsUpdateAndReset("title")) [wndHandle setTitle: config["title"]];
             
@@ -382,8 +383,15 @@ public:
                     }
                    
                     if (!bypass){
+                        ignoreUpdateByConfig = true;
                         if (config.data.contains("mainWindow") && config.data["mainWindow"] == false) [wndHandle setFrame:frame display:YES animate:NO];
-                        [wndHandle setContentSize:frame.size];
+                        //[wndHandle setContentSize:frame.size];
+                        
+                        frame.origin.x = 0;
+                        frame.origin.y = 0;
+                        [contentView setFrame: frame];
+                        
+                        ignoreUpdateByConfig = false;
                     }
                 //});
             }
@@ -422,7 +430,11 @@ public:
                 
                 if (needsReposition || needsResize) {
                     NSPoint origin = NSMakePoint(config.data["x"], config.data["y"]);
-                    if (config.data.contains("mainWindow") && config.data["mainWindow"] == false) [wndHandle setFrameOrigin:origin];
+                    if (config.data.contains("mainWindow") && config.data["mainWindow"] == false){
+                        ignoreUpdateByConfig = true;
+                        [wndHandle setFrameOrigin:origin];
+                        ignoreUpdateByConfig = false;
+                    }
                 }
 
                 if (checkNeedsUpdateAndReset("show")) {
