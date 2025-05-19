@@ -34,6 +34,8 @@ public:
     
     SK_Global* _Nullable skg;
     
+    void* parentWnd;
+    
     #if defined(SK_OS_macos)
         #ifdef __OBJC__
             NSWindow* _Nullable parentWndHandle;

@@ -8,21 +8,25 @@ class Superkraft {
 public:
 	SK_Global* skg;
 
-	SK_Project_BinaryData binaryData;
+	SK_Project_BinaryData* binaryData;
 
 	SK_Machine* machine;
-	SK_WebView_Initializer wvinit;
+	SK_WebView_Initializer* wvinit;
 	SK_Window_Mngr* wndMngr;
 	SK_Module_System* modsys;
 
 	SK_Communication* comm;
-
-   
+    
+    bool isReady = false;
     
 	Superkraft() {
+        binaryData = new SK_Project_BinaryData();
+        
 		skg = new SK_Global();
 		skg->sk = this;
-
+        
+        
+        
 		machine = new SK_Machine(skg);
 		skg->machine = machine;
 		machine->init();
@@ -31,15 +35,16 @@ public:
 		wndMngr = new SK_Window_Mngr(skg);
 		comm = new SK_Communication(skg);
 
-		wvinit.skg = skg;
+        wvinit = new SK_WebView_Initializer();
+		wvinit->skg = skg;
 
 		modsys = new SK_Module_System(skg);
-		modsys->bdfs->binaryData = &binaryData;
+		modsys->bdfs->binaryData = binaryData;
         
         modsys->proton->app->wndMngr = wndMngr;
         modsys->proton->window->wndMngr = wndMngr;
 
-		wvinit.modsys = modsys;
+		wvinit->modsys = modsys;
 
 
 		skg->pathUtils.init();
@@ -57,18 +62,27 @@ public:
 	}
 
 	~Superkraft() {
-		delete skg;
 		delete machine;
+        skg->machine = nullptr;
+        
+        delete wvinit;
+        wvinit = nullptr;
+        
 		delete wndMngr;
+        wndMngr = nullptr;
+       
 		delete modsys;
+        modsys = nullptr;
+       
 		delete comm;
+        comm = nullptr;
+        
+        delete binaryData;
+        binaryData = nullptr;
+        
+        delete skg;
+        skg = nullptr;
 	}
-    
-    
-    /*static inline Superkraft* sk() {
-		Superkraft* instance = static_cast<Superkraft*>(SK_Global::GetInstance().sk);
-		return instance ? instance : nullptr;
-	}*/
 };
 
 END_SK_NAMESPACE

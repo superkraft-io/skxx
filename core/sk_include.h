@@ -27,6 +27,8 @@
 #include "sk_web/sk_web_utils.hpp"
 #include "utils/sk_file.hpp"
 
+
+
 #include "sk_callbacks.hpp"
 
 #include "sk_threads/sk_thread_pool.hpp"
@@ -68,6 +70,8 @@ public:
 
             return ss.str();
         #endif
+        
+        return "";
     }
 
     SK_Path_Utils pathUtils;
@@ -77,7 +81,7 @@ public:
     
     long long ipc_msg_id = 0;
 
-	SK_String runningAs = SK_String("unknown");
+	SK_String runningAs = "unknown";
 
     void* project;
 
@@ -129,8 +133,25 @@ public:
     SK_onPreConfigWnd onPreConfigWnd = NULL;
     SK_onPostConfigWnd onPostConfigWnd = NULL;
     SK_wndCreated onWndCreated = NULL;
-
+    SK_onBeforeWndResize_CB onBeforeWndResize = NULL;
+    
     SK_WebView_onGetUserDataPath onGetWebViewUserDataPath;
+    
+    SK_HandlePluginParamEvent_CB handlePluginParamEvent;
+    SK_GetPluginInstance_CB getPluginInstance;
+    SK_FindPluginParamByName_CB findPluginParamByName;
+    SK_FindPluginParamIdxByName_CB findPluginParamIdxByName;
+
+    SK_PopupCtxMenu_CB popupContextMenu;
+    
+    SK_InitSK_CB initSK;
+    SK_DestroySK_CB destroySK;
+    SK_OBJCPPSafeTicker_CB OBJCPPSafeTicker;
+    SK_OBJCPPSafeInitializer_CB OBJCPPSafeInitializerCB;
+    
+    ~SK_Global(){
+        delete threadPool;
+    }
 };
 
 END_SK_NAMESPACE

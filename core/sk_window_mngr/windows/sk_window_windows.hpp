@@ -19,6 +19,8 @@ using SK_Window_WndEvent_CB = std::function<void(const SK_String& eventID, nlohm
 class SK_Window : public SK_Window_Root {
 public:
 
+    bool ignoreUpdateByConfig = false;
+
     UINT(WINAPI* sk__GetDpiForWindow)(HWND) = nullptr;
 
     float getHWNDScale(HWND hwnd)
@@ -883,7 +885,7 @@ public:
     }
 
     void updateWindowByConfig() {
-        if (wndHandle == NULL) return;
+        if (wndHandle == NULL || ignoreUpdateByConfig == true) return;
 
        
         float scale = getHWNDScale(wndHandle);
@@ -895,7 +897,7 @@ public:
         if (checkNeedsUpdateAndReset("maximizable")) setStyle(WS_MAXIMIZEBOX, config.data["maximizable"]);
         if (checkNeedsUpdateAndReset("minimizable")) setStyle(WS_MINIMIZEBOX, config.data["minimizable"]);
         if (checkNeedsUpdateAndReset("backgroundColor")) backgroundColor = config.data["backgroundColor"];
- /* WIP */ if (checkNeedsUpdateAndReset("focusable")) setStyle(WS_EX_NOACTIVATE, !config.data["focusable"], true);
+        /* WIP */ if (checkNeedsUpdateAndReset("focusable")) setStyle(WS_EX_NOACTIVATE, !config.data["focusable"], true);
         if (checkNeedsUpdateAndReset("skipTaskbar")) setStyle(WS_EX_APPWINDOW, config.data["skipTaskbar"], true);
         
         if (checkNeedsUpdateAndReset("frame")) {
@@ -932,10 +934,11 @@ public:
         }
 
 
-
+     
         //everything below this comment should come last
 
         if (!isMaximized) {
+            
             if (checkNeedsUpdateAndReset("center") && config.data["center"] == true) {
                 RECT  wndRect;
                 GetWindowRect(wndHandle, &wndRect);
@@ -958,21 +961,46 @@ public:
                 config.data["x"] = posx;
                 config.data["y"] = posy;
             }
-
+           
             bool needsReposition = false;
             bool needsResize = false;
             if (checkNeedsUpdateAndReset("x") || checkNeedsUpdateAndReset("y")) needsReposition = true;
             if (checkNeedsUpdateAndReset("width") || checkNeedsUpdateAndReset("width")) needsResize = true;
             
-            if (needsReposition || needsResize) SetWindowPos(wndHandle, NULL, config.data["x"], config.data["y"], config["width"] * scale, config["height"] * scale, SWP_NOZORDER);
 
+
+
+            int w = config["width"] * scale;
+            int h = config["height"] * scale;
+
+
+
+            bool bypass = false;
+
+            if (skg) {
+                if (skg->onBeforeWndResize) {
+                    ignoreUpdateByConfig = true;
+                    SK_Point size = skg->onBeforeWndResize(this);
+                    ignoreUpdateByConfig = false;
+
+                    if (size.x == -2) bypass = true;
+
+                    if (size.x > -1) w = size.x;
+                    if (size.y > -1) h = size.y;
+                }
+            }
+
+            if (!bypass) {
+                if (config.data.contains("mainWindow") && config.data["mainWindow"] == false) {
+                    if (needsReposition || needsResize) SetWindowPos(wndHandle, NULL, config.data["x"], config.data["y"], w, h, SWP_NOZORDER);
+                }
+            }
+            
             if (needsResize) update();
 
             if (checkNeedsUpdateAndReset("show")) ShowWindow(wndHandle, (config["show"] ? SW_SHOW : SW_HIDE));
-
-            
         }
-
+        
         if (needsWindowUpdate()) {
             InvalidateRect(wndHandle, NULL, TRUE);
             UpdateWindow(wndHandle);

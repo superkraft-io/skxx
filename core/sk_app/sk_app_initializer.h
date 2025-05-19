@@ -17,6 +17,7 @@ public:
     
     #ifdef __OBJC__
         NSObject* observer;
+        CFRunLoopObserverRef sk_observer;
     #endif
     
     nlohmann::json bypasses;
@@ -54,28 +55,34 @@ public:
         }
     #elif defined(SK_OS_apple)
         #ifdef __OBJC__
+    
+    
             SK_App_Initializer(const nlohmann::json& _bypasses = {}, SK_Get_SK_SB_IPC _Get_SK_SB_IPC_CB = NULL) {
                 init();
 
                 bypasses = _bypasses;
                 get_SK_SB_IPC_CB = _Get_SK_SB_IPC_CB;
 
+                
                 // Set up Objective-C observer
                 observer = [[NSObject alloc] init];
         
+                #if defined(SK_APP_TYPE_app)
+                    //⚠️ ☢️ This causes crash in Studio One when used in plugins
                 
-                CFRunLoopObserverContext context = {0, static_cast<void*>(skg), nullptr, nullptr, nullptr};
-                CFRunLoopObserverRef sk_observer = CFRunLoopObserverCreate(
-                    kCFAllocatorDefault,
-                    kCFRunLoopAllActivities, // Listen to all states
-                    true, // Repeats
-                    0,
-                    runLoopCallback,
-                    &context
-                );
+                    CFRunLoopObserverContext context = {0, static_cast<void*>(skg), nullptr, nullptr, nullptr};
+                    sk_observer = CFRunLoopObserverCreate(
+                        kCFAllocatorDefault,
+                        kCFRunLoopAllActivities, // Listen to all states
+                        true, // Repeats
+                        0,
+                        runLoopCallback,
+                        &context
+                    );
 
-                CFRunLoopAddObserver(CFRunLoopGetCurrent(), sk_observer, kCFRunLoopCommonModes);
-                CFRelease(sk_observer);
+                    CFRunLoopAddObserver(CFRunLoopGetCurrent(), sk_observer, kCFRunLoopCommonModes);
+                #endif
+                
                 
                 // Dynamically add methods to the observer
         
@@ -108,8 +115,27 @@ public:
                                                            object:nil];
             }
 
+    
+    
+    
             ~SK_App_Initializer() {
-                [[NSNotificationCenter defaultCenter] removeObserver:observer];
+                // 1. Stop all callbacks
+                if (observer) {
+                    [[NSNotificationCenter defaultCenter] removeObserver:observer];
+                    observer = nil;
+                }
+
+                // 2. Clean up CoreFoundation resources
+                if (sk_observer) {
+                    CFRunLoopRemoveObserver(CFRunLoopGetCurrent(), sk_observer, kCFRunLoopCommonModes);
+                    CFRelease(sk_observer);
+                    sk_observer = nullptr;
+                }
+
+                // 3. Clear other members
+                bypasses.clear();
+                get_SK_SB_IPC_CB = nullptr;
+                skg = nullptr;
             }
     
     

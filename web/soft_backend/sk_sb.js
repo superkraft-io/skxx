@@ -10,9 +10,9 @@ function sleep(delay = 1000) {
 
 
 var __start = async () => {
-    console.log('Sleeeping for 5 seconds...')
+    //console.log('Sleeeping for 5 seconds...')
     //await sleep(5000)
-    console.log('Woke up!')
+    //console.log('Woke up!')
 
     
     window.global = window
@@ -22,7 +22,8 @@ var __start = async () => {
         var x = 0
     }
 
-    sk_api.setID('sk:sb')
+    console.log('sk_sb: ', Date.now())
+    window.sk_api.setID('sk:sb')
    
 
     

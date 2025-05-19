@@ -18,10 +18,16 @@ public:
         skg = _skg;
     }
     
+    ~SK_Module_ProtonJS_Window() {
+        wndMngr = nullptr;
+        skg = nullptr;
+    }
+    
     void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
         
         SK_String wndID = payload["__moduleInstanceConfig"]["__uuid"];
         SK_Window* wnd = wndMngr->findWindowByTag(wndID);
+        
         
               if (operation == "construct") construct(wnd, payload, respondWith);
          else if (operation == "configure") configure(wnd, payload, respondWith);
@@ -32,11 +38,14 @@ public:
         
         if (_wnd != nullptr) return;
         
+   
+        
         SK_String wndID = payload["__moduleInstanceConfig"]["__uuid"];
 
         
         SK_Window* wnd = wndMngr->newWindow();
       
+        wnd->webview.parentWnd = wnd;
 
         wnd->tag = wndID;
         wnd->ipc->sender_id = wndID;
@@ -44,13 +53,14 @@ public:
         nlohmann::json constructorOpts = payload["constructorOpts"];
             
         if (skg->onPreConfigWnd) skg->onPreConfigWnd(wnd, constructorOpts);
-           
+        
+        //wnd->config.bypassCallback = true;
         wnd->configWithInfo(constructorOpts);
-            
+        //wnd->config.bypassCallback = false;
+        
         if (skg->onPostConfigWnd) skg->onPostConfigWnd(wnd);
-            
-        //newWnd->webview.navigate(SK_Base_URL + "/sk:view/" + wndID);
-
+        
+        
         if (wnd->config.data.contains("mainWindow") && wnd->config.data["mainWindow"] == true) {
 
             #if defined(SK_OS_windows)
@@ -59,11 +69,22 @@ public:
                 #ifdef __OBJC__
                     wnd->wndHandle = skg->mainWindow->wndHandle;
                     wnd->contentView = skg->mainWindow->contentView;
+            
+                    #if defined(SK_APP_TYPE_au)
+                        //This code block causes issues in some DAW's, so we'll allow only fixed-size plugin windows for now
+                        //wnd->contentView.translatesAutoresizingMaskIntoConstraints = false;
+                        /*[NSLayoutConstraint activateConstraints:@[
+                            [wnd->contentView.leadingAnchor constraintEqualToAnchor:wnd->contentView.superview.leadingAnchor],
+                            [wnd->contentView.trailingAnchor constraintEqualToAnchor:wnd->contentView.superview.trailingAnchor],
+                            [wnd->contentView.topAnchor constraintEqualToAnchor:wnd->contentView.superview.topAnchor],
+                            [wnd->contentView.bottomAnchor constraintEqualToAnchor:wnd->contentView.superview.bottomAnchor]
+                        ]];*/
+                    #endif
                 #endif
             #endif
-                
+            
             wnd->windowClassName = "SK_Window_" + wndID;
-                
+            
             skg->setMainWindowSize(wnd->config["width"], wnd->config["height"]);
 
             wnd->createWebView();

@@ -6,6 +6,7 @@ BEGIN_SK_NAMESPACE
 
 class SK_Window;
 class SK_Communication_Packet;
+class SK_Communication_Response;
 
 
 using SK_Window_onWindowFocusChanged_Callback = std::function<void(SK_Window* wnd, const bool& focused)>;
@@ -25,7 +26,7 @@ using SK_onMainWindowHWNDAcquired = std::function<void(void* handle, bool isView
 
 
 	
-using SK_WebView_OnReady = std::function<void(void* webview, bool isHardBackend)>;
+using SK_WebView_OnReady = std::function<void(void* wnd, void* webview, bool isHardBackend)>;
 using SK_WebView_SendMsgToFrontend_CB = std::function<void(const SK_String& target, const SK_String& data)>;
 
 enum SK_Communication_Packet_Type {
@@ -70,7 +71,14 @@ using SK_setMainWindowSize = std::function<void(int w, int h)>;
 using SK_onPreConfigWnd = std::function<void(SK_Window* wnd, nlohmann::json constructorOpts)>;
 using SK_onPostConfigWnd = std::function<void(SK_Window* wnd)>;
 using SK_wndCreated = std::function<void(SK_Window* wnd)>;
+using SK_onBeforeWndResize_CB = std::function<SK_Point(SK_Window* wnd)>;
 
 using SK_WebView_onGetUserDataPath = std::function<SK_String(SK_Window* wnd)>;
 
+using SK_HandlePluginParamEvent_CB = std::function<void(const nlohmann::json& payload, SK_Communication_Response& respondWith)>;
+
+using SK_InitSK_CB = std::function<void()>;
+using SK_DestroySK_CB = std::function<void()>;
+using SK_OBJCPPSafeTicker_CB = std::function<void()>;
+using SK_OBJCPPSafeInitializer_CB = std::function<void()>;
 END_SK_NAMESPACE

@@ -18,7 +18,7 @@ public:
             
     nlohmann::json call(const nlohmann::json& opt) {
        // Initialize the curl library
-      /* curl_global_init(CURL_GLOBAL_DEFAULT);
+       curl_global_init(CURL_GLOBAL_DEFAULT);
 
        // Create a curl handle
        CURL* handle = curl_easy_init();
@@ -39,7 +39,7 @@ public:
 
            if (opt.contains("mimeType")) mimeTypeStr = SK_String(opt["mimeType"]);
 
-           SK_String mimeType = SK_Web_MIME_utils::fromFileExt("foo." + mimeTypeStr);
+           SK_String mimeType = SK_Web_MIME_utils::GetInstance().fromFileExt("foo." + mimeTypeStr);
            SK_String hStr = "Accept: " + mimeType;
            headers = curl_slist_append(headers, hStr.c_str());
            hStr = "Content-Type: " + mimeType;
@@ -108,7 +108,6 @@ public:
            curl_global_cleanup();
            return { {"error", "failed web request"}};
        }
-       */
 
         return {};
     };

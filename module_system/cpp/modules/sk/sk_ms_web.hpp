@@ -23,6 +23,11 @@ public:
         skg = _skg;
     }
 
+    ~SK_Module_web(){
+        skg = nullptr;
+    }
+    
+    
     void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
        // if (operation == "createProgressCallback") createProgressCallback(payload, respondWith);
         //else if (operation == "getProgress") getProgress(payload, respondWith);

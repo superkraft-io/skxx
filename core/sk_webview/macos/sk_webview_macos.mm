@@ -23,6 +23,8 @@ using namespace SK;
     
     
     SK_Communication_Config config{self.tag, SK_Communication_Packet_Type::sk_comm_pt_web, (__bridge void *)urlSchemeTask.request};
+    if (!self.skg) return;
+    
     self.skg->onCommunicationRequest(&config, NULL, [&](SK_Communication_Packet* packet) -> void* {
         if (packet == nullptr){
             return (static_cast<Superkraft*>(self.skg->sk))->comm->packetFromWebRequest(urlSchemeTask.request, config.sender);
@@ -118,6 +120,8 @@ NS_ASSUME_NONNULL_END
 BEGIN_SK_NAMESPACE
 
 SK_WebView::~SK_WebView(){
+    if (!webview) return;
+    
     [webview.configuration.userContentController removeScriptMessageHandlerForName:@"SK_IPC_Handler"];
     [webview.configuration.userContentController removeAllUserScripts];
     
@@ -144,7 +148,7 @@ void SK_WebView::create(bool offsetWhenDebugging) {
     #if defined(SK_MODE_DEBUG)
         if (offsetWhenDebugging){
             //when we are debugging, we want to expose a bit of the soft backend so that we can right click on it to open its dev tools
-            int offset = 64;
+            int offset = 32;
             int width = frame.size.width;
             width = width - offset;
             frame.origin.x = offset;
@@ -186,6 +190,7 @@ void SK_WebView::create(bool offsetWhenDebugging) {
     
     // Create the WKWebView
     webview = [[WKWebView alloc] initWithFrame:frame configuration:config];
+   
     
     webviewDelegate = [[SK_Webview_MacOS_Delegate alloc] init];
     webviewDelegate.windowHandle = parentWndHandle;
@@ -209,7 +214,21 @@ void SK_WebView::create(bool offsetWhenDebugging) {
     // Add WKWebView to the parent window's content view
     [parentContentView addSubview:webview];
 
-    skg->onWebViewReady(static_cast<void*>(webview), false);
+    
+    webview.translatesAutoresizingMaskIntoConstraints = false;
+    [NSLayoutConstraint activateConstraints:@[
+        #if defined(SK_MODE_DEBUG)
+            [webview.leadingAnchor constraintEqualToAnchor:parentContentView.leadingAnchor constant:32],
+        #else
+            [webview.leadingAnchor constraintEqualToAnchor:parentContentView.leadingAnchor],
+        #endif
+        
+        [webview.trailingAnchor constraintEqualToAnchor:parentContentView.trailingAnchor],
+        [webview.topAnchor constraintEqualToAnchor:parentContentView.topAnchor],
+        [webview.bottomAnchor constraintEqualToAnchor:parentContentView.bottomAnchor]
+    ]];
+    
+    skg->onWebViewReady(parentWnd, static_cast<void*>(webview), false);
 
     // Navigate to the initial URL
     navigate(currentURL);

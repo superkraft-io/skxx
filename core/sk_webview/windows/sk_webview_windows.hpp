@@ -20,14 +20,16 @@ public:
 
     SK_WebViewResourceHandler* wvrh;
 
+    void* parentWnd;
     SK_String parentClassName;
-
 	HWND* parentHwnd;
 
     wil::com_ptr<ICoreWebView2Environment> environment;
+    wil::com_ptr<ICoreWebView2Environment12> environment12;
 	wil::com_ptr<ICoreWebView2Settings> settings;
 	wil::com_ptr<ICoreWebView2Controller> controller = nullptr;
-	wil::com_ptr<ICoreWebView2> webview = nullptr;
+    wil::com_ptr<ICoreWebView2> webview = nullptr;
+    wil::com_ptr<ICoreWebView2_17> webview17 = nullptr;
     EventRegistrationToken mWebMessageReceivedToken;
     
 	SK_String currentURL = "";
@@ -181,7 +183,12 @@ public:
 
                     environment = env;
 
-                   
+                    HRESULT hr12 = env->QueryInterface(IID_PPV_ARGS(&environment12));
+                    if (FAILED(hr12)) {
+                        // Handle the error if the cast fails
+                        __debugbreak;
+                        return hr12;
+                    }
 
                     // Create a CoreWebView2Controller and get the associated CoreWebView2 whose parent is the main window hWnd
                     env->CreateCoreWebView2Controller(*parentHwnd, Callback<ICoreWebView2CreateCoreWebView2ControllerCompletedHandler>(
@@ -189,7 +196,24 @@ public:
                                                        
                             if (_controller != nullptr) {
                                 controller = _controller;
-                                controller->get_CoreWebView2(&webview);
+
+                                HRESULT hr = controller->get_CoreWebView2(&webview);
+                                if (SUCCEEDED(hr) && webview != nullptr) {
+                                    hr = webview->QueryInterface(IID_PPV_ARGS(&webview17));
+                                    if (SUCCEEDED(hr)) {
+                                        // Successfully obtained ICoreWebView2_17 interface
+                                        // You can now use webview17 to access new features
+                                        int x = 0;
+                                    }
+                                    else {
+                                        // ICoreWebView2_17 not supported on this runtime version
+                                        int x = 0;
+                                    }
+                                }
+                            }
+                            else {
+                                __debugbreak;
+                                throw "[SK++ / sk_webview_windows.hpp] FAILED TO CREATE WEBVIEW CONTROLLER";
                             }
 
 
@@ -299,13 +323,11 @@ public:
                             }).Get(), &mWebMessageReceivedToken);
 
 
-                            
-
 
                             //----  Lets make the webview transparent  ----//
                             callResize();
 
-                            skg->onWebViewReady(static_cast<void*>(webview.get()), false);
+                            skg->onWebViewReady(parentWnd, static_cast<void*>(webview.get()), false);
 
                             //  8. Finally we can navigate to the desired URL
                             //webview->Navigate(L"data:text/html, <html style=\"background:transparent;\"><body style=\"background:transparent; color: white;\">WebView 2</body></html>");

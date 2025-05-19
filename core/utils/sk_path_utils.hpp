@@ -262,6 +262,7 @@ public:
 			return SK_String(_path);
 		#elif defined(SK_OS_apple)
 			//for apple
+        return "";
 		#endif
 	}
 

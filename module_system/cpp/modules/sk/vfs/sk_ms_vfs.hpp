@@ -16,6 +16,7 @@ public:
 
     ~SK_Module_vfs() {
         for (int i = 0; i < entries.size(); i++) delete entries[i];
+        skg = nullptr;
     }
 
     void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {

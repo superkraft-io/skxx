@@ -78,6 +78,8 @@ class SK_Global_Core {
         }
 
 
+        this.pluginMngr = new sk_dawPluginMngr()
+
         this.init()
     }
 
@@ -158,7 +160,6 @@ class SK_Global_Core {
     }
 
     waitForWndReady(){
-        console.log('-------- waitForWndReady')
         return new Promise(resolve => {
             var isBusy = false
             var timer = setInterval(async ()=>{
@@ -178,4 +179,6 @@ class SK_Global_Core {
     }
 }
 
+
+console.log('sk_api: ', Date.now())
 window.sk_api = new SK_Global_Core({ id: Date.now().toString() })

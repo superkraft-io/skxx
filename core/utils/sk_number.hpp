@@ -140,6 +140,57 @@ public:
         }
         return false; // Not a number
     }
+    
+    
+    bool operator<(int rhs) const {
+            return std::get<int>(value) < rhs;
+        }
+
+        bool operator>(int rhs) const {
+            return std::get<int>(value) > rhs;
+        }
+
+        bool operator<=(int rhs) const {
+            return std::get<int>(value) <= rhs;
+        }
+
+        bool operator>=(int rhs) const {
+            return std::get<int>(value) >= rhs;
+        }
+
+        bool operator<(float rhs) const {
+            return std::get<float>(value) < rhs;
+        }
+
+        bool operator>(float rhs) const {
+            return std::get<float>(value) > rhs;
+        }
+
+        bool operator<=(float rhs) const {
+            return std::get<float>(value) <= rhs;
+        }
+
+        bool operator>=(float rhs) const {
+            return std::get<float>(value) >= rhs;
+        }
+
+        bool operator<(double rhs) const {
+            return std::get<double>(value) < rhs;
+        }
+
+        bool operator>(double rhs) const {
+            return std::get<double>(value) > rhs;
+        }
+
+        bool operator<=(double rhs) const {
+            return std::get<double>(value) <= rhs;
+        }
+
+        bool operator>=(double rhs) const {
+            return std::get<double>(value) >= rhs;
+        }
+    
+    
 
     // Utility function to get the value as a specific type
     template <typename T>
