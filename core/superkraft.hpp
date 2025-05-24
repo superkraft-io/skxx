@@ -8,8 +8,6 @@ class Superkraft {
 public:
 	SK_Global* skg;
 
-	SK_Project_BinaryData* binaryData;
-
 	SK_Machine* machine;
 	SK_WebView_Initializer* wvinit;
 	SK_Window_Mngr* wndMngr;
@@ -17,15 +15,16 @@ public:
 
 	SK_Communication* comm;
     
+    SK_SoftBackend_Bundle_Library* bundle_library;
+    
     bool isReady = false;
     
 	Superkraft() {
-        binaryData = new SK_Project_BinaryData();
-        
 		skg = new SK_Global();
 		skg->sk = this;
         
-        
+        bundle_library = new SK_SoftBackend_Bundle_Library();
+        skg->bundle_library = bundle_library;
         
 		machine = new SK_Machine(skg);
 		skg->machine = machine;
@@ -39,7 +38,6 @@ public:
 		wvinit->skg = skg;
 
 		modsys = new SK_Module_System(skg);
-		modsys->bdfs->binaryData = binaryData;
         
         modsys->proton->app->wndMngr = wndMngr;
         modsys->proton->window->wndMngr = wndMngr;
@@ -77,11 +75,11 @@ public:
 		delete comm;
         comm = nullptr;
         
-        delete binaryData;
-        binaryData = nullptr;
-        
         delete skg;
         skg = nullptr;
+        
+        delete bundle_library;
+        bundle_library = nullptr;
 	}
 };
 

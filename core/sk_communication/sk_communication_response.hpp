@@ -30,7 +30,8 @@ public:
 	using SK_Communication_Response_CB_JSON = std::function<bool(const nlohmann::json& json)>;
 	using SK_Communication_Response_CB_JSON_OK = std::function<bool()>;
 	using SK_Communication_Response_CB_string = std::function<bool(const SK_String& str, const SK_String& mimeType)>;
-	using SK_Communication_Response_CB_file = std::function<bool(const SK_String& path, const SK_String& mimeType)>;
+    using SK_Communication_Response_CB_file = std::function<bool(const SK_String& path, const SK_String& mimeType)>;
+    using SK_Communication_Response_CB_fileFromBuffer = std::function<bool(const SK_String& path, const SK_String& mimeType)>;
 	using SK_Communication_Response_CB_error = std::function<void(int code, SK_String msg)>;
 
 	SK_Communication_Response_CB_setAsOK CB_setAsOK;
@@ -38,6 +39,7 @@ public:
 	SK_Communication_Response_CB_JSON_OK CB_JSON_OK;
 	SK_Communication_Response_CB_string CB_string;
 	SK_Communication_Response_CB_file CB_file;
+    SK_Communication_Response_CB_fileFromBuffer CB_fileFromBuffer;
 	SK_Communication_Response_CB_error CB_error;
 
 	SK_Communication_Response_CB_packageIPCResponse packageIPCResponse;
@@ -83,11 +85,17 @@ public:
 		return res;
 	}
 
-	bool file(const SK_String& path, const SK_String& mimeType = "auto") {
-		bool res = CB_file(path, mimeType);
-		onHandleResponse(this);
-		return res;
-	}
+    bool file(const SK_String& path, const SK_String& mimeType = "auto") {
+        bool res = CB_file(path, mimeType);
+        onHandleResponse(this);
+        return res;
+    }
+    
+    bool fileFromBuffer(const SK_String& buffer, const SK_String& mimeType = "auto") {
+        bool res = CB_fileFromBuffer(buffer, mimeType);
+        onHandleResponse(this);
+        return res;
+    }
 
 	void error(int code = 404, SK_String msg = "Not Found") {
 		CB_error(code, msg);
@@ -126,6 +134,7 @@ public:
 		CB_JSON_OK = [&]() { return JSON_OK(); };
 		CB_string = [&](SK_String str, SK_String mimeType) { return string(str, mimeType); };
 		CB_file = [&](SK_String path, SK_String mimeType) { return file(path, mimeType); };
+        CB_fileFromBuffer = [&](SK_String path, SK_String mimeType) { return fileFromBuffer(path, mimeType); };
 		CB_error = [&](int code, SK_String msg) { error(code, msg); };
 
 		CB_getIPCResponse = [&]() {
@@ -159,18 +168,22 @@ public:
 
 		SK_File file;
 		if (file.loadFromDisk(path.replaceAll("\\", "/").c_str())) {
-			fileData = std::vector<char>(file.data.begin(), file.data.end());
-			data = nlohmann::json {
-				{"data", fileData}
-			};
-
-			return true;
+			return fileFromBuffer(file.data, (mimeType == "auto" ? file.mimeType : mimeType));
 		}
 
 		error(); //something went wrong reading the file so we return a 404
 
 		return false;
 	}
+    
+    bool fileFromBuffer(const SK_String& buffer, const SK_String& mimeType){
+        data = nlohmann::json {
+            {"data", std::vector<char>(buffer.data.begin(), buffer.data.end())},
+            {"mimeType", mimeType}
+        };
+
+        return true;
+    }
 
 	void error(int code = 404, SK_String msg = "Not Found") {
 		data = nlohmann::json{ {"error", code}, {"message", msg} };
@@ -211,6 +224,7 @@ public:
         CB_JSON_OK = [&]() { return JSON_OK(); };
         CB_string = [&](SK_String str, SK_String mimeType) { return string(str, mimeType); };
         CB_file = [&](SK_String path, SK_String mimeType) { return file(path, mimeType); };
+        CB_fileFromBuffer = [&](SK_String path, SK_String mimeType) { return fileFromBuffer(path, mimeType); };
         CB_error = [&](int code, SK_String msg) { error(code, msg); };
 
         #if defined(SK_OS_windows)
@@ -288,15 +302,19 @@ public:
     bool file(const SK_String& path, const SK_String& mimeType = "auto") {
         SK_File file;
         if (file.loadFromDisk(path.replaceAll("\\", "/").c_str())) {
-            headers["Content-Type"] = (mimeType == "auto" ? file.mimeType : mimeType);
-            data = std::vector<char>(file.data.begin(), file.data.end());
-            setAsOK();
-            return true;
+            return fileFromBuffer(file.data, (mimeType == "auto" ? file.mimeType : mimeType));
         }
 
         error(); //something went wrong reading the file so we return a 404
 
         return false;
+    }
+    
+    bool fileFromBuffer(const SK_String& buffer, const SK_String& mimeType) {
+        headers["Content-Type"] = mimeType;
+        data = std::vector<char>(buffer.data.begin(), buffer.data.end());
+        setAsOK();
+        return true;
     }
 
     void error(int code = 404, const SK_String& msg = "Not Found") {

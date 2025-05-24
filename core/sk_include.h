@@ -42,6 +42,7 @@
 #include "sk_communication/sk_communication_packet.hpp"
 
 
+#include "../../../sk_soft_backend_bundle/sk_soft_backend_bundle_library.h"
 
 BEGIN_SK_NAMESPACE
 
@@ -84,6 +85,7 @@ public:
 	SK_String runningAs = "unknown";
 
     void* project;
+    SK_SoftBackend_Bundle_Library* bundle_library;
 
     void* sk = nullptr;
 
@@ -151,6 +153,15 @@ public:
     
     ~SK_Global(){
         delete threadPool;
+        threadPool = nullptr;
+        
+        appInitializer = nullptr;
+        mainWindow = nullptr;
+        sb_ipc = nullptr;
+        sk = nullptr;
+        project = nullptr;
+        bundle_library = nullptr;
+        machine = nullptr;
     }
 };
 
@@ -165,7 +176,6 @@ END_SK_NAMESPACE
 
 #include "sk_app/sk_app_initializer.h"
 
-#include "../../sk_project_binarydata.hpp"
 
 
 #include "../module_system/cpp/modules/sk/vfs/sk_ms_vfs_file.hpp"

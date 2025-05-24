@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../../../core/sk_common.hpp"
+#include "../../../../core/sk_web/sk_web_utils.hpp"
 
 BEGIN_SK_NAMESPACE
 
@@ -8,14 +9,11 @@ class SK_Module_bdfs {
 public:
     SK_Global* skg;
 
-    SK_Project_BinaryData* binaryData;
-
     SK_Module_bdfs(SK_Global* _skg) {
         skg = _skg;
     }
     
     ~SK_Module_bdfs(){
-        binaryData = nullptr;
         skg = nullptr;
     }
 
@@ -35,26 +33,21 @@ public:
 
 
     void access(const SK_String& path, SK_Communication_Response& respondWith) {
-        /*responseData = "{\"access\": false}";
-
-        auto pair = vbe->sk_bd.findEntryByPath(path);
-
-        if (pair.first != "none") responseData = "{\"access\": true}";
-        */
+        SK_SoftBackend_Bundle_Entry_Info* entry = skg->bundle_library->findByPath(path);
+        respondWith.JSON({"access", (entry ? true : false)});
+        
     }
 
     void stat(const SK_String& path, SK_Communication_Response& respondWith) {
-        /*auto pair = vbe->sk_bd.findEntryByPath(path);
+        SK_SoftBackend_Bundle_Entry_Info* entry = skg->bundle_library->findByPath(path);
 
-        if (pair.first == "none") {
-            responseData = SK_IPC::Error("ENOENT");
+        if (!entry) {
+            respondWith.error(404, "ENOENT");
             return;
         }
 
-        SK_VB_BDFS_Entry* entry = (SK_VB_BDFS_Entry*)pair.second;
-
-        auto statInfo = SSC::JSON::Object(SSC::JSON::Object::Entries{
-            {"type", pair.first.toStdString()},
+        respondWith.JSON({
+            {"type", (entry->isFolder ? "dir" : "file")},
             {"dev", -1},
             {"mode", -1},
             {"nlink", 1},
@@ -65,21 +58,15 @@ public:
             {"ino", 0},
             {"size", entry->size},
             {"blocks", -1},
-            {"atimeMs", entry->atime},
-            {"mtimeMs", entry->mtime},
-            {"ctimeMs", entry->ctime},
-            {"birthtimeMs", entry->ctime},
+            {"atimeMs", ""},
+            {"mtimeMs", ""},
+            {"ctimeMs", ""},
+            {"birthtimeMs", ""},
             {"atime"    , ""},
             {"mtime"    , ""},
             {"ctime"    , ""},
             {"birthtime", ""}
-            });
-
-
-        auto tempstr = statInfo.str();
-
-        responseData = String(tempstr);
-        */
+        });
     }
 
     void writeFile(const SK_String& path, const SK_String& data, SK_Communication_Response& respondWith) {
@@ -87,27 +74,18 @@ public:
     }
 
     void readFile(const SK_String& path, SK_Communication_Response& respondWith) {
-        /*auto pair = vbe->sk_bd.findEntryByPath(path);
+        SK_SoftBackend_Bundle_Entry_Info* entry = skg->bundle_library->findByPath(path);
 
-        if (pair.first == "dir") {
-            responseData = SK_IPC::Error("ENOENT");
+        if (entry->isFolder) {
+            respondWith.error(404, "ENOENT");
             return;
         }
 
-        if (pair.first == "none") {
-            responseData = "\"\"";
-            return;
-        }
-        SK_VB_BDFS_File* entry = (SK_VB_BDFS_File*)pair.second;
-
-        String fileData = entry->toBase64();
-
-        responseData = "\"" + fileData + "\"";
-        */
+        respondWith.fileFromBuffer(entry->dataAs_CharPtr(), SK_Web_MIME_utils::GetInstance().fromFilename(entry->filename));
     }
 
     void readdir(const SK_String& path, SK_Communication_Response& respondWith) {
-        //respondWith.JSON(binaryData->readDir(path));
+        respondWith.JSON(SK_SoftBackend_Bundle_Class::GetInstance().readDir(path));
         respondWith.JSON_OK();
     }
 
