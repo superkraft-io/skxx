@@ -1,9 +1,9 @@
 
-class SK_Module_VFS extends SK_Module_Root {
+class SK_Module_BDFS extends SK_Module_Root {
     constructor(modulePath) {
         super(modulePath)
         
-        this.promises = new SK_Module_VFS_Promises(this)
+        this.promises = new SK_Module_BDFS_Promises(this)
 
         window.vfs = this
     }
@@ -13,7 +13,7 @@ class SK_Module_VFS extends SK_Module_Root {
     }
 }
 
-class SK_Module_VFS_Promises {
+class SK_Module_BDFS_Promises {
     constructor(parent) {
         this.parent = parent
         this.sk = parent.sk
@@ -39,21 +39,32 @@ class SK_Module_VFS_Promises {
     }
 
     writeFile(path, data) {
-        console.log('writeFile')
-        return this.parent.async('writeFile', { path: path, data: { fileData: data } })
+        throw 'Cannot write to BDFS module'
     }
 
     readFile(path) {
-        console.log('readFile')
-        return this.parent.async('readFile', { path: path })
+        return new Promise(async (resolve, reject) => {
+            try {
+                var res = await this.parent.async('readFile', { path: path })
+                var decodedData = atob(res.data)
+                resolve(decodedData)
+            } catch (err) {
+                reject(err)
+            }
+        })
     }
 
     readdir(path, asObj) {
         return new Promise(async (resolve, reject) => {
             try {
                 var res = await this.parent.async('readdir', { path: path })
+
                 var list = []
-                for (var i in res) list.push((!asObj ? res[i].name : res[i]))
+
+                for (var i = 0; i < res.length; i++) {
+                    list.push((!asObj ? res[i].name : res[i]))
+                }
+
                 resolve(list)
             } catch (err) {
                 reject(err)
@@ -67,10 +78,9 @@ class SK_Module_VFS_Promises {
     }
 
     async writeJSON(path, data) {
-        console.log('writeJSON')
-        return JSON.parse(await this.parent.async('writeJSON', { path: path, data: JSON.stringify(data) }))
+        throw 'Cannot write to BDFS module'
     }
 }
 
 
-module.exports = new SK_Module_VFS('vfs')
+module.exports = new SK_Module_BDFS('bdfs')

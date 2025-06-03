@@ -14,11 +14,11 @@ class FileGroup {
 
         var fileData = fs.readFileSync(opt.path);
         
-        if (removeWhitespace){
+        /*if (removeWhitespace){
             var lines = fileData.toString().split('\n');
             for (var u in lines) lines[u] = lines[u].trim();
             fileData = lines.join('\n');
-        }
+        }*/
 
         return Buffer.from(fileData, 'utf8');
     }
@@ -67,12 +67,18 @@ class FileGroup {
 
     saveHeader() {
         var dataEntryTemplatePath =  __dirname + '/../templates/sk_soft_backend_bundle_group_template.h'
-        var dataEntryTemplate = fs.readFileSync(dataEntryTemplatePath).toString()
+        var dataEntryTemplate_deep = fs.readFileSync(dataEntryTemplatePath).toString()
+        var dataEntryTemplate_shallow = fs.readFileSync(dataEntryTemplatePath).toString()
 
-        dataEntryTemplate = dataEntryTemplate
+        dataEntryTemplate_deep = dataEntryTemplate_deep
             .split('<!id!>').join(this.id)
-            .replace('<!data_size!>', this.buffer.length)
+            .split('<!data_size!>').join(this.buffer.length)
             .replace('<!data!>', this.buffer.join(','))
+
+        dataEntryTemplate_shallow = dataEntryTemplate_shallow
+            .split('<!id!>').join(this.id)
+            .split('<!data_size!>').join(this.buffer.length)
+            .replace('<!data!>', '')
 
 
         var offsets = []
@@ -84,14 +90,22 @@ class FileGroup {
             sizes.push(file.size)
         }
         
-        dataEntryTemplate = dataEntryTemplate
+        dataEntryTemplate_deep = dataEntryTemplate_deep
+            .replace('<!offsets_arr_size!>', this.files.length).replace('<!offsets!>', offsets.join(','))
+            .replace('<!sizes_arr_size!>', this.files.length).replace('<!sizes!>', sizes.join(','))
+        
+        dataEntryTemplate_shallow = dataEntryTemplate_shallow
             .replace('<!offsets_arr_size!>', this.files.length).replace('<!offsets!>', offsets.join(','))
             .replace('<!sizes_arr_size!>', this.files.length).replace('<!sizes!>', sizes.join(','))
 
-        var savePath = groupsRoot + '/sk_soft_backend_bundle_group_' + this.id + '.h'
-        fs.writeFileSync(savePath, dataEntryTemplate)
+        fs.writeFileSync(deepGroupsRoot + '/sk_soft_backend_bundle_group_' + this.id + '.h', dataEntryTemplate_deep)
+        fs.writeFileSync(shallowGroupsRoot + '/sk_soft_backend_bundle_group_' + this.id + '.h', dataEntryTemplate_shallow)
 
-        this.headerDef = `#include "./groups/sk_soft_backend_bundle_group_${this.id}.h"`
+        this.headerDef = {
+            deep: `#include "./deep/groups/sk_soft_backend_bundle_group_${this.id}.h"`,
+            shallow: `#include "./shallow/groups/sk_soft_backend_bundle_group_${this.id}.h"`
+        }
+
         this.headerClass = `SK_SoftBackend_Bundle_Data_Group_${this.id}`
     }
 }
@@ -159,26 +173,30 @@ module.exports = {
        
         
 
-        var includeDefs = []
+        var includeDefs = {deep: [], shallow: []}
         var groupDefs = []
         var entriesDefs = []
 
         for (var groupIdx = 0; groupIdx < groups.length; groupIdx++) {
             var group = groups[groupIdx]
 
-            includeDefs.push(group.headerDef)
+            includeDefs.deep.push(group.headerDef.deep)
+            includeDefs.shallow.push(group.headerDef.shallow)
 
             groupDefs.push(`        new ${group.headerClass}()`)
 
             for (var u in group.files) {
                 var file = group.files[u]
-                var entryLine = `       {"${file.path}", new SK_SoftBackend_Bundle_Entry_Info(${file.offset}, ${file.size}, ${groupIdx}, ${file.idx}, groups[${groupIdx}], false, "${file.filename}", "")}`
+                var entryLine = `       {"${file.path}", new SK_SoftBackend_Bundle_Entry_Info(${file.offset}, ${file.size}, ${groupIdx}, ${file.idx}, groups[${groupIdx}], false, "${file.filename}", "", "")}`
                 entriesDefs.push(entryLine)
             }
         }
 
         var returnInfo = {
-            includesDef: includeDefs.join('\n'),
+            includesDef: {
+                deep: includeDefs.deep.join('\n'),
+                shallow: includeDefs.shallow.join('\n')
+            },
             groupsDefs: groupDefs.join(',\n'),
             entriesDefs: entriesDefs.join(',\n')
         }

@@ -79,6 +79,22 @@ module.exports = {
 
 
 
+        const stat = fs.statSync(dirPath);
+
+        const info = {
+            originalPath: dirPath,
+
+            isFolder: stat.isDirectory(),
+            path: dirPath.replace(dirPath, '/'),
+            filename: '',
+            size: stat.size,
+            folders: [],
+            files: []
+        }
+
+        entries.push(info);
+
+
         readDirRecursive(dirPath);
         console.log(`${totalSize} vs ${compressedSize}    ${totalSize/compressedSize}x smaller`)
         return entries;

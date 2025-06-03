@@ -1,6 +1,10 @@
 #pragma once
 
-<!group_includes!>
+#if defined(SK_BUNDLER_MODE_DEEP)
+    <!deep_group_includes!>
+#elif defined(SK_BUNDLER_MODE_SHALLOW)
+    <!shallow_group_includes!>
+#endif
 
 BEGIN_SK_NAMESPACE
 
@@ -15,7 +19,8 @@ public:
     bool isFolder = false;
     SK_String filename;
 
-    SK_String folders;
+    SK_String folderEntries;
+    SK_String fileEntries;
 
     SK_SoftBackend_Bundle_Data_Group_Root* group;
     
@@ -27,7 +32,8 @@ public:
         void* _group,
         bool _isFolder = false,
         const SK_String& _filename = "",
-        const SK_String& _folderEntries = ""
+        const SK_String& _folderEntries = "",
+        const SK_String& _fileEntries = ""
     ) : offset(_offset),    // Initialization list
         size(_size),
         groupIdx(_groupIdx),
@@ -35,26 +41,75 @@ public:
         group(static_cast<SK_SoftBackend_Bundle_Data_Group_Root*>(_group)),
         isFolder(_isFolder),
         filename(_filename),
-        folders(_folderEntries)
+        folderEntries(_folderEntries),
+        fileEntries(_fileEntries)
     {
         // Constructor body (empty in this case)
     }
     
-    char* dataAs_CharPtr(){
-        void* _offsets;
-        void* _sizes;
-        void* _data;
-        size_t _data_size;
+    SK_String dataAs_SKString() {
+        void* _offsets;    // Will hold `offsets` array address
+        void* _sizes;      // Will hold `sizes` array address
+        void* _data;       // Will hold `data` array address
+        size_t _data_size; // Will hold `data_size`
 
-        group->getPointers(_offsets, _sizes, _data, &_data_size);
-        
+        // Pass addresses of the pointers (&_offsets, &_sizes, &_data)
+        group->getPointers(&_offsets, &_sizes, &_data, &_data_size);
+
         size_t end = offset + size;
-
         if (end > _data_size) {
             throw std::runtime_error("Corrupted data: size exceeds buffer");
         }
 
-        return reinterpret_cast<char*>(static_cast<char*>(_data) + offset);
+        // Create string directly from the source range (zero-copy if possible)
+        const char* data_start = static_cast<const char*>(_data) + offset;
+        return SK_String(std::string(data_start, size));  // Efficient construction
+    }
+    
+    nlohmann::json readDir(){
+        nlohmann::json list = nlohmann::json::array();
+        
+        
+        if (folderEntries.length() > 0 && fileEntries.length() > 0 ){
+            
+            if (folderEntries.length() > 0){
+                //add folders
+                std::vector<std::string> folders = folderEntries.split(",");
+                unsigned int folderEntries_size = folders.size();
+                if (size > 0) {
+                    for (unsigned int i = 0; i < folderEntries_size; i++) {
+                        std::string entryName = folders[i];
+                        list.push_back(nlohmann::json{
+                            {"type", "dir"},
+                            {"name", entryName}
+                        });
+                    }
+                }
+            }
+            
+            if (fileEntries.length() > 0){
+                //add folders
+                std::vector<std::string> files = fileEntries.split(",");
+                unsigned int fileEntries_size = files.size();
+                if (size > 0) {
+                    for (unsigned int i = 0; i < fileEntries_size; i++) {
+                        std::string entryName = files[i];
+                        list.push_back(nlohmann::json{
+                            {"type", "dir"},
+                            {"name", entryName}
+                        });
+                    }
+                }
+            }
+            
+            
+            
+            std::sort(list.begin(), list.end(), [](const nlohmann::json& a, const nlohmann::json& b) {
+                return a["name"] < b["name"];
+            });
+        }
+        
+        return list;
     }
 };
 
@@ -76,9 +131,19 @@ public:
         auto fileEntry_Pair = fileEntries.find(path);
         auto folderEntry_Pair = folderEntries.find(path);
 
-        if (fileEntry_Pair == fileEntries.end() && fileEntry_Pair == fileEntries.end()) return nullptr;
+        if (fileEntry_Pair == fileEntries.end() && folderEntry_Pair == folderEntries.end()) return nullptr;
 
-        return (fileEntry_Pair ? fileEntry_Pair->second : folderEntry_Pair->second);
+        SK_SoftBackend_Bundle_Entry_Info* entry = nullptr;
+        
+        if (fileEntry_Pair != fileEntries.end()){
+            entry = fileEntry_Pair->second;
+        }
+        
+        if (folderEntry_Pair != folderEntries.end()){
+            entry = folderEntry_Pair->second;
+        }
+        
+        return entry;
     };
 };
 

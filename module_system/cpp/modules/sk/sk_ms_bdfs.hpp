@@ -20,7 +20,7 @@ public:
 
     void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
         SK_String path = payload["path"];
-        SK_String data = payload["data"];
+        SK_String data = (payload.contains("data") ? payload["data"] : "");
 
              if (operation == "access") access(path, respondWith);
         else if (operation == "stat") stat(path, respondWith);
@@ -34,8 +34,13 @@ public:
 
     void access(const SK_String& path, SK_Communication_Response& respondWith) {
         SK_SoftBackend_Bundle_Entry_Info* entry = skg->bundle_library->findByPath(path);
-        respondWith.JSON({"access", (entry ? true : false)});
-        
+
+        if (!entry) {
+            respondWith.error(404, "ENOENT");
+            return;
+        }
+
+        respondWith.JSON({});
     }
 
     void stat(const SK_String& path, SK_Communication_Response& respondWith) {
@@ -70,7 +75,7 @@ public:
     }
 
     void writeFile(const SK_String& path, const SK_String& data, SK_Communication_Response& respondWith) {
-        respondWith.JSON_OK();
+        respondWith.error(501, "ENOSYS");
     }
 
     void readFile(const SK_String& path, SK_Communication_Response& respondWith) {
@@ -81,12 +86,19 @@ public:
             return;
         }
 
-        respondWith.fileFromBuffer(entry->dataAs_CharPtr(), SK_Web_MIME_utils::GetInstance().fromFilename(entry->filename));
+        SK::SK_String data = entry->dataAs_SKString();
+        respondWith.JSON({ {"data", data.toBase64()} });
     }
 
     void readdir(const SK_String& path, SK_Communication_Response& respondWith) {
-        respondWith.JSON(SK_SoftBackend_Bundle_Class::GetInstance().readDir(path));
-        respondWith.JSON_OK();
+        SK_SoftBackend_Bundle_Entry_Info* entry = skg->bundle_library->findByPath(path);
+
+        if (!entry || !entry->isFolder) {
+            respondWith.error(404, "ENOENT");
+            return;
+        }
+    
+        respondWith.JSON(entry->readDir());
     }
 
     void readJSON(const SK_String& path, SK_Communication_Response& respondWith) {
@@ -94,7 +106,7 @@ public:
     }
 
     void writeJSON(const SK_String& path, const SK_String& data, SK_Communication_Response& respondWith) {
-        respondWith.JSON_OK();
+        respondWith.error(501, "ENOSYS");
     }
 };
 END_SK_NAMESPACE

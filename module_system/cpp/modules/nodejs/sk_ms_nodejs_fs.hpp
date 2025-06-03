@@ -68,7 +68,13 @@ public:
 
     
     void access(const SK_String& path, SK_Communication_Response& respondWith) {
-        respondWith.JSON(nlohmann::json{ {"access", SK_String(SK_File::exists(path) ? "true" : "false")} });
+        
+        if (!SK_File::exists(path)) {
+            respondWith.error(404, "ENOENT");
+            return;
+        }
+
+        respondWith.JSON({});
     };
 
     void writeFile(const SK_String& path, const SK_String& data, SK_Communication_Response& respondWith) {
