@@ -69,46 +69,49 @@ public:
     nlohmann::json readDir(){
         nlohmann::json list = nlohmann::json::array();
         
+        bool doSort = false;
+
+        if (folderEntries.length() > 0){
+            doSort = true;
+
+            //add folders
+            std::vector<std::string> folders = folderEntries.split(",");
+            unsigned int folderEntries_size = folders.size();
+            if (folderEntries_size > 0) {
+                for (unsigned int i = 0; i < folderEntries_size; i++) {
+                    std::string entryName = folders[i];
+                    list.push_back(nlohmann::json{
+                        {"type", "dir"},
+                        {"name", entryName}
+                    });
+                }
+            }
+        }
         
-        if (folderEntries.length() > 0 && fileEntries.length() > 0 ){
+        if (fileEntries.length() > 0){
+            doSort = true;
             
-            if (folderEntries.length() > 0){
-                //add folders
-                std::vector<std::string> folders = folderEntries.split(",");
-                unsigned int folderEntries_size = folders.size();
-                if (size > 0) {
-                    for (unsigned int i = 0; i < folderEntries_size; i++) {
-                        std::string entryName = folders[i];
-                        list.push_back(nlohmann::json{
-                            {"type", "dir"},
-                            {"name", entryName}
-                        });
-                    }
+            //add folders
+            std::vector<std::string> files = fileEntries.split(",");
+            unsigned int fileEntries_size = files.size();
+            if (fileEntries_size > 0) {
+                for (unsigned int i = 0; i < fileEntries_size; i++) {
+                    std::string entryName = files[i];
+                    list.push_back(nlohmann::json{
+                        {"type", "dir"},
+                        {"name", entryName}
+                    });
                 }
             }
-            
-            if (fileEntries.length() > 0){
-                //add folders
-                std::vector<std::string> files = fileEntries.split(",");
-                unsigned int fileEntries_size = files.size();
-                if (size > 0) {
-                    for (unsigned int i = 0; i < fileEntries_size; i++) {
-                        std::string entryName = files[i];
-                        list.push_back(nlohmann::json{
-                            {"type", "dir"},
-                            {"name", entryName}
-                        });
-                    }
-                }
-            }
+        }
             
             
-            
+        if (doSort){
             std::sort(list.begin(), list.end(), [](const nlohmann::json& a, const nlohmann::json& b) {
                 return a["name"] < b["name"];
             });
         }
-        
+
         return list;
     }
 };

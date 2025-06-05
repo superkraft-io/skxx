@@ -20,7 +20,9 @@ public:
     }
 
     void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
-        SK_String path = payload["path"];
+        SK_String path = std::filesystem::path(payload["path"]).lexically_normal().string();
+        if (path.length() > 1 && path.substring(path.length() - 1, 1) == "/") path = path.substring(0, path.length() - 1);
+    
         SK_String data = payload["data"];
 
 

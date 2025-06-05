@@ -80,6 +80,8 @@ class FileGroup {
             .split('<!data_size!>').join(this.buffer.length)
             .replace('<!data!>', '')
 
+        fs.writeFileSync(shallowGroupsDataRoot + '/' + this.id + '.bin', this.buffer)
+
 
         var offsets = []
         var sizes = []
@@ -129,8 +131,8 @@ module.exports = {
 
         var groups = []
 
-        console.warn('GROUPING FOR LARGE FILES IS DISABLED. TURN IT BACK ON WHEN BUNDLER IS CONFIRMED TO WORK PROPERLY!')
-        /*
+        //console.warn('GROUPING FOR LARGE FILES IS DISABLED. TURN IT BACK ON WHEN BUNDLER IS CONFIRMED TO WORK PROPERLY!')
+        
         for (var i = files.length - 1; i >= 0; i--) {
             var file = files[i]
             if (file.size > groupSize) {
@@ -140,13 +142,12 @@ module.exports = {
                 files.splice(i, 1)
             }
         }
-            */
 
         var currentGroup = new FileGroup()
         for (var i = 0; i < files.length; i++) {
             var file = files[i]
             
-            if (i > 3) break //temporary limit for testing
+            //if (i > 3) break //temporary limit for testing
 
             if (file.isFolder) continue
 

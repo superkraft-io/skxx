@@ -10,13 +10,15 @@ BEGIN_SK_NAMESPACE
 
 class SK_SoftBackend_Bundle_Data_Group_<!id!> : public SK_SoftBackend_Bundle_Data_Group_Root {
 public:
+    unsigned int groupID = <!id!>;
+    
     size_t offsets[<!offsets_arr_size!>] = {<!offsets!>};
     size_t sizes[<!sizes_arr_size!>] = {<!sizes!>};
     
     size_t data_size = <!data_size!>;
     unsigned char data[<!data_size!>] = {<!data!>};
 
-    SK_SoftBackend_Bundle_Data_Group_0() {
+    SK_SoftBackend_Bundle_Data_Group_<!id!>() {
         getPointersCB = [this](void** _offsets, void** _sizes, void** _data, size_t* _data_size) {
             *_offsets = (void*)this->offsets;  // Assign address of `offsets`
             *_sizes = (void*)this->sizes;     // Assign address of `sizes`
@@ -29,30 +31,32 @@ public:
         #endif
     };
 
-    bool loadShallowData(){
-        //Load shallow data
-        auto file = std::filesystem::path(SK_BUNDLE_SHALLOW_DATA_PATH) / "group_<!id!>.bin";
 
-        FILE* file = fopen(path.replaceAll("\\", "/").c_str(), "rb");
-		if (file) {
-			fseek(file, 0, SEEK_END);
-			long dataSize = ftell(file);
-			char* buffer = (char*)malloc(dataSize + 1);
-			fseek(file, 0, SEEK_SET);
-			fread(buffer, 1, dataSize, file);
+    #if defined(SK_BUNDLER_MODE_SHALLOW)
+        bool loadShallowData(){
+            //Load shallow data
+            SK_String path = SK_BUNDLER_SHALLOW_DATA_PATH + "/" + SK_String(groupID) + ".bin";
 
-			data.resize(dataSize);
-			std::memcpy(data.data(), buffer, dataSize);
+            FILE* file = fopen(path.replaceAll("\\", "/").c_str(), "rb");
+            if (file) {
+                fseek(file, 0, SEEK_END);
+                long dataSize = ftell(file);
+                char* buffer = (char*)malloc(dataSize + 1);
+                fseek(file, 0, SEEK_SET);
+                fread(buffer, 1, dataSize, file);
 
-			free(buffer);
+                std::memcpy(data, buffer, dataSize);
 
-			fclose(file);
+                free(buffer);
 
-            return true;
+                fclose(file);
+
+                return true;
+            }
+
+            return false;
         }
-
-        return false;
-    }
+    #endif
 };
 
 END_SK_NAMESPACE
