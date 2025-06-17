@@ -16,7 +16,7 @@ public:
         skg = nullptr;
     }
 
-    void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+    void handleOperation(const SK_String& operation, nlohmann::json& payload, SK_Communication_Response& respondWith) {
              if (operation == "getCPUInfo"    ) getCPUInfo(respondWith);
         else if (operation == "getMemoryInfo" ) getMemoryInfo(respondWith);
         else if (operation == "getMachineTime") getMachineTime(respondWith);

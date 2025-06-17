@@ -42,7 +42,9 @@
 #include "sk_communication/sk_communication_packet.hpp"
 
 
-#include "../../../sk_soft_backend_bundle/sk_soft_backend_bundle_library.h"
+#if defined(SK_BUNDLER_MODE_DEEP) || defined(SK_BUNDLER_MODE_SHALLOW)
+    #include "../../../sk_soft_backend_bundle/sk_soft_backend_bundle_library.h"
+#endif
 
 BEGIN_SK_NAMESPACE
 
@@ -85,9 +87,16 @@ public:
 	SK_String runningAs = "unknown";
 
     void* project;
-    SK_SoftBackend_Bundle_Library* bundle_library;
+    
+    
+    #if defined(SK_BUNDLER_MODE_DEEP) || defined(SK_BUNDLER_MODE_SHALLOW)
+        SK_SoftBackend_Bundle_Library* bundle_library;
+    #endif
 
+    
     void* sk = nullptr;
+    
+    SK_ForwardPacketToModule_CB forwardPacketToModule;
 
 
 	SK_Window_onWindowFocusChanged_Callback onWindowFocusChanged;
@@ -160,7 +169,11 @@ public:
         sb_ipc = nullptr;
         sk = nullptr;
         project = nullptr;
-        bundle_library = nullptr;
+        
+        #if defined(SK_BUNDLER_MODE_DEEP) || defined(SK_BUNDLER_MODE_SHALLOW)
+            bundle_library = nullptr;
+        #endif
+        
         machine = nullptr;
     }
 };

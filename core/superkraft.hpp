@@ -15,7 +15,10 @@ public:
 
 	SK_Communication* comm;
     
-    SK_SoftBackend_Bundle_Library* bundle_library;
+    
+    #if defined(SK_BUNDLER_MODE_DEEP) || defined(SK_BUNDLER_MODE_SHALLOW)
+        SK_SoftBackend_Bundle_Library* bundle_library;
+    #endif
     
     bool isReady = false;
     
@@ -23,8 +26,10 @@ public:
 		skg = new SK_Global();
 		skg->sk = this;
         
-        bundle_library = new SK_SoftBackend_Bundle_Library();
-        skg->bundle_library = bundle_library;
+        #if defined(SK_BUNDLER_MODE_DEEP) || defined(SK_BUNDLER_MODE_SHALLOW)
+            bundle_library = new SK_SoftBackend_Bundle_Library();
+            skg->bundle_library = bundle_library;
+        #endif
         
 		machine = new SK_Machine(skg);
 		skg->machine = machine;
@@ -78,8 +83,10 @@ public:
         delete skg;
         skg = nullptr;
         
-        delete bundle_library;
-        bundle_library = nullptr;
+        #if defined(SK_BUNDLER_MODE_DEEP) || defined(SK_BUNDLER_MODE_SHALLOW)
+            delete bundle_library;
+            bundle_library = nullptr;
+        #endif
 	}
 };
 

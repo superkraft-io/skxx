@@ -27,17 +27,17 @@ public:
 		application = new SK_Module_application(skg);
 
 		fs = new SK_Module_fs(skg);
-
 		vfs = new SK_Module_vfs(skg);
-		fs->vfs = vfs;
-
         bdfs = new SK_Module_bdfs(skg);
 
 		web = new SK_Module_web(skg);
         nativeActions = new SK_Module_NativeActions(skg);
         debugMngr = new SK_Module_debugMngr(skg);
 		proton = new SK_Module_ProtonJS(skg);
-
+        
+        skg->forwardPacketToModule = [&](const SK_String& module, const SK_String& operation, nlohmann::json& payload, SK_Communication_Response& respondWith){
+            performOperation(module, operation, payload, respondWith);
+        };
 	}
 
 	~SK_Module_System() {
@@ -45,9 +45,8 @@ public:
         delete debugMngr;
         delete nativeActions;
         delete web;
-        delete bdfs;
         
-        fs->vfs = nullptr;
+        delete bdfs;
         delete vfs;
         delete fs;
         
@@ -57,7 +56,7 @@ public:
         skg = nullptr;
 	}
 
-	void performOperation(const SK_String& module, const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+	void performOperation(const SK_String& module, const SK_String& operation, nlohmann::json& payload, SK_Communication_Response& respondWith) {
 		     if (module == "os") os->handleOperation(operation, payload, respondWith);
 		else if (module == "application") application->handleOperation(operation, payload, respondWith);
 		else if (module == "fs") fs->handleOperation(operation, payload, respondWith);

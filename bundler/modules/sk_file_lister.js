@@ -19,7 +19,7 @@ global.shouldIgnoreFile = file => {
 }
 
 module.exports = {
-    listFiles: function(dirPath) { // Recursively list files and directories
+    listFiles: function(dirPath, replaceRootWith, ignoreRootDir) { // Recursively list files and directories
         let entries = [];
 
         var totalSize = 0
@@ -46,6 +46,10 @@ module.exports = {
                     size: stat.size,
                     folders: [],
                     files: []
+                }
+
+                if (replaceRootWith === 'sk:modsys/') {
+                    info.modsysPath = dirPath.replace(dirPath, replaceRootWith)
                 }
 
                 totalSize += info.size
@@ -78,22 +82,26 @@ module.exports = {
         }
 
 
+        //if (!ignoreRootDir){
+            const stat = fs.statSync(dirPath);
 
-        const stat = fs.statSync(dirPath);
+            const info = {
+                originalPath: dirPath,
 
-        const info = {
-            originalPath: dirPath,
+                isFolder: stat.isDirectory(),
+                path: dirPath.replace(dirPath, '/'),
+                filename: '',
+                size: stat.size,
+                folders: [],
+                files: []
+            }
 
-            isFolder: stat.isDirectory(),
-            path: dirPath.replace(dirPath, '/'),
-            filename: '',
-            size: stat.size,
-            folders: [],
-            files: []
-        }
+            if (replaceRootWith === 'sk:modsys/') {
+                info.modsysPath = dirPath.replace(dirPath, replaceRootWith)
+            }
 
-        entries.push(info);
-
+            entries.push(info);
+        //}
 
         readDirRecursive(dirPath);
         console.log(`${totalSize} vs ${compressedSize}    ${totalSize/compressedSize}x smaller`)

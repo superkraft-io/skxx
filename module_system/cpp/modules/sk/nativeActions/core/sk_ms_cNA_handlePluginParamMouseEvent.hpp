@@ -8,7 +8,7 @@ class SK_MS_cNA_handlePluginParamMouseEvent {
 public:
     SK_Global* skg;
 
-    void handleOperation(const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+    void handleOperation(nlohmann::json& payload, SK_Communication_Response& respondWith) {
         if (skg->handlePluginParamEvent) skg->handlePluginParamEvent(payload, respondWith);
         else respondWith.error();
     };

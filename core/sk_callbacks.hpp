@@ -77,8 +77,11 @@ using SK_WebView_onGetUserDataPath = std::function<SK_String(SK_Window* wnd)>;
 
 using SK_HandlePluginParamEvent_CB = std::function<void(const nlohmann::json& payload, SK_Communication_Response& respondWith)>;
 
+using SK_ForwardPacketToModule_CB = std::function<void(const SK_String& module, const SK_String& operation, nlohmann::json& payload, SK_Communication_Response& respondWith)>;
+
 using SK_InitSK_CB = std::function<void()>;
 using SK_DestroySK_CB = std::function<void()>;
 using SK_OBJCPPSafeTicker_CB = std::function<void()>;
 using SK_OBJCPPSafeInitializer_CB = std::function<void()>;
+
 END_SK_NAMESPACE

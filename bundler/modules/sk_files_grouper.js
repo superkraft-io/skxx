@@ -53,6 +53,7 @@ class FileGroup {
         this.files.push({
             idx: this.files.length,
             path: opt.path,
+            modsysPath: opt.modsysPath,
             size: opt.size,
             filename: opt.filename,
             offset: this.currentOffset
@@ -188,7 +189,7 @@ module.exports = {
 
             for (var u in group.files) {
                 var file = group.files[u]
-                var entryLine = `       {"${file.path}", new SK_SoftBackend_Bundle_Entry_Info(${file.offset}, ${file.size}, ${groupIdx}, ${file.idx}, groups[${groupIdx}], false, "${file.filename}", "", "")}`
+                var entryLine = `       {"${(file.modsysPath ? file.modsysPath.substr(0, file.modsysPath.length - 1) + file.path : file.path)}", new SK_SoftBackend_Bundle_Entry_Info(${file.offset}, ${file.size}, ${groupIdx}, ${file.idx}, groups[${groupIdx}], false, "${file.filename}", "", "")}`
                 entriesDefs.push(entryLine)
             }
         }

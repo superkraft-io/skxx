@@ -1,9 +1,21 @@
+
+
+//!!!!!    TODO: Also bundle all modsys web files, not just the soft backend files.    !!!!
+
+
 const fs = require('fs')
 const path = require('path')
 
 var lister = require('./modules/sk_file_lister')
 var grouper = require('./modules/sk_files_grouper')
 var folders_assembler = require('./modules/sk_folders_assembler')
+
+global.modsys_root = path.resolve(__dirname, '../module_system/web/')
+global.modsys_roots = {
+    node: modsys_root + '/node/',
+    npm: modsys_root + '/npm/',
+    sk: modsys_root + '/sk/',
+}
 
 global.soft_backend_root =  path.resolve(__dirname, '../../project')
 
@@ -30,7 +42,16 @@ fs.copyFileSync(__dirname + '/templates/sk_soft_backend_bundle_group_root_templa
 
 
 
-var allEntries = lister.listFiles(soft_backend_root)
+var modsysEntries = []
+/*for (var key in modsys_roots){
+    var modulesPath = modsys_roots[key]
+    modsysEntries = [...modsysEntries, ...lister.listFiles(modulesPath, 'sk:modsys/')]
+}*/
+
+modsysEntries = lister.listFiles(modsys_root, 'sk:modsys/')
+
+var allEntries = [...modsysEntries, ...lister.listFiles(soft_backend_root)]
+
 
 
 var groupRes = grouper.forFiles({

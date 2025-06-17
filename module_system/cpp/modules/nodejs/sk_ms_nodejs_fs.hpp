@@ -4,39 +4,48 @@
 
 BEGIN_SK_NAMESPACE
 
-
 class SK_Module_fs {
 public:
     SK_Global* skg;
-
-    SK_Module_vfs* vfs;
 
     SK_Module_fs(SK_Global* _skg) {
         skg = _skg;
     }
     
     ~SK_Module_fs(){
-        vfs = nullptr;
         skg = nullptr;
     }
 
-    void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+    void handleOperation(const SK_String& operation, nlohmann::json& payload, SK_Communication_Response& respondWith) {
+        SK_String _path = payload["path"];
+        if (_path.length() == 0) payload["path"] = "/";
+        
+        
         SK_String path = std::filesystem::path(payload["path"]).lexically_normal().string();
         if (path.length() > 1 && path.substring(path.length() - 1, 1) == "/") path = path.substring(0, path.length() - 1);
-
+        
+        /*if (path.indexOf("sk:modsys") > -1) {
+            path = path.replace("sk:modsys", "");
+            payload["path"] = path.data;
+        }*/
+        
+        
         //If path starts with sk_vfs/, we route the operation to the VFS module
         if (path.indexOf("sk_vfs/") > -1) {
-            vfs->handleOperation(operation, payload, respondWith);
+            skg->forwardPacketToModule("vfs", operation, payload, respondWith);
             return;
         }
-
+        
         //!!! IMPORTANT !!!! If in RELEASE mode, we route the operation to the BDFS module
-        #ifdef SK_MODE_RELEASE
-            //if (vbe->mode != "debug") {
-            //    vbe->sk_c_api->sk->bdfs->handle_IPC_Msg(msgID, obj, responseData);
-            //    return;
-           // }
+        #if defined(SK_ROUTE_FS_TO_BDFS)// || defined(SK_BUNDLER_MODE_DEEP) || defined(SK_BUNDLER_MODE_SHALLOW)
+            skg->forwardPacketToModule("bdfs", operation, payload, respondWith);
+            return;
         #endif
+        
+        
+        
+
+        
 
         SK_String fullPath = path;
 
@@ -55,6 +64,7 @@ public:
             }
         }
 
+       
         
              if (operation == "access"   ) access(fullPath, respondWith);
         else if (operation == "stat"     ) stat(fullPath, respondWith);

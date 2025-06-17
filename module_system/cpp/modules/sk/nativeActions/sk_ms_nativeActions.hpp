@@ -29,7 +29,7 @@ public:
         skg = nullptr;
     }
 
-    void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+    void handleOperation(const SK_String& operation, nlohmann::json& payload, SK_Communication_Response& respondWith) {
         if (appActions->handleOperation(operation, payload, respondWith)) return;
 
         if (operation == "handlePluginParamMouseEvent") handlePluginParamMouseEvent.handleOperation(payload, respondWith);
