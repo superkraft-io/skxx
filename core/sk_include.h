@@ -38,13 +38,15 @@
 #include "sk_web/sk_curl.hpp"
 
 
+#if defined(SK_BUNDLER_MODE_DEEP) || defined(SK_BUNDLER_MODE_SHALLOW)
+    #include "../../../sk_soft_backend_bundle/sk_soft_backend_bundle_library.h"
+#endif
+
+
 #include "sk_communication/sk_communication_response.hpp"
 #include "sk_communication/sk_communication_packet.hpp"
 
 
-#if defined(SK_BUNDLER_MODE_DEEP) || defined(SK_BUNDLER_MODE_SHALLOW)
-    #include "../../../sk_soft_backend_bundle/sk_soft_backend_bundle_library.h"
-#endif
 
 BEGIN_SK_NAMESPACE
 

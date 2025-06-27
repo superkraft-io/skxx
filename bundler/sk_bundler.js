@@ -14,7 +14,13 @@ global.modsys_root = path.resolve(__dirname, '../module_system/web/')
 global.modsys_roots = {
     node: modsys_root + '/node/',
     npm: modsys_root + '/npm/',
-    sk: modsys_root + '/sk/',
+    sk: modsys_root + '/sk/'
+}
+
+global.web_core_root = path.resolve(__dirname, '../web/')
+global.web_core = {
+    global_js_core: web_core_root + '/global_js_core/',
+    soft_backend: web_core_root + '/soft_backend/'
 }
 
 global.soft_backend_root =  path.resolve(__dirname, '../../project')
@@ -43,14 +49,20 @@ fs.copyFileSync(__dirname + '/templates/sk_soft_backend_bundle_group_root_templa
 
 
 var modsysEntries = []
+var webcoreEntries = []
 /*for (var key in modsys_roots){
     var modulesPath = modsys_roots[key]
     modsysEntries = [...modsysEntries, ...lister.listFiles(modulesPath, 'sk:modsys/')]
 }*/
 
+webcoreEntries = lister.listFiles(web_core_root, 'sk:webcore/')
 modsysEntries = lister.listFiles(modsys_root, 'sk:modsys/')
 
-var allEntries = [...modsysEntries, ...lister.listFiles(soft_backend_root)]
+var allEntries = [
+    ...webcoreEntries,
+    ...modsysEntries,
+    ...lister.listFiles(soft_backend_root)
+]
 
 
 

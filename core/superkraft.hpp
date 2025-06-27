@@ -53,10 +53,16 @@ public:
 		skg->pathUtils.init();
 
 		SK_File configFile;
-		if (!configFile.loadFromDisk(skg->pathUtils.paths["config"])) {
-			throw std::runtime_error("[SK++] No config file found!");
-		}
-		skg->sk_config = nlohmann::json::parse(std::string(configFile));
+        
+        #if defined(SK_ROUTE_FS_TO_BDFS)
+            configFile.data = bundle_library->findByPath("/config.json")->dataAs_SKString().data;
+        #else
+            if (!configFile.loadFromDisk(skg->pathUtils.paths["config"])) {
+                throw std::runtime_error("[SK++] No config file found!");
+            }
+        #endif
+        
+		skg->sk_config = nlohmann::json::parse(configFile.data);
 
 
 

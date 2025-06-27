@@ -47,7 +47,13 @@ public:
 			}
 
 			packet->response()->config = config;
-
+            
+            #if defined(SK_BUNDLER_MODE_NONE)
+                //...
+            #else
+                packet->response()->bundle_library = skg->bundle_library;
+            #endif
+            
             packet->response()->onHandleResponse = [packet, ipcResponseCallback, webPayload, resHandler](SK_Communication_Response* response) {
                 
                 if (response->type == SK_Communication_Packet_Type::sk_comm_pt_ipc) {
@@ -57,7 +63,7 @@ public:
                     #if defined(SK_OS_windows)
                         webPayload->put_Response(response->getForWeb().get());
                     #elif defined(SK_OS_apple)
-                    resHandler(packet);
+                        resHandler(packet);
                     #elif defined(SK_OS_linux) || defined(SK_OS_android)
                         //for linux and android
                     #endif
@@ -91,22 +97,23 @@ public:
 				handleForwarding(packet);
 			}
 			else {
-				#if defined SK_MODE_DEBUG
-					SK_String filePath = skg->pathUtils.paths["soft_backend"] + SK_String(packet->info["path"]);
-					packet->response()->file(filePath);
-				#else
-
-				#endif
+                SK_String filePath = skg->pathUtils.paths["soft_backend"] + SK_String(packet->info["path"]);
+                
+                #if defined(SK_BUNDLER_MODE_NONE)
+                    packet->response()->file(filePath);
+                #else
+                    packet->response()->fileFromBundle(filePath);
+                #endif
 			}
 		}
 		else if (packet->target == "sk:modsys") {
-			#if defined SK_MODE_DEBUG
-				SK_String filePath = skg->pathUtils.paths["module_system"] + SK_String(packet->info["path"]);
-				packet->response()->file(filePath);
-			#else
-
-			#endif
-			
+            SK_String filePath = skg->pathUtils.paths["module_system"] + SK_String(packet->info["path"]);
+            
+            #if defined(SK_BUNDLER_MODE_NONE)
+                packet->response()->file(filePath);
+            #else
+                packet->response()->fileFromBundle(filePath);
+            #endif
 		}
 		else if (packet->target == "sk:modop") {
 			nlohmann::json payload;
@@ -142,12 +149,13 @@ public:
 				return;
 			}
 
-			#if defined SK_MODE_DEBUG
-				SK_String filePath = skg->pathUtils.paths["project"] + path;
-				packet->response()->file(filePath);
-			#else
-
-			#endif
+            SK_String filePath = skg->pathUtils.paths["project"] + path;
+            
+            #if defined(SK_BUNDLER_MODE_NONE)
+                packet->response()->file(filePath);
+            #else
+                packet->response()->fileFromBundle(filePath);
+            #endif
 		}
 		else if (packet->target == "sk:view") {
 			SK_String path = SK_String(packet->info["path"]);
@@ -162,12 +170,12 @@ public:
 			//packet->response()->JSON(SK_Profiler::serialize());
 		}
 		else {
-			#if defined SK_MODE_DEBUG
-				std::string filePath = skg->pathUtils.paths["project"] + SK_String(packet->info["path"]);
-				packet->response()->file(filePath);
-			#else
-
-			#endif
+            std::string filePath = skg->pathUtils.paths["project"] + SK_String(packet->info["path"]);
+            #if defined(SK_BUNDLER_MODE_NONE)
+                packet->response()->file(filePath);
+            #else
+                packet->response()->fileFromBundle(filePath);
+            #endif
 		}
 	};
 

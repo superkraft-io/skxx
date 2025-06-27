@@ -12,7 +12,8 @@ class Folder {
         this.entries.push({
             idx: this.files.length,
             path: opt.path,
-            modsysPath: opt.modsysPath,
+            altPath: opt.altPath,
+            altPath: opt.altPathRoot,
             size: opt.size,
             filename: opt.filename,
             offset: this.currentOffset
@@ -34,7 +35,7 @@ module.exports = {
             if (!entry.isFolder) continue
 
           
-            var res = fs.readdirSync((entry.modsysPath ? modsys_root : soft_backend_root) + entry.path)
+            var res = fs.readdirSync((entry.altPath ? entry.altPathRoot : soft_backend_root) + entry.path)
             
             var folderEntries = {
                 folders: [],
@@ -44,20 +45,21 @@ module.exports = {
             for (var u in res) {
                 if (shouldIgnoreFile(res[u])) continue // Skip ignored files
 
-                if (fs.statSync(path.join((entry.modsysPath ? modsys_root : soft_backend_root), entry.path, res[u])).isDirectory()){
+                if (fs.statSync(path.join((entry.altPath ? entry.altPathRoot : soft_backend_root), entry.path, res[u])).isDirectory()){
                     folderEntries.folders.push(res[u])
                 } else {
                     folderEntries.files.push(res[u])
                 }
             }
 
-            if (entry.modsysPath){
+            if (entry.altPath){
                 var x = 0
             }
             
             entries.push({
                 path: entry.path,
-                modsysPath: entry.modsysPath,
+                altPath: entry.altPath,
+                altPathRoot: entry.altPathRoot,
                 entries: folderEntries
             })
         }
@@ -66,8 +68,8 @@ module.exports = {
 
         for (var i in entries) {
             var folder = entries[i]
-            var refPath = (folder.modsysPath ? folder.modsysPath.substr(0, folder.modsysPath.length - 1) + folder.path: folder.path)
-            if (folder.modsysPath && folder.path === '/') refPath = folder.modsysPath.substr(0, folder.modsysPath.length - 1)
+            var refPath = (folder.altPath ? folder.altPath.substr(0, folder.altPath.length - 1) + folder.path: folder.path)
+            if (folder.altPath && folder.path === '/') refPath = folder.altPath.substr(0, folder.altPath.length - 1)
             var cppEntry = `       {"${refPath}", new SK_SoftBackend_Bundle_Entry_Info(0, 0, 0, 0,0, true, "", "${folder.entries.folders.join(',')}", "${folder.entries.files.join(',')}")}`
             cppEntries.push(cppEntry)
         }

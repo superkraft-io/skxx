@@ -60,6 +60,7 @@ public:
             
             pathUtils->paths["global_js_core"] + "/sk_debug_mode.js"
         })
+        
         #if defined(SK_APP_TYPE_plugin)
             .replace("'<sk_plugin_parameters>'", pluginParameters)
            
@@ -71,6 +72,7 @@ public:
                 #endif
           
         #endif
+        
         .replace("<sk_base_url>", SK_Base_URL)
         .replace("'<sk_static_info>'", getStaticInfo())
         .replace("'<sk_native_actions>'", modsys->nativeActions->listActions());
@@ -82,12 +84,15 @@ public:
         SK_String data;
 
         for (int i = 0; i < paths.size(); i++) {
+            SK_String path = paths[i];
+            
             SK_File file;
-
-            #ifdef SK_MODE_DEBUG
+            
+            #if defined(SK_BUNDLER_MODE_NONE)
                 file.loadFromDisk(paths[i]);
             #else
-                //..
+                SK_SoftBackend_Bundle_Entry_Info* entry = skg->bundle_library->findByPath(path);
+                file.data = entry->dataAs_SKString().data;
             #endif
 
             data += "\n\r" + file;
@@ -130,6 +135,7 @@ public:
             {"argv"   , "<argv>"},
             {"argv0"  , argv0},
             {"mode"   , SK_MODE},
+            {"bundler_mode", SK_BUNDLER_MODE},
             {"name"   , appName},
             {"version", appVersion}
         };

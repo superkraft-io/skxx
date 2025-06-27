@@ -23,14 +23,20 @@ using SK_Communication_Response_CB_onHandleResponse = std::function<void(SK_Comm
 
 class SK_Communication_Response {
 public:
+    #if defined(SK_BUNDLER_MODE_DEEP) || defined(SK_BUNDLER_MODE_SHALLOW)
+        SK_SoftBackend_Bundle_Library* bundle_library;
+    #endif
+    
 	SK_Communication_Packet_Type type;
 	SK_Communication_Config* config;
+    nlohmann::json headers{ {"Content-Type", "application/json"} };
 
 	using SK_Communication_Response_CB_setAsOK = std::function<void()>;
 	using SK_Communication_Response_CB_JSON = std::function<bool(const nlohmann::json& json)>;
 	using SK_Communication_Response_CB_JSON_OK = std::function<bool()>;
 	using SK_Communication_Response_CB_string = std::function<bool(const SK_String& str, const SK_String& mimeType)>;
     using SK_Communication_Response_CB_file = std::function<bool(const SK_String& path, const SK_String& mimeType)>;
+    using SK_Communication_Response_CB_fileFromBundle = std::function<bool(const SK_String& path, const SK_String& mimeType)>;
     using SK_Communication_Response_CB_fileFromBuffer = std::function<bool(const SK_String& path, const SK_String& mimeType)>;
 	using SK_Communication_Response_CB_error = std::function<void(int code, SK_String msg)>;
 
@@ -38,7 +44,8 @@ public:
 	SK_Communication_Response_CB_JSON CB_JSON;
 	SK_Communication_Response_CB_JSON_OK CB_JSON_OK;
 	SK_Communication_Response_CB_string CB_string;
-	SK_Communication_Response_CB_file CB_file;
+    SK_Communication_Response_CB_file CB_file;
+    SK_Communication_Response_CB_fileFromBundle CB_fileFromBundle;
     SK_Communication_Response_CB_fileFromBuffer CB_fileFromBuffer;
 	SK_Communication_Response_CB_error CB_error;
 
@@ -91,6 +98,12 @@ public:
         return res;
     }
     
+    bool fileFromBundle(const SK_String& path, const SK_String& mimeType = "auto") {
+        bool res = CB_fileFromBundle(path, mimeType);
+        onHandleResponse(this);
+        return res;
+    }
+    
     bool fileFromBuffer(const SK_String& buffer, const SK_String& mimeType = "auto") {
         bool res = CB_fileFromBuffer(buffer, mimeType);
         onHandleResponse(this);
@@ -133,7 +146,8 @@ public:
 		CB_JSON = [&](nlohmann::json json) { return JSON(json); };
 		CB_JSON_OK = [&]() { return JSON_OK(); };
 		CB_string = [&](SK_String str, SK_String mimeType) { return string(str, mimeType); };
-		CB_file = [&](SK_String path, SK_String mimeType) { return file(path, mimeType); };
+        CB_file = [&](SK_String path, SK_String mimeType) { return file(path, mimeType); };
+        CB_fileFromBundle = [&](SK_String path, SK_String mimeType) { return fileFromBundle(path, mimeType); };
         CB_fileFromBuffer = [&](SK_String path, SK_String mimeType) { return fileFromBuffer(path, mimeType); };
 		CB_error = [&](int code, SK_String msg) { error(code, msg); };
 
@@ -163,18 +177,36 @@ public:
 		return true;
 	}
 
-	bool file(const SK_String& path, const SK_String& mimeType = "auto") {
-		std::vector<char> fileData;
+    bool file(const SK_String& path, const SK_String& mimeType = "auto") {
+        std::vector<char> fileData;
 
-		SK_File file;
-		if (file.loadFromDisk(path.replaceAll("\\", "/").c_str())) {
-			return fileFromBuffer(file.data, (mimeType == "auto" ? file.mimeType : mimeType));
-		}
+        SK_File file;
+        if (file.loadFromDisk(path.replaceAll("\\", "/").c_str())) {
+            return fileFromBuffer(file.data, (mimeType == "auto" ? file.mimeType : mimeType));
+        }
 
-		error(); //something went wrong reading the file so we return a 404
+        error(); //something went wrong reading the file so we return a 404
 
-		return false;
-	}
+        return false;
+    }
+    
+    bool fileFromBundle(const SK_String& path, const SK_String& mimeType = "auto") {
+        #if defined(SK_BUNDLER_MODE_NONE)
+            error();
+            return false;
+        #else
+            SK_SoftBackend_Bundle_Entry_Info* entry = bundle_library->findByPath(path);
+            
+            if (!entry){
+                error(); //something went wrong reading the file so we return a 404
+                return false;
+            }
+            
+            SK_String fileData = entry->dataAs_SKString();
+            
+            return fileFromBuffer(fileData, (mimeType == "auto" ? SK_String(SK_Web_MIME_utils::GetInstance().fromFilename(entry->filename)) : mimeType));
+        #endif
+    }
     
     bool fileFromBuffer(const SK_String& buffer, const SK_String& mimeType){
         data = nlohmann::json {
@@ -197,7 +229,6 @@ public:
     SK_String errorType = "plain/text";
     int statusCode = 404;
     SK_String statusMessage = "Not found";
-    nlohmann::json headers{ {"Content-Type", "application/json"} };
     std::vector<char> data;
     SK_String url;
 
@@ -224,6 +255,7 @@ public:
         CB_JSON_OK = [&]() { return JSON_OK(); };
         CB_string = [&](SK_String str, SK_String mimeType) { return string(str, mimeType); };
         CB_file = [&](SK_String path, SK_String mimeType) { return file(path, mimeType); };
+        CB_fileFromBundle = [&](SK_String path, SK_String mimeType) { return fileFromBundle(path, mimeType); };
         CB_fileFromBuffer = [&](SK_String path, SK_String mimeType) { return fileFromBuffer(path, mimeType); };
         CB_error = [&](int code, SK_String msg) { error(code, msg); };
 
@@ -308,6 +340,24 @@ public:
         error(); //something went wrong reading the file so we return a 404
 
         return false;
+    }
+    
+    bool fileFromBundle(const SK_String& path, const SK_String& mimeType = "auto") {
+        #if defined(SK_BUNDLER_MODE_NONE)
+            error();
+            return false;
+        #else
+            SK_SoftBackend_Bundle_Entry_Info* entry = bundle_library->findByPath(path);
+            
+            if (!entry){
+                error(); //something went wrong reading the file so we return a 404
+                return false;
+            }
+            
+            SK_String fileData = entry->dataAs_SKString();
+            
+            return fileFromBuffer(fileData, (mimeType == "auto" ? SK_String(SK_Web_MIME_utils::GetInstance().fromFilename(entry->filename)) : mimeType));
+        #endif
     }
     
     bool fileFromBuffer(const SK_String& buffer, const SK_String& mimeType) {
