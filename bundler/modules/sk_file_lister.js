@@ -33,7 +33,7 @@ module.exports = {
                 
                 if (shouldIgnoreFile(file)) continue // Skip ignored files
 
-                const fullPath = path.join(currentPath, file);
+                const fullPath = path.join(currentPath, file).split('\\').join('/');
 
                 const stat = fs.statSync(fullPath);
 

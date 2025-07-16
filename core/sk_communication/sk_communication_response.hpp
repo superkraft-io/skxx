@@ -195,7 +195,9 @@ public:
             error();
             return false;
         #else
-            SK_SoftBackend_Bundle_Entry_Info* entry = bundle_library->findByPath(path);
+            SK_String _path = SK_String(std::filesystem::path(path).lexically_normal().string()).replaceAll("\\", "/").replaceAll("//", "/");
+
+            SK_SoftBackend_Bundle_Entry_Info* entry = bundle_library->findByPath(_path);
             
             if (!entry){
                 error(); //something went wrong reading the file so we return a 404
@@ -347,7 +349,9 @@ public:
             error();
             return false;
         #else
-            SK_SoftBackend_Bundle_Entry_Info* entry = bundle_library->findByPath(path);
+            SK_String _path = SK_String(std::filesystem::path(path).lexically_normal().string()).replaceAll("\\", "/").replaceAll("//", "/");
+
+            SK_SoftBackend_Bundle_Entry_Info* entry = bundle_library->findByPath(_path);
             
             if (!entry){
                 error(); //something went wrong reading the file so we return a 404

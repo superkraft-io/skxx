@@ -167,7 +167,6 @@ public:
         HRESULT iniHR = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
         if (FAILED(iniHR))
         {
-            __debugbreak;
             throw "Could not initialize webview";
             return;
         }
@@ -186,7 +185,6 @@ public:
                     HRESULT hr12 = env->QueryInterface(IID_PPV_ARGS(&environment12));
                     if (FAILED(hr12)) {
                         // Handle the error if the cast fails
-                        __debugbreak;
                         return hr12;
                     }
 
@@ -212,7 +210,6 @@ public:
                                 }
                             }
                             else {
-                                __debugbreak;
                                 throw "[SK++ / sk_webview_windows.hpp] FAILED TO CREATE WEBVIEW CONTROLLER";
                             }
 
@@ -346,7 +343,6 @@ public:
         if (FAILED(hr)) {
             std::wstring logMessage = L"CreateCoreWebView2EnvironmentWithOptions failed. HRESULT: " + std::to_wstring(hr) + L"\n";
             OutputDebugStringW(logMessage.c_str());
-            __debugbreak;
         }
     };
 

@@ -10,32 +10,33 @@ var lister = require('./modules/sk_file_lister')
 var grouper = require('./modules/sk_files_grouper')
 var folders_assembler = require('./modules/sk_folders_assembler')
 
-global.modsys_root = path.resolve(__dirname, '../module_system/web/')
+global.modsys_root = path.resolve(__dirname, '../module_system/web/').split('\\').join('/');
 global.modsys_roots = {
     node: modsys_root + '/node/',
     npm: modsys_root + '/npm/',
     sk: modsys_root + '/sk/'
 }
 
-global.web_core_root = path.resolve(__dirname, '../web/')
+global.web_core_root = path.resolve(__dirname, '../web/').split('\\').join('/');
 global.web_core = {
     global_js_core: web_core_root + '/global_js_core/',
     soft_backend: web_core_root + '/soft_backend/'
 }
 
-global.soft_backend_root =  path.resolve(__dirname, '../../project')
+global.soft_backend_root =  path.resolve(__dirname, '../../project').split('\\').join('/');
 
-global.bundleRoot = path.resolve(__dirname, '../../sk_soft_backend_bundle/')
+global.bundleRoot = path.resolve(__dirname, '../../sk_soft_backend_bundle/').split('\\').join('/');
 
-global.bundleDeepRoot = path.resolve(__dirname, '../../sk_soft_backend_bundle/deep/')
-global.deepGroupsRoot = path.resolve(__dirname, '../../sk_soft_backend_bundle/deep/groups/')
+global.bundleDeepRoot = path.resolve(__dirname, '../../sk_soft_backend_bundle/deep/').split('\\').join('/');
+global.deepGroupsRoot = path.resolve(__dirname, '../../sk_soft_backend_bundle/deep/groups/').split('\\').join('/');
 
-global.bundleShallowRoot = path.resolve(__dirname, '../../sk_soft_backend_bundle/shallow/')
-global.shallowGroupsRoot = path.resolve(__dirname, '../../sk_soft_backend_bundle/shallow/groups/')
-global.shallowGroupsDataRoot = path.resolve(__dirname, '../../sk_soft_backend_bundle/shallow/groups/data/')
+global.bundleShallowRoot = path.resolve(__dirname, '../../sk_soft_backend_bundle/shallow/').split('\\').join('/');
+global.shallowGroupsRoot = path.resolve(__dirname, '../../sk_soft_backend_bundle/shallow/groups/').split('\\').join('/');
+global.shallowGroupsDataRoot = path.resolve(__dirname, '../../sk_soft_backend_bundle/shallow/groups/data/').split('\\').join('/');
 
 
-fs.rmdirSync(bundleRoot, { recursive: true, force: true })
+try { fs.rmSync(bundleRoot, { recursive: true, force: true }) } catch(err) {}
+fs.mkdirSync(bundleRoot, { recursive: true })
 
 fs.mkdirSync(bundleDeepRoot, { recursive: true })
 fs.mkdirSync(deepGroupsRoot, { recursive: true })

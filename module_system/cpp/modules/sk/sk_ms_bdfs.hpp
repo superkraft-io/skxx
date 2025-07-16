@@ -24,7 +24,7 @@ public:
             if (_path.length() == 0) payload["path"] = "/";
             
             
-            SK_String path = std::filesystem::path(payload["path"]).lexically_normal().string();
+            SK_String path = SK_String(std::filesystem::path(SK_String(payload["path"])).lexically_normal().string()).replaceAll("\\", "/");
             if (path.length() > 1 && path.substring(path.length() - 1, 1) == "/") path = path.substring(0, path.length() - 1);
             
             SK_String data = (payload.contains("data") ? payload["data"] : "");

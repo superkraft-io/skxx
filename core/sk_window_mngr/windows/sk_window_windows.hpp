@@ -510,10 +510,10 @@ public:
                     float scale = wnd->getHWNDScale(hwnd);
 
                     // Set the maximum size dynamically
-                    pMinMaxInfo->ptMinTrackSize.x = wnd->config.data["minWidth"] * scale;
-                    pMinMaxInfo->ptMinTrackSize.y = wnd->config.data["minHeight"] * scale;
-                    pMinMaxInfo->ptMaxTrackSize.x = (wnd->config.data["maxWidth"]  > 0 ? wnd->config.data["maxWidth"] * scale : wnd->maxSizeFull.x);
-                    pMinMaxInfo->ptMaxTrackSize.y = (wnd->config.data["maxHeight"] > 0 ? wnd->config.data["maxHeight"] * scale : wnd->maxSizeFull.y);
+                    pMinMaxInfo->ptMinTrackSize.x = float(wnd->config.data["minWidth"]) * scale;
+                    pMinMaxInfo->ptMinTrackSize.y = float(wnd->config.data["minHeight"]) * scale;
+                    pMinMaxInfo->ptMaxTrackSize.x = (wnd->config.data["maxWidth"]  > 0 ? float(wnd->config.data["maxWidth"]) * scale : float(wnd->maxSizeFull.x));
+                    pMinMaxInfo->ptMaxTrackSize.y = (wnd->config.data["maxHeight"] > 0 ? float(wnd->config.data["maxHeight"]) * scale : float(wnd->maxSizeFull.y));
                 }
                 return 0;
             }
@@ -533,7 +533,7 @@ public:
                 diff.y = (wndRect.bottom - wndRect.top) - clientRect.bottom;
 
 
-                SetWindowPos(hwnd, 0, rect->left, rect->top, wnd->config.data["width"] + diff.x, wnd->config.data["height"] + diff.y, 0);
+                SetWindowPos(hwnd, 0, rect->left, rect->top, long(wnd->config.data["width"]) + diff.x, long(wnd->config.data["height"]) + diff.y, 0);
 
                 return 0;
             }
