@@ -14,8 +14,8 @@ if (!accepted_modes.includes(bundle_mode)) throw `[SK++ Bundler] Invalid bundle 
 
 var lines = []
 
-lines.push(`#define SK_BUNDLER_MODE_${bundle_mode.toUpperCase()} 1`)
-lines.push(`#define SK_BUNDLER_MODE "${bundle_mode}"`)
+lines.push(`#define SK_BUNDLE_MODE_${bundle_mode.toUpperCase()} 1`)
+lines.push(`#define SK_BUNDLE_MODE "${bundle_mode}"`)
 
 if (bundle_mode === 'none'){
 } else {

@@ -88,7 +88,7 @@ public:
             
             SK_File file;
             
-            #if defined(SK_BUNDLER_MODE_NONE)
+            #if defined(SK_BUNDLE_MODE_NONE)
                 file.loadFromDisk(paths[i]);
             #else
                 SK_SoftBackend_Bundle_Entry_Info* entry = skg->bundle_library->findByPath(path);
@@ -135,7 +135,7 @@ public:
             {"argv"   , "<argv>"},
             {"argv0"  , argv0},
             {"mode"   , SK_MODE},
-            {"bundler_mode", SK_BUNDLER_MODE},
+            {"bundle_mode", SK_BUNDLE_MODE},
             {"name"   , appName},
             {"version", appVersion}
         };

@@ -38,7 +38,7 @@
 #include "sk_web/sk_curl.hpp"
 
 
-#if defined(SK_BUNDLER_MODE_DEEP) || defined(SK_BUNDLER_MODE_SHALLOW)
+#if defined(SK_BUNDLE_MODE_DEEP) || defined(SK_BUNDLE_MODE_SHALLOW)
     #include "../../../sk_soft_backend_bundle/sk_soft_backend_bundle_library.h"
 #endif
 
@@ -91,7 +91,7 @@ public:
     void* project;
     
     
-    #if defined(SK_BUNDLER_MODE_DEEP) || defined(SK_BUNDLER_MODE_SHALLOW)
+    #if defined(SK_BUNDLE_MODE_DEEP) || defined(SK_BUNDLE_MODE_SHALLOW)
         SK_SoftBackend_Bundle_Library* bundle_library;
     #endif
 
@@ -172,7 +172,7 @@ public:
         sk = nullptr;
         project = nullptr;
         
-        #if defined(SK_BUNDLER_MODE_DEEP) || defined(SK_BUNDLER_MODE_SHALLOW)
+        #if defined(SK_BUNDLE_MODE_DEEP) || defined(SK_BUNDLE_MODE_SHALLOW)
             bundle_library = nullptr;
         #endif
         

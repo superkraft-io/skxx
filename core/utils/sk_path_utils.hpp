@@ -57,7 +57,7 @@ public:
 
 
 	void init() {
-        #if defined(SK_BUNDLER_MODE_NONE)
+        #if defined(SK_BUNDLE_MODE_NONE)
             //if we're not running in bundled mode, projectRoot will be set to the root folder of your project.
             SK_String projectRoot = SK_String(SK_Path_Utils::pathBackwardsUntilNeighbour("skxx")).replaceAll("\\", "/");
             SK_String skxx = projectRoot + "/skxx";

@@ -18,7 +18,7 @@ public:
     }
 
 
-    #if defined(SK_BUNDLER_MODE_DEEP) || defined(SK_BUNDLER_MODE_SHALLOW)
+    #if defined(SK_BUNDLE_MODE_DEEP) || defined(SK_BUNDLE_MODE_SHALLOW)
         void handleOperation(const SK_String& operation, nlohmann::json& payload, SK_Communication_Response& respondWith) {
             SK_String _path = payload["path"];
             if (_path.length() == 0) payload["path"] = "/";
@@ -116,7 +116,7 @@ public:
         void writeJSON(const SK_String& path, const SK_String& data, SK_Communication_Response& respondWith) {
             respondWith.error(501, "ENOSYS");
         }
-    #elif defined(SK_BUNDLER_MODE_NONE)
+    #elif defined(SK_BUNDLE_MODE_NONE)
         void handleOperation(const SK_String& operation, nlohmann::json& payload, SK_Communication_Response& respondWith) {
             respondWith.error(404, "ENOENT");
         }

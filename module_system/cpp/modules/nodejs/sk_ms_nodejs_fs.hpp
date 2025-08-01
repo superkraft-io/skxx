@@ -37,7 +37,7 @@ public:
         }
         
         //!!! IMPORTANT !!!! If in RELEASE mode, we route the operation to the BDFS module
-        #if defined(SK_ROUTE_FS_TO_BDFS)// || defined(SK_BUNDLER_MODE_DEEP) || defined(SK_BUNDLER_MODE_SHALLOW)
+        #if defined(SK_ROUTE_FS_TO_BDFS)// || defined(SK_BUNDLE_MODE_DEEP) || defined(SK_BUNDLE_MODE_SHALLOW)
             skg->forwardPacketToModule("bdfs", operation, payload, respondWith);
             return;
         #endif

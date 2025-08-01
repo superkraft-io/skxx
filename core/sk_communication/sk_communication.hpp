@@ -48,7 +48,7 @@ public:
 
 			packet->response()->config = config;
             
-            #if defined(SK_BUNDLER_MODE_NONE)
+            #if defined(SK_BUNDLE_MODE_NONE)
                 //...
             #else
                 packet->response()->bundle_library = skg->bundle_library;
@@ -99,7 +99,7 @@ public:
 			else {
                 SK_String filePath = skg->pathUtils.paths["soft_backend"] + SK_String(packet->info["path"]);
                 
-                #if defined(SK_BUNDLER_MODE_NONE)
+                #if defined(SK_BUNDLE_MODE_NONE)
                     packet->response()->file(filePath);
                 #else
                     packet->response()->fileFromBundle(filePath);
@@ -109,7 +109,7 @@ public:
 		else if (packet->target == "sk:modsys") {
             SK_String filePath = skg->pathUtils.paths["module_system"] + SK_String(packet->info["path"]);
             
-            #if defined(SK_BUNDLER_MODE_NONE)
+            #if defined(SK_BUNDLE_MODE_NONE)
                 packet->response()->file(filePath);
             #else
                 packet->response()->fileFromBundle(filePath);
@@ -151,7 +151,7 @@ public:
 
             SK_String filePath = skg->pathUtils.paths["project"] + path;
             
-            #if defined(SK_BUNDLER_MODE_NONE)
+            #if defined(SK_BUNDLE_MODE_NONE)
                 packet->response()->file(filePath);
             #else
                 packet->response()->fileFromBundle(filePath);
@@ -171,7 +171,7 @@ public:
 		}
 		else {
             std::string filePath = skg->pathUtils.paths["project"] + SK_String(packet->info["path"]);
-            #if defined(SK_BUNDLER_MODE_NONE)
+            #if defined(SK_BUNDLE_MODE_NONE)
                 packet->response()->file(filePath);
             #else
                 packet->response()->fileFromBundle(filePath);

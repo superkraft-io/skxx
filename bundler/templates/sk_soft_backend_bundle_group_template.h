@@ -2,7 +2,7 @@
 
 #include "../../sk_soft_backend_bundle_group_root.h"
 
-#if defined(SK_BUNDLER_MODE_SHALLOW)
+#if defined(SK_BUNDLE_MODE_SHALLOW)
     #include <filesystem>
 #endif
 
@@ -26,13 +26,13 @@ public:
             *_data_size = this->data_size;    // Assign data size
         };
 
-        #if defined(SK_BUNDLER_MODE_SHALLOW)
+        #if defined(SK_BUNDLE_MODE_SHALLOW)
             loadShallowData();
         #endif
     };
 
 
-    #if defined(SK_BUNDLER_MODE_SHALLOW)
+    #if defined(SK_BUNDLE_MODE_SHALLOW)
         bool loadShallowData(){
             //Load shallow data
             SK_String path = SK_BUNDLER_SHALLOW_DATA_PATH + "/" + SK_String(groupID) + ".bin";

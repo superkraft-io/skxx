@@ -16,7 +16,7 @@ public:
 	SK_Communication* comm;
     
     
-    #if defined(SK_BUNDLER_MODE_DEEP) || defined(SK_BUNDLER_MODE_SHALLOW)
+    #if defined(SK_BUNDLE_MODE_DEEP) || defined(SK_BUNDLE_MODE_SHALLOW)
         SK_SoftBackend_Bundle_Library* bundle_library;
     #endif
     
@@ -26,7 +26,7 @@ public:
 		skg = new SK_Global();
 		skg->sk = this;
         
-        #if defined(SK_BUNDLER_MODE_DEEP) || defined(SK_BUNDLER_MODE_SHALLOW)
+        #if defined(SK_BUNDLE_MODE_DEEP) || defined(SK_BUNDLE_MODE_SHALLOW)
             bundle_library = new SK_SoftBackend_Bundle_Library();
             skg->bundle_library = bundle_library;
         #endif
@@ -89,7 +89,7 @@ public:
         delete skg;
         skg = nullptr;
         
-        #if defined(SK_BUNDLER_MODE_DEEP) || defined(SK_BUNDLER_MODE_SHALLOW)
+        #if defined(SK_BUNDLE_MODE_DEEP) || defined(SK_BUNDLE_MODE_SHALLOW)
             delete bundle_library;
             bundle_library = nullptr;
         #endif

@@ -23,7 +23,7 @@ using SK_Communication_Response_CB_onHandleResponse = std::function<void(SK_Comm
 
 class SK_Communication_Response {
 public:
-    #if defined(SK_BUNDLER_MODE_DEEP) || defined(SK_BUNDLER_MODE_SHALLOW)
+    #if defined(SK_BUNDLE_MODE_DEEP) || defined(SK_BUNDLE_MODE_SHALLOW)
         SK_SoftBackend_Bundle_Library* bundle_library;
     #endif
     
@@ -191,7 +191,7 @@ public:
     }
     
     bool fileFromBundle(const SK_String& path, const SK_String& mimeType = "auto") {
-        #if defined(SK_BUNDLER_MODE_NONE)
+        #if defined(SK_BUNDLE_MODE_NONE)
             error();
             return false;
         #else
@@ -345,7 +345,7 @@ public:
     }
     
     bool fileFromBundle(const SK_String& path, const SK_String& mimeType = "auto") {
-        #if defined(SK_BUNDLER_MODE_NONE)
+        #if defined(SK_BUNDLE_MODE_NONE)
             error();
             return false;
         #else
