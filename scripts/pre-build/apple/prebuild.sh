@@ -74,9 +74,20 @@ case "$SK_BUNDLE_MODE" in
 esac
 
 
+
+
+case "$SK_BUNDLE_MODE" in
+  shallow | deep)
+    echo "Running prebuild script..."
+    node "${SRCROOT}/../../../../skxx/bundler/sk_prebuild_script.js" $SK_BUNDLE_MODE
+
+    echo "Running bundler..."
+    node "${SRCROOT}/../../../../skxx/bundler/sk_bundler.js"
+    ;;
+esac
+
 echo "Applying permissions of \"sk_target_build_defs.h\" to \"600\"..."
 chmod 600 "$OUTPUT_FILE"
 echo ""
-
 
 echo "------  SK++ Pre-Build Script - END ------"
