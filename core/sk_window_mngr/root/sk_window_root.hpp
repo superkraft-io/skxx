@@ -40,6 +40,7 @@ public:
     
     std::optional<int> zIndex = NULL;
 
+    bool __closed = false;
     
 	bool isReady = false;
     bool isClosed = false;
@@ -115,6 +116,8 @@ public:
     
     
     void emitWndEvent(SK_Window_Root* wnd, const SK_String& eventID, const nlohmann::json& data, SK_Window_Root_windowEventMsg_CB cb = NULL){
+        if (wnd->__closed) return;
+        
         nlohmann::json payload {
             {"action", "windowEvent"},
             {"windowID", wnd->tag},

@@ -45,7 +45,10 @@
 
 
 #if defined(SK_OS_windows)
-	#include <vld.h>
+	#if defined(SK_MODE_DEBUG)
+		#include <vld.h>
+	#endif
+
 	#include <windows.h>
 	#include <windowsx.h>
 
@@ -79,8 +82,6 @@
 	typedef NTSTATUS(WINAPI* RtlGetVersionFunc)(RTL_OSVERSIONINFOEXW*);
 
 	#pragma comment(lib, "Ws2_32.lib")
-
-
 #else
 	#include <sys/utsname.h>
 	#include <unistd.h>

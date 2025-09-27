@@ -47,10 +47,18 @@ public:
     ~SK_WebView() {
         if (controller.get() != nullptr) {
             controller->Close();
-            controller = nullptr;
-            webview = nullptr;
-            environment = nullptr;
+
+            MSG msg;
+            while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+            }
         }
+
+
+        controller = nullptr;
+        webview = nullptr;
+        environment = nullptr;
     }
 
 
