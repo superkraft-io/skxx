@@ -28,7 +28,7 @@ public:
             delete static_cast<SK_Communication_Response_IPC*>(responseObj);
         }
         else if (response()->config->type == SK_Communication_Packet_Type::sk_comm_pt_web) {
-            //delete static_cast<SK_Communication_Response_Web*>(responseObj);
+            delete static_cast<SK_Communication_Response_Web*>(responseObj);
         }
     }
 

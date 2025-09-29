@@ -70,6 +70,26 @@ public:
 	bool async = false;
 
 
+    ~SK_Communication_Response() {
+        CB_setAsOK = {};
+        CB_JSON = {};
+        CB_JSON_OK = {};
+        CB_string = {};
+        CB_file = {};
+        CB_fileFromBundle = {};
+        CB_fileFromBuffer = {};
+        CB_error = {};
+        CB_getIPCResponse = {};
+
+        #if defined(SK_OS_apple)
+            #ifdef __OBJC__
+                    data.clear();
+                    data.shrink_to_fit();
+
+            #endif
+        #endif
+    }
+
 	void setAsOK() {
 		CB_setAsOK();
 	}
@@ -142,16 +162,16 @@ public:
 	SK_Communication_Response_IPC() {
 		type = SK_Communication_Packet_Type::sk_comm_pt_ipc;
 
-		CB_setAsOK = [&]() { setAsOK(); };
-		CB_JSON = [&](nlohmann::json json) { return JSON(json); };
-		CB_JSON_OK = [&]() { return JSON_OK(); };
-		CB_string = [&](SK_String str, SK_String mimeType) { return string(str, mimeType); };
-        CB_file = [&](SK_String path, SK_String mimeType) { return file(path, mimeType); };
-        CB_fileFromBundle = [&](SK_String path, SK_String mimeType) { return fileFromBundle(path, mimeType); };
-        CB_fileFromBuffer = [&](SK_String path, SK_String mimeType) { return fileFromBuffer(path, mimeType); };
-		CB_error = [&](int code, SK_String msg) { error(code, msg); };
+		CB_setAsOK = [this]() { setAsOK(); };
+		CB_JSON = [this](nlohmann::json json) { return JSON(json); };
+		CB_JSON_OK = [this]() { return JSON_OK(); };
+		CB_string = [this](SK_String str, SK_String mimeType) { return string(str, mimeType); };
+        CB_file = [this](SK_String path, SK_String mimeType) { return file(path, mimeType); };
+        CB_fileFromBundle = [this](SK_String path, SK_String mimeType) { return fileFromBundle(path, mimeType); };
+        CB_fileFromBuffer = [this](SK_String path, SK_String mimeType) { return fileFromBuffer(path, mimeType); };
+		CB_error = [this](int code, SK_String msg) { error(code, msg); };
 
-		CB_getIPCResponse = [&]() {
+		CB_getIPCResponse = [this]() {
 			return packageIPCResponse(data);
 		};
 	}
@@ -252,14 +272,14 @@ public:
         SK_String defaultData = "{\"error\":\"404\",\"message\":\"Not found\"}";
         data = std::vector<char>(defaultData.data.begin(), defaultData.data.end());
 
-        CB_setAsOK = [&]() { setAsOK(); };
-        CB_JSON = [&](nlohmann::json json) { return JSON(json); };
-        CB_JSON_OK = [&]() { return JSON_OK(); };
-        CB_string = [&](SK_String str, SK_String mimeType) { return string(str, mimeType); };
-        CB_file = [&](SK_String path, SK_String mimeType) { return file(path, mimeType); };
-        CB_fileFromBundle = [&](SK_String path, SK_String mimeType) { return fileFromBundle(path, mimeType); };
-        CB_fileFromBuffer = [&](SK_String path, SK_String mimeType) { return fileFromBuffer(path, mimeType); };
-        CB_error = [&](int code, SK_String msg) { error(code, msg); };
+        CB_setAsOK = [this]() { setAsOK(); };
+        CB_JSON = [this](nlohmann::json json) { return JSON(json); };
+        CB_JSON_OK = [this]() { return JSON_OK(); };
+        CB_string = [this](SK_String str, SK_String mimeType) { return string(str, mimeType); };
+        CB_file = [this](SK_String path, SK_String mimeType) { return file(path, mimeType); };
+        CB_fileFromBundle = [this](SK_String path, SK_String mimeType) { return fileFromBundle(path, mimeType); };
+        CB_fileFromBuffer = [this](SK_String path, SK_String mimeType) { return fileFromBuffer(path, mimeType); };
+        CB_error = [this](int code, SK_String msg) { error(code, msg); };
 
         #if defined(SK_OS_windows)
             wil::com_ptr<ICoreWebView2WebResourceResponse> response;
@@ -273,10 +293,10 @@ public:
         
         
         #if defined(SK_OS_windows)
-            CB_getWebResponse = [&]() { return getWebResponse(); };
+            CB_getWebResponse = [this]() { return getWebResponse(); };
         #elif defined(SK_OS_apple)
             #ifdef __OBJC__
-                CB_getWebResponse = [&]() {
+                CB_getWebResponse = [this]() {
                     return getWebResponse();
                 };
             #endif
