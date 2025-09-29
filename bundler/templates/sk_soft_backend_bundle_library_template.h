@@ -148,6 +148,45 @@ public:
         
         return entry;
     };
+
+    ~SK_SoftBackend_Bundle_Library() {
+        // 1) Delete all data groups (polymorphic)
+        for (void* p : groups) {
+            auto* g = static_cast<SK_SoftBackend_Bundle_Data_Group_Root*>(p);
+            delete g;
+        }
+        groups.clear();
+
+        // Helper: dedup *within a single map* and delete each unique pointer once.
+        auto dedup_and_delete_map = [](auto& m) {
+            for (auto it1 = m.begin(); it1 != m.end(); ++it1) {
+                auto* ptr = it1->second;
+                if (!ptr) continue;
+                // Null any later duplicates of the same pointer in this map
+                for (auto it2 = std::next(it1); it2 != m.end(); ++it2) {
+                    if (it2->second == ptr) it2->second = nullptr;
+                }
+                delete ptr;           // delete once
+                it1->second = nullptr;
+            }
+            m.clear();
+        };
+
+        // 2) Avoid cross-map double free:
+        //    If a pointer exists in fileEntries, let fileEntries own its deletion.
+        for (auto& fk : folderEntries) {
+            if (!fk.second) continue;
+            for (auto& ek : fileEntries) {
+                if (ek.second == fk.second) { fk.second = nullptr; break; }
+            }
+        }
+
+        // 3) Delete unique pointers remaining in folderEntries
+        dedup_and_delete_map(folderEntries);
+
+        // 4) Delete unique pointers in fileEntries
+        dedup_and_delete_map(fileEntries);
+    }
 };
 
 END_SK_NAMESPACE

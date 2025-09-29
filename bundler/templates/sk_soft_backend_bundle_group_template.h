@@ -31,6 +31,11 @@ public:
         #endif
     };
 
+    ~SK_SoftBackend_Bundle_Data_Group_<!id!>() override {
+        // No owned heap memory to free here; clear callback for safety.
+        getPointersCB = nullptr;
+    }
+
 
     #if defined(SK_BUNDLE_MODE_SHALLOW)
         bool loadShallowData(){

@@ -13,6 +13,10 @@ public:
             getPointersCB(offsets, sizes, data, data_size);
         }
     };
+
+     virtual ~SK_SoftBackend_Bundle_Data_Group_Root() {
+        getPointersCB = nullptr;
+    }
 };
 
 END_SK_NAMESPACE
