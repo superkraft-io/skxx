@@ -32,6 +32,7 @@ public:
     wil::com_ptr<ICoreWebView2> webview = nullptr;
     wil::com_ptr<ICoreWebView2_17> webview17 = nullptr;
     EventRegistrationToken mWebMessageReceivedToken;
+    EventRegistrationToken mWebRequestToken;
     
 	SK_String currentURL = "";
 
@@ -47,8 +48,8 @@ public:
 
     ~SK_WebView() {
         if (webview) {
-            if (mWebMsgToken.value)          webview->remove_WebMessageReceived(mWebMsgToken);
-            if (mWebResRequestedToken.value) webview->remove_WebResourceRequested(mWebResRequestedToken);
+            if (mWebMessageReceivedToken.value)          webview->remove_WebMessageReceived(mWebMessageReceivedToken);
+            if (mWebRequestToken.value) webview->remove_WebResourceRequested(mWebRequestToken);
             webview->RemoveWebResourceRequestedFilter(L"*", COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
         }
 
@@ -282,7 +283,7 @@ public:
                                 skg->onCommunicationRequest(&config, NULL, NULL);
 
                                 return S_OK;
-                            }).Get(), nullptr);
+                            }).Get(), &mWebRequestToken);
 
                             webview->add_WebMessageReceived(Callback<ICoreWebView2WebMessageReceivedEventHandler>([this](ICoreWebView2* sender, ICoreWebView2WebMessageReceivedEventArgs* args) -> HRESULT {
                                 wil::unique_cotaskmem_string strPtr;

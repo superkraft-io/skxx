@@ -87,5 +87,8 @@ var libraryTemplate = fs.readFileSync(libraryTemplatePath).toString()
 var libraryPath = path.resolve(__dirname, '../../sk_soft_backend_bundle/sk_soft_backend_bundle_library.h')
 fs.writeFileSync(libraryPath, libraryTemplate)
 
+console.log(`Finalizing...`)
 
-console.log(`Done!`)
+setTimeout(()=>{
+    console.log(`Done!`)
+}, 2000)
