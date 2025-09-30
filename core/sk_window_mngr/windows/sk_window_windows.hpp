@@ -69,6 +69,7 @@ public:
 
     ~SK_Window() {
 		UnregisterClassW(windowClassName.toWString().c_str(), wc.hInstance);
+		delete ipc;
 	}
 
 

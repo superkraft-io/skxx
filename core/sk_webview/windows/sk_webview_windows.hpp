@@ -23,6 +23,7 @@ public:
     void* parentWnd;
     SK_String parentClassName;
 	HWND* parentHwnd;
+    bool comApartmentInitialized = false;
 
     wil::com_ptr<ICoreWebView2Environment> environment;
     wil::com_ptr<ICoreWebView2Environment12> environment12;
@@ -45,6 +46,13 @@ public:
 
 
     ~SK_WebView() {
+        if (webview) {
+            if (mWebMsgToken.value)          webview->remove_WebMessageReceived(mWebMsgToken);
+            if (mWebResRequestedToken.value) webview->remove_WebResourceRequested(mWebResRequestedToken);
+            webview->RemoveWebResourceRequestedFilter(L"*", COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
+        }
+
+
         if (controller.get() != nullptr) {
             controller->Close();
 
@@ -59,6 +67,12 @@ public:
         controller = nullptr;
         webview = nullptr;
         environment = nullptr;
+
+        
+        if (comApartmentInitialized) {
+            CoUninitialize();
+            comApartmentInitialized = false;
+        }
     }
 
 
@@ -173,12 +187,13 @@ public:
         }
 
         HRESULT iniHR = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
-        if (FAILED(iniHR))
-        {
+        if (SUCCEEDED(iniHR)) {
+            comApartmentInitialized = true;
+        } else if (iniHR == RPC_E_CHANGED_MODE) {
+            // Thread already initialized differently; skip uninitialize.
+        } else {
             throw "Could not initialize webview";
-            return;
         }
-
 
         HRESULT hr = CreateCoreWebView2EnvironmentWithOptions(nullptr, _udPath, options.Get(),
             Callback<ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>(

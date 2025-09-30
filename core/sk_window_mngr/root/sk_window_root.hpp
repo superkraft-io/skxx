@@ -65,7 +65,6 @@ public:
     
     
     ~SK_Window_Root(){
-        int x = 0;
     }
     
 	virtual void initialize(const unsigned int& _wndIdx) {

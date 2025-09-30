@@ -99,9 +99,13 @@ public:
     };
 
     void writeFile(const SK_String& path, const SK_String& data, SK_Communication_Response& respondWith) {
-        entries.push_back(new SK_Module_vfs_file());
+        SK_Module_vfs_file* file = findByPath(path);
 
-        SK_Module_vfs_file* file = entries.at(entries.size() - 1);
+        if (file == nullptr) {
+            entries.push_back(new SK_Module_vfs_file());
+            file = entries.at(entries.size() - 1);
+        }
+
         file->path = path;
         file->data = data;
 
