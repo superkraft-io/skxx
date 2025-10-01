@@ -106,7 +106,7 @@ module.exports = {
         //}
 
         readDirRecursive(dirPath);
-        console.log(`${totalSize} vs ${compressedSize}    ${totalSize/compressedSize}x smaller`)
+        //console.log(`${totalSize} vs ${compressedSize}    ${totalSize/compressedSize}x smaller`)
         return entries;
     }
 };

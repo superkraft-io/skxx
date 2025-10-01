@@ -1,5 +1,7 @@
 #pragma once
 
+#ifndef __INTELLISENSE__ // Disable for Intellisense
+
 #include "../../sk_soft_backend_bundle_group_root.h"
 
 #if defined(SK_BUNDLE_MODE_SHALLOW)
@@ -65,3 +67,5 @@ public:
 };
 
 END_SK_NAMESPACE
+
+#endif // __INTELLISENSE__

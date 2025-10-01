@@ -1,5 +1,7 @@
 #pragma once
 
+#ifndef __INTELLISENSE__ // Disable for Intellisense
+
 #if defined(SK_BUNDLE_MODE_DEEP)
     <!deep_group_includes!>
 #elif defined(SK_BUNDLE_MODE_SHALLOW)
@@ -190,3 +192,5 @@ public:
 };
 
 END_SK_NAMESPACE
+
+#endif // __INTELLISENSE__

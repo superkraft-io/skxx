@@ -82,7 +82,7 @@ class FileGroup {
             .split('<!data_size!>').join(this.buffer.length)
             .replace('<!data!>', '')
 
-        fs.writeFileSync(shallowGroupsDataRoot + '/' + this.id + '.bin', this.buffer)
+        if (sk.bundle_mode === 'shallow') fs.writeFileSync(shallowGroupsDataRoot + '/' + this.id + '.bin', this.buffer)
 
 
         var offsets = []
@@ -102,10 +102,14 @@ class FileGroup {
             .replace('<!offsets_arr_size!>', this.files.length).replace('<!offsets!>', offsets.join(','))
             .replace('<!sizes_arr_size!>', this.files.length).replace('<!sizes!>', sizes.join(','))
 
-        fs.writeFileSync(deepGroupsRoot + '/sk_soft_backend_bundle_group_' + this.id + '.h', dataEntryTemplate_deep)
-        fs.writeFileSync(shallowGroupsRoot + '/sk_soft_backend_bundle_group_' + this.id + '.h', dataEntryTemplate_shallow)
+        if (sk.bundle_mode === 'deep') fs.writeFileSync(deepGroupsRoot + '/sk_soft_backend_bundle_group_' + this.id + '.h', dataEntryTemplate_deep)
+        if (sk.bundle_mode === 'shallow') fs.writeFileSync(shallowGroupsRoot + '/sk_soft_backend_bundle_group_' + this.id + '.h', dataEntryTemplate_shallow)
 
         this.headerDef = {
+            paths: {
+                deep: deepGroupsRoot + '/sk_soft_backend_bundle_group_' + this.id + '.h',
+                shallow: shallowGroupsRoot + '/sk_soft_backend_bundle_group_' + this.id + '.h'
+            },
             deep: `#include "./deep/groups/sk_soft_backend_bundle_group_${this.id}.h"`,
             shallow: `#include "./shallow/groups/sk_soft_backend_bundle_group_${this.id}.h"`
         }
