@@ -48,6 +48,8 @@ BEGIN_SK_NAMESPACE
 
 class SK_Global {
 public:
+    bool terminating = false;
+
     SK_String newUUID() {
         #if defined(SK_OS_windows)
             UUID uuid;

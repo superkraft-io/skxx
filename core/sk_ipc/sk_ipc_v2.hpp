@@ -30,9 +30,13 @@ public:
     std::unordered_map<std::string, SK_IPC_v2_FrontendCallback> listeners_once;
 
 
-    std::unordered_map<std::string, SK_IPC_v2_awaiter*> forwardAwaitList;
 
 
+    ~SK_IPC_v2() {
+        awaitList.clear();
+        listeners.clear();
+        listeners_once.clear();
+    }
 
     static nlohmann::json createResponseJSON(SK_Communication_Packet* packet, const SK_String& data) {
         nlohmann::json responseJSON;

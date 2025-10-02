@@ -1,12 +1,23 @@
-var start = async function(){
-    var fs = require('fs')
-    var path = require('path')
-    const { argv } = require('process')
-    var utils = require('./modules/sk_utils.js')
+var fs = require('fs')
+var path = require('path')
+const { argv } = require('process')
+var utils = require('./modules/sk_utils.js')
 
-    console.log('[SK++ Bundler] Starting...')
+if (utils.getOS() === 'unknown'){
+    utils.reportError({msg: '[SK++ Bundler] Unsupported OS. Only Windows, MacOS and Linux are supported.'})
+    process.exit(1)
+}
+
+var start = async function(){
+    console.log('[SK++ Pre-Build Script] Starting...')
 
     var args = utils.parseArgs(argv.slice(2))
+
+    var accepted_ides = ['visual_studio', 'vscode', 'xcode'] //We require this to print errors in a format that the IDE can understand
+    if (!accepted_ides.includes(args.ide)){
+        utils.reportError({msg: `[SK++ Pre-Build Script] Invalid or missing --ide argument. Accepted values are: ${accepted_ides.join(', ')}. Given that you are running on ${utils.getOS(true)}, you can use --ide ${utils.getOS() === 'win' ? 'visual_studio' : 'xcode'}.`})
+    }
+
 
     var accepted_modes = ['none', 'shallow', 'deep']
 
@@ -14,7 +25,9 @@ var start = async function(){
     var root_path = path.resolve(__dirname)
     var output_path = path.resolve(root_path + '../../../sk_target_build_defs.h')
 
-    if (!accepted_modes.includes(bundle_mode)) throw `[SK++ Bundler] Invalid bundle mode. Requested ${bundle_mode}. Only accepts none, shallow and deep`
+    if (!accepted_modes.includes(bundle_mode)){
+        utils.reportError({msg: `[SK++ Pre-Build Script] Invalid bundle mode. Requested "${bundle_mode}". Only accepts "none", "shallow" and "deep"`})
+    }
 
     var lines = []
 
@@ -22,7 +35,7 @@ var start = async function(){
     lines.push(`#define SK_BUNDLE_MODE "${bundle_mode}"`)
 
     if (bundle_mode === 'none'){
-        console.log('[SK++ Bundler] No bundling needed')
+        console.log('[SK++ Pre-Build Script] No bundling needed')
     } else {
         lines.push('#define SK_ROUTE_FS_TO_BDFS 1')
         if (bundle_mode === 'shallow'){
@@ -40,11 +53,13 @@ var start = async function(){
     fs.chmodSync(output_path, 600)
 
 
+    var bundlerExitError = false
+
     //Run bundler if needed
     if (bundle_mode !== 'none'){
-        await utils.runNode(path.resolve(__dirname, 'sk_bundler.js'), [`--bundle_mode`, bundle_mode])
+        var bundleRes = await utils.runNode(path.resolve(__dirname, 'sk_bundler.js'), [`--bundle_mode`, bundle_mode])
     }
 
-    console.log('[SK++ Bundler] Done')
+    console.log('[SK++ Pre-Build Script] Done')
 }
 start()

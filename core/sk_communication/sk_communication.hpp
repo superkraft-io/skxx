@@ -21,6 +21,8 @@ public:
     #elif defined(SK_OS_apple)
 		skg->onCommunicationRequest = [&](SK_Communication_Config* config, SK_Communication_handlePacket_Response_IPC_CB ipcResponseCallback, SK_Communication_AppleCB_CB resHandler) {
     #endif
+            if (skg->terminating) return; //what's the point of handling any type of communication packet if the app is terminating? (there are actually good reasons but I don't care right now)
+
 			SK_Communication_Packet* packet;
 			
 			#if defined(SK_OS_windows)
@@ -76,6 +78,11 @@ public:
 			handlePacket(packet);
 		};
 	}
+
+
+    ~SK_Communication() {
+        int x = 0;
+    }
 
 	void handlePacket(SK_Communication_Packet* packet) {
 		SK_Window* view = wndMngr->findWindowByTag(packet->target);
@@ -181,6 +188,7 @@ public:
 
 	SK_IPC_v2* getIPCForID(const SK_String& id) {
 		if (id == "sk:sb") {
+            if (!sb_ipc) return nullptr;
 			return sb_ipc;
 		}
 		else {

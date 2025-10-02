@@ -1,20 +1,21 @@
 //!!!!!    TODO: Also bundle all modsys web files, not just the soft backend files.    !!!!
 
 
+global.sk = {
+    file: 'sk_bundler.js',
+    path: __dirname
+}
+
 const fs = require('fs')
 const path = require('path')
-const os = require('os')
+var utils = require('./modules/sk_utils.js')
 
-var currentOS = os.platform()
-if (currentOS === 'win32') currentOS = 'win'
-else if (currentOS === 'darwin') currentOS = 'macos'
-else if (currentOS === 'linux') currentOS = 'linux'
-else throw new Error(`Unsupported OS: ${currentOS}`)
+if (utils.getOS() === 'unknown'){
+    utils.reportError({msg: '[SK++ Bundler] Unsupported OS. Only Windows, MacOS and Linux are supported.'})
+}
 
 const { argv } = require('process')
 
-
-var utils = require('./modules/sk_utils.js')
 var args = utils.parseArgs(argv.slice(2))
 global.sk = {
     bundle_mode: args.bundle_mode //none, shallow, deep
@@ -55,30 +56,29 @@ var run = async ()=>{
 
     console.log(`Checking for locked files...`)
     
-    var lockChecker = new (require(`./modules/LockChecker/lockChecker_${currentOS}.js`))()
+    var lockChecker = new (require(`./modules/LockChecker/lockChecker_${utils.getOS()}.js`))()
+
     await lockChecker.init()
+    
     var lockedFiles = await lockChecker.checkFiles()
 
     var pidList = []
-
+    
     if (lockedFiles.length > 0){
-        console.error(`[ERROR] Some files are locked/open in other applications or couldn't be found:`)
         for (var f of lockedFiles){
-
             pidList = [...pidList, ...f.procList.map(p=>p.pid)]
+        }
+        utils.reportError({keepAlive: true, msg: `[SK++ Bundler] Some files are locked/open in other applications or couldn't be found. Please close the applications locking these files by running the below command in an Administrator command prompt then try bundling again.`})
+        utils.reportError({keepAlive: true, msg: `taskkill /PID ${[...new Set(pidList)].join(' /PID ')} /F`})
 
+        for (var f of lockedFiles){
             if (f.status === 'not_found'){
-                console.error(` - File not found: ${f.path}`)
+                utils.reportError({keepAlive: true, msg: `[SK++ Bundler] File "${f.filename}" not found.`, file: f.path})
             } else {
                 var procs = f.procList.map(p=>`${p.name} (PID ${p.pid})`).join(', ')
-                console.error(` - File locked: ${f.path}  (locked by: ${procs})`)
+                utils.reportError({keepAlive: true, msg: `[SK++ Bundler]  File "${f.filename}" locked by: ${procs}`})
             }
         }
-
-
-        console.log(`\nPlease close the applications locking these files by running the following commands in an Administrator command prompt:` +
-        `\n\n    taskkill /PID ${[...new Set(pidList)].join(' /PID ')} /F\n` +
-        `\nThen try bundling again.\n`  )
 
         process.exit(1)
     }
@@ -152,9 +152,7 @@ var run = async ()=>{
 
 
     //ensuring all files have been written before exiting
-    setTimeout(()=>{
-        console.log(`Done!`)
-    }, 2000)
+    console.log(`Done!`)
 }
 
 run()
