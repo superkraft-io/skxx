@@ -80,14 +80,6 @@ public:
         CB_fileFromBuffer = {};
         CB_error = {};
         CB_getIPCResponse = {};
-
-        #if defined(SK_OS_apple)
-            #ifdef __OBJC__
-                    data.clear();
-                    data.shrink_to_fit();
-
-            #endif
-        #endif
     }
 
 	void setAsOK() {
