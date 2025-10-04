@@ -110,7 +110,7 @@ public:
 		#endif
 
         skg->resizeAllMainWindowViews = [&](int x, int y, int w, int h, float scale) {
-			#if defined(SK_MODE_DEBUG)
+			//#if defined(SK_MODE_DEBUG)
 				for (auto it = list.begin(); it != list.end(); ++it) {
 					if (it->second) {
 						SK_Window* wnd = it->second;
@@ -137,7 +137,7 @@ public:
 						}
 					}
 				}
-			#endif
+			//#endif
 		};
 	}
 

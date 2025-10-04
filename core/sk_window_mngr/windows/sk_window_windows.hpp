@@ -893,7 +893,13 @@ public:
 
         //movable: handled in WindowProc
         if (checkNeedsUpdateAndReset("title")) SetWindowTextW(wndHandle, SK_String(config.data["title"]).toWString().c_str());
-        if (checkNeedsUpdateAndReset("resizable")) setStyle(WS_SIZEBOX, config.data["resizable"]);
+
+        bool isResizable = false;
+        if (config.data.contains("resizable") == true) {
+            isResizable = config.data["resizable"];
+        }
+        if (checkNeedsUpdateAndReset("resizable")) setStyle(WS_SIZEBOX, isResizable);
+
         if (checkNeedsUpdateAndReset("alwaysOnTop")) setAlwaysOnTop(config.data["alwaysOnTop"]);
         if (checkNeedsUpdateAndReset("maximizable")) setStyle(WS_MAXIMIZEBOX, config.data["maximizable"]);
         if (checkNeedsUpdateAndReset("minimizable")) setStyle(WS_MINIMIZEBOX, config.data["minimizable"]);
