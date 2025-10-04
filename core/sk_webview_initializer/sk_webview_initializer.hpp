@@ -37,11 +37,11 @@ public:
     
     
     
-    void init(void* webview, bool isHardBackend){
-        inject_core(webview);
+    void init(void* webview, SK_Window* wnd = NULL){
+        inject_core(webview, wnd);
     }
 
-    void inject_core(void* webview){
+    void inject_core(void* webview, SK_Window* wnd = NULL){
         #if defined(SK_OS_windows)
             injectData(webview, "window.__SK_IPC_Send  = data => { window.chrome.webview.postMessage(data) }");
         #endif
@@ -76,6 +76,18 @@ public:
         .replace("<sk_base_url>", SK_Base_URL)
         .replace("'<sk_static_info>'", getStaticInfo())
         .replace("'<sk_native_actions>'", modsys->nativeActions->listActions());
+
+        if (wnd) {
+            SK_String windowScript = generateFromFiles(std::vector<SK_String>{
+                pathUtils->paths["global_js_core"] + "/sk_window_control.js",
+            });
+
+            windowScript = windowScript
+                .replace("{/* <wnd_config> */}", wnd->config.data.dump(4))
+                .replace("'<wnd_id>'", "'" + wnd->tag + "'");
+
+            payload = payload.replace("//<window_interface>", windowScript);
+        }
 
         injectData(webview, payload);
     }
@@ -154,6 +166,7 @@ public:
 
     SK_String getStaticInfo() {
         nlohmann::json res {
+            {"os", SK_OS},
             {"application", getAppInfo()},
             {"machine", static_cast<SK_Machine*>(skg->machine)->getStaticInfo()}
         };

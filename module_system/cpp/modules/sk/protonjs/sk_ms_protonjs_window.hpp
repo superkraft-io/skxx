@@ -32,6 +32,7 @@ public:
               if (operation == "construct") construct(wnd, payload, respondWith);
          else if (operation == "configure") configure(wnd, payload, respondWith);
          else if (operation == "loadURL") loadURL(wnd, payload, respondWith);
+         else if (operation == "windowAction") windowAction(wnd, payload, respondWith);
     };
 
     void construct(SK_Window* _wnd, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
@@ -128,6 +129,11 @@ public:
     
     void loadURL(SK_Window* wnd, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
         wnd->webview.navigate(SK_Base_URL + SK_String(payload["url"]));
+        respondWith.JSON_OK();
+    }
+
+    void windowAction(SK_Window* wnd, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+        wnd->handleWindowAction(payload);
         respondWith.JSON_OK();
     }
 };

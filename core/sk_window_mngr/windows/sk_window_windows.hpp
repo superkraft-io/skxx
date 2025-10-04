@@ -65,6 +65,25 @@ public:
         ipc->on("isReady", [&](const nlohmann::json& data, SK_Communication_Packet* packet) {
             packet->response()->JSON({ {"isReady", isReady} });
         });
+
+        onWindowAction = [&](SK_Communication_Packet* packet) {
+            //do something here
+        };
+
+        ipc->onMessage = [&, this](const SK_String& sender, SK_Communication_Packet* packet) {
+            SK_String action = "";
+            if (packet->data.contains("action")) action = SK_String(packet->data["action"]);
+            if (action == "startDraggingWindow") {
+                ReleaseCapture();
+
+                // Use current cursor position (screen coords)
+                POINT pt;
+                GetCursorPos(&pt);
+
+                // Tell the window �the user pressed down on the title bar here�
+                SendMessage(wndHandle, WM_NCLBUTTONDOWN, HTCAPTION, MAKELPARAM(pt.x, pt.y));
+            }
+        };
     }
 
     ~SK_Window() {
@@ -333,6 +352,15 @@ public:
                 }
 
                 emitWndEvent(wnd, "app-command", { {"command", cmd.toLowerCase()}});
+            }
+
+            case WM_NCHITTEST: {
+                if (wnd->activateMoving) {
+                    POINT pt{ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+                    ScreenToClient(hwnd, &pt);
+
+                    return HTCAPTION;
+                }
             }
         }
 
@@ -1062,6 +1090,61 @@ public:
 
         emitWndEvent(this, "enter-fullscreen", {});
         config.data["fullscreen"] = true;
+    }
+
+    void handleWindowAction(const nlohmann::json& payload){
+            SK_String action = "";
+            if (payload.contains("action")) action = SK_String(payload["action"]);
+
+            if (action == "beginMoveWindow") {
+                ReleaseCapture();
+
+                // Use current cursor position (screen coords)
+                POINT pt;
+                GetCursorPos(&pt);
+
+                // Tell the window �the user pressed down on the title bar here�
+                SendMessage(wndHandle, WM_NCLBUTTONDOWN, HTCAPTION, MAKELPARAM(pt.x, pt.y));
+            }
+            else if (action == "close") {
+                SendMessage(wndHandle, WM_SYSCOMMAND, SC_CLOSE, 0);
+            }
+            else if (action == "focus") {
+                if (IsIconic(wndHandle)) ShowWindow(wndHandle, SW_RESTORE); // if minimized
+                ShowWindow(wndHandle, SW_SHOW);                      // make sure it's visible
+                BringWindowToTop(wndHandle);
+                SetForegroundWindow(wndHandle);                      // give it focus/activation
+                SetActiveWindow(wndHandle);
+            }
+            else if (action == "blur") {
+                // Windows doesn't have a direct "blur" for top-level windows.
+                // Best effort: activate another window; if none, minimize this one.
+                HWND other = GetWindow(wndHandle, GW_HWNDPREV);
+                if (!other || !IsWindow(other)) other = GetWindow(wndHandle, GW_HWNDNEXT);
+                if (other && other != wndHandle) {
+                    SetForegroundWindow(other);
+                } else {
+                    ShowWindow(wndHandle, SW_MINIMIZE); // fallback so it's not active
+                }
+            }
+            else if (action == "show") {
+                ShowWindow(wndHandle, SW_SHOW);
+            }
+            else if (action == "hide") {
+                ShowWindow(wndHandle, SW_HIDE);
+            }
+            else if (action == "maximize") {
+                SendMessage(wndHandle, WM_SYSCOMMAND, SC_MAXIMIZE, 0);
+            }
+            else if (action == "unmaximize") {
+                if (IsZoomed(wndHandle)) ShowWindow(wndHandle, SW_RESTORE); // only if currently maximized
+            }
+            else if (action == "minimize") {
+                SendMessage(wndHandle, WM_SYSCOMMAND, SC_MINIMIZE, 0);
+            }
+            else if (action == "restore") {
+                SendMessage(wndHandle, WM_SYSCOMMAND, SC_RESTORE, 0);
+            }
     }
 private:
 

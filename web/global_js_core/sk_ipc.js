@@ -58,6 +58,12 @@ class SK_IPC {
             }, timeout)
 
             var msg_id = this.sendToBE(event_id, data, "request", overridePacketInfo, msg_id => {
+                if (overridePacketInfo.responseless){
+                    clearTimeout(timeoutTimer)
+                    resolve()
+                    return
+                }
+
                 this.awaitList[msg_id] = {
                     resolve: resolve,
                     reject: reject,

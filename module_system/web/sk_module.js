@@ -148,12 +148,18 @@ class SK_Module {
         return res
     }
 
-    static async asyncOperation(module, operation, data) {
+    static async asyncOperation(module, operation, data, additionalOptions) {
         var res = await window.sk_api.ipc.request('sk:modop', {
             module: module,
             operation: operation,
             payload: data
-        }, undefined, {target: 'sk:modop'})
+        }, undefined, {...{target: 'sk:modop'}, ...additionalOptions})
+
+        return res
+    }
+
+    static async asyncOperationResponseless(module, operation, data) {
+        var res = this.asyncOperation(module, operation, data, {responseless: true})
 
         return res
     }

@@ -68,6 +68,7 @@ public:
 	SK_Communication_Response_CB_onHandleResponse onHandleResponse;
 
 	bool async = false;
+    bool responseless = false;
 
 
     ~SK_Communication_Response() {

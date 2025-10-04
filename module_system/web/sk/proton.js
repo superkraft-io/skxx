@@ -122,11 +122,13 @@ class BrowserWindow extends SK_Module_Root {
 
         this.defOpt = { ...BrowserWindow.getDefOpts(), ...opt }
         
-        
+
         sk_api.ipc.on('sk::windowEvent::' + this.__moduleInstanceConfig.__uuid, (res, respondWith)=>{
             console.log(res)
             this.emit(res, respondWith)
         })
+        
+        if (opt.shell) return
         
         this.sync('construct', { constructorOpts: this.defOpt })
 
@@ -512,15 +514,15 @@ class BrowserWindow extends SK_Module_Root {
     }
 
     close() {
-        throw 'Not implemented yet'
+        this.asyncResponseless('windowAction', {action: 'close'})
     }
 
     focus() {
-        throw 'Not implemented yet'
+        this.asyncResponseless('windowAction', {action: 'focus'})
     }
 
     blur() {
-        throw 'Not implemented yet'
+        this.asyncResponseless('windowAction', {action: 'blur'})
     }
 
     isFocused() {
@@ -532,7 +534,7 @@ class BrowserWindow extends SK_Module_Root {
     }
 
     show() {
-        throw 'Not implemented yet'
+        this.asyncResponseless('windowAction', {action: 'show'})
     }
 
     showInactive() {
@@ -540,7 +542,7 @@ class BrowserWindow extends SK_Module_Root {
     }
 
     hide() {
-        throw 'Not implemented yet'
+        this.asyncResponseless('windowAction', {action: 'hide'})
     }
 
     isVisible() {
@@ -552,11 +554,11 @@ class BrowserWindow extends SK_Module_Root {
     }
 
     maximize() {
-        throw 'Not implemented yet'
+        this.asyncResponseless('windowAction', {action: 'maximize'})
     }
 
     unmaximize() {
-        throw 'Not implemented yet'
+        this.asyncResponseless('windowAction', {action: 'unmaximize'})
     }
 
     isMaximized() {
@@ -564,11 +566,11 @@ class BrowserWindow extends SK_Module_Root {
     }
 
     minimize() {
-        throw 'Not implemented yet'
+        this.asyncResponseless('windowAction', {action: 'minimize'})
     }
 
     restore() {
-        throw 'Not implemented yet'
+        this.asyncResponseless('windowAction', {action: 'restore'})
     }
 
     isMinimized() {
@@ -1015,6 +1017,12 @@ class BrowserWindow extends SK_Module_Root {
         throw 'Not implemented yet'
     }
 
+
+    /********************/
+
+    beginMoveWindow(){
+        this.asyncResponseless('windowAction', {action: 'beginMoveWindow'})
+    }
 }
 
 

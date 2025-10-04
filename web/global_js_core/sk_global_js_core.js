@@ -151,7 +151,7 @@ class SK_Global_Core {
 
         this.nativeActions = require('nativeActions')
         
-        var x = 0
+        //<window_interface>
     }
 
     async printProfiler() {

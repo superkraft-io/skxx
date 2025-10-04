@@ -58,11 +58,13 @@ public:
             
             packet->response()->onHandleResponse = [packet, ipcResponseCallback, webPayload, resHandler](SK_Communication_Response* response) {
                 
+                
                 if (response->type == SK_Communication_Packet_Type::sk_comm_pt_ipc) {
-                    ipcResponseCallback(response->getForIPC());
+                    if (!response->responseless) ipcResponseCallback(response->getForIPC());
                 }
                 else if (response->type == SK_Communication_Packet_Type::sk_comm_pt_web) {
                     #if defined(SK_OS_windows)
+                        if (response->responseless) response->setAsOK();
                         webPayload->put_Response(response->getForWeb().get());
                     #elif defined(SK_OS_apple)
                         resHandler(packet);
@@ -243,6 +245,8 @@ public:
         packet->originalData = payload;
 
         packet->responseObj = new SK_Communication_Response_IPC();
+        
+        packet->response()->responseless = (payload.contains("responseless") && payload["responseless"] == true); 
 
         packet->response()->packageIPCResponse = [&, packet](const nlohmann::json& data) -> SK_String {
             nlohmann::json results{
@@ -256,7 +260,7 @@ public:
 
             SK_String dumpStr = results.dump();
             return dumpStr;
-            };
+        };
 
         SK_String msg_id = payload["msg_id"];
         SK_String sender = payload["sender"];

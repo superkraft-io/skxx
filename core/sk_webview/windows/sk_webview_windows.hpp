@@ -401,7 +401,6 @@ public:
     };
 
     void evaluateScript(const SK_String& src, SK_WebView_EvaluationComplete_Callback cb) {
-
         if (skg->threadPool->thisFunctionRunningInMainThread()) {
             evaluateScript_mainThread(webview, src, cb);
             return;

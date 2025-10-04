@@ -8,6 +8,7 @@ BEGIN_SK_NAMESPACE
 
 using SK_Window_Root_onDestroyed_CB = std::function<void()>;
 using SK_Window_Root_windowEventMsg_CB = std::function<void(nlohmann::json data)>;
+using SK_Window_Root_windowAction_CB = std::function<void(SK_Communication_Packet* packet)>;
 
 //class SK_Window;
 
@@ -16,7 +17,8 @@ public:
 	SK_Global* skg;
 
     SK_Window_Root_onDestroyed_CB onDestroyed;
-    
+    SK_Window_Root_windowAction_CB onWindowAction;
+
 	unsigned int wndIdx;
     SK_String windowClassName = "SK_Window";
 	SK_String tag;
@@ -59,16 +61,30 @@ public:
     bool shouldClose = true;
 	bool shouldClose_2ndPass = false;
 
+    bool activateMoving = false;
+
 	SK_Color backgroundColor = "greenyellow";
 
     SK_WebView webview;
     
-    
+    SK_Window_Root() {
+        
+    }
+
     ~SK_Window_Root(){
     }
     
 	virtual void initialize(const unsigned int& _wndIdx) {
         wndIdx = _wndIdx;
+
+        ipc->onMessage = [&](const SK_String& sender, SK_Communication_Packet* packet) {
+            SK_String action = "";
+            if (packet->data.contains("action")) action = SK_String(packet->data["action"]);
+
+            if (action == "windowAction") {
+                onWindowAction(packet);
+            }
+        };
     }
 
 	virtual void configWithInfo(const nlohmann::json& _info) {
