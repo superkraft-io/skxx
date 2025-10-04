@@ -63,6 +63,7 @@ public:
         
         
         if (wnd->config.data.contains("mainWindow") && wnd->config.data["mainWindow"] == true) {
+            skg->mainWindow->addSubView(wnd);
 
             #if defined(SK_OS_windows)
                 wnd->wndHandle = skg->mainWindow->wndHandle;

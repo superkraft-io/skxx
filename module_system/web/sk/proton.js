@@ -1018,11 +1018,13 @@ class BrowserWindow extends SK_Module_Root {
     }
 
 
-    /********************/
+    /****  SK specific  ****/
 
     beginMoveWindow(){
         this.asyncResponseless('windowAction', {action: 'beginMoveWindow'})
     }
+    
+    get resizing() { return this.getAttrSync('resizing') }
 }
 
 

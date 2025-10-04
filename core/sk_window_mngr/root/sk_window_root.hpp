@@ -36,6 +36,9 @@ public:
 		{ "title", true}
 	};
 
+
+    std::vector<SK_Window_Root*> subViews; //other SK_Window objects that also should receive window events
+
 	SK_Point maxSizeFull {-1, -1};
 
     //SK_Window* parent = nullptr;
@@ -72,6 +75,8 @@ public:
     }
 
     ~SK_Window_Root(){
+        subViews.clear();
+        subViews.shrink_to_fit();
     }
     
 	virtual void initialize(const unsigned int& _wndIdx) {
@@ -143,7 +148,7 @@ public:
 
         if (skg->sb_ipc){
             SK_IPC_v2* sb_ipc = static_cast<SK_IPC_v2*>(skg->sb_ipc);
-            sb_ipc->request("sk:viewIPC", "sk:sb", "sk::windowEvent::" + wnd->tag, payload, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
+            sb_ipc->request("sk:viewIPC", "sk:sb", "sk::windowEvent::", payload, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
                 if (cb != NULL) cb(responsePacket->data);
             });
         }
@@ -151,7 +156,28 @@ public:
 		if (ipc) ipc->request("sk:viewIPC", tag, "sk::windowEvent", payload, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
 			//do nothing
 		});
+
+        for (auto* subView : subViews) {           // module is SK_Module_ProtonJS_Window
+            if (subView) subView->ipc->request("sk:viewIPC", subView->tag, "sk::windowEvent::" + subView->tag, payload, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
+                //do nothing
+            });
+        }
     }
+
+    
+    void addSubView(SK_Window_Root* wnd) {
+        if (!wnd) return;
+        if (std::find(subViews.begin(), subViews.end(), wnd) != subViews.end()) return;
+        subViews.push_back(wnd);
+    }
+
+    void removeSubView(SK_Window_Root* wnd) {
+        if (!wnd) return;
+        auto it = std::find(subViews.begin(), subViews.end(), wnd);
+        if (it == subViews.end()) return;
+        subViews.erase(it);
+    }
+
 private:
 
 };

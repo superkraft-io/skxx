@@ -1093,58 +1093,58 @@ public:
     }
 
     void handleWindowAction(const nlohmann::json& payload){
-            SK_String action = "";
-            if (payload.contains("action")) action = SK_String(payload["action"]);
+        SK_String action = "";
+        if (payload.contains("action")) action = SK_String(payload["action"]);
 
-            if (action == "beginMoveWindow") {
-                ReleaseCapture();
+        if (action == "beginMoveWindow") {
+            ReleaseCapture();
 
-                // Use current cursor position (screen coords)
-                POINT pt;
-                GetCursorPos(&pt);
+            // Use current cursor position (screen coords)
+            POINT pt;
+            GetCursorPos(&pt);
 
-                // Tell the window �the user pressed down on the title bar here�
-                SendMessage(wndHandle, WM_NCLBUTTONDOWN, HTCAPTION, MAKELPARAM(pt.x, pt.y));
+            // Tell the window �the user pressed down on the title bar here�
+            SendMessage(wndHandle, WM_NCLBUTTONDOWN, HTCAPTION, MAKELPARAM(pt.x, pt.y));
+        }
+        else if (action == "close") { 
+            SendMessage(wndHandle, WM_SYSCOMMAND, SC_CLOSE, 0);
+        }
+        else if (action == "focus") {
+            if (IsIconic(wndHandle)) ShowWindow(wndHandle, SW_RESTORE); // if minimized
+            ShowWindow(wndHandle, SW_SHOW);                      // make sure it's visible
+            BringWindowToTop(wndHandle);
+            SetForegroundWindow(wndHandle);                      // give it focus/activation
+            SetActiveWindow(wndHandle);
+        }
+        else if (action == "blur") {
+            // Windows doesn't have a direct "blur" for top-level windows.
+            // Best effort: activate another window; if none, minimize this one.
+            HWND other = GetWindow(wndHandle, GW_HWNDPREV);
+            if (!other || !IsWindow(other)) other = GetWindow(wndHandle, GW_HWNDNEXT);
+            if (other && other != wndHandle) {
+                SetForegroundWindow(other);
+            } else {
+                ShowWindow(wndHandle, SW_MINIMIZE); // fallback so it's not active
             }
-            else if (action == "close") {
-                SendMessage(wndHandle, WM_SYSCOMMAND, SC_CLOSE, 0);
-            }
-            else if (action == "focus") {
-                if (IsIconic(wndHandle)) ShowWindow(wndHandle, SW_RESTORE); // if minimized
-                ShowWindow(wndHandle, SW_SHOW);                      // make sure it's visible
-                BringWindowToTop(wndHandle);
-                SetForegroundWindow(wndHandle);                      // give it focus/activation
-                SetActiveWindow(wndHandle);
-            }
-            else if (action == "blur") {
-                // Windows doesn't have a direct "blur" for top-level windows.
-                // Best effort: activate another window; if none, minimize this one.
-                HWND other = GetWindow(wndHandle, GW_HWNDPREV);
-                if (!other || !IsWindow(other)) other = GetWindow(wndHandle, GW_HWNDNEXT);
-                if (other && other != wndHandle) {
-                    SetForegroundWindow(other);
-                } else {
-                    ShowWindow(wndHandle, SW_MINIMIZE); // fallback so it's not active
-                }
-            }
-            else if (action == "show") {
-                ShowWindow(wndHandle, SW_SHOW);
-            }
-            else if (action == "hide") {
-                ShowWindow(wndHandle, SW_HIDE);
-            }
-            else if (action == "maximize") {
-                SendMessage(wndHandle, WM_SYSCOMMAND, SC_MAXIMIZE, 0);
-            }
-            else if (action == "unmaximize") {
-                if (IsZoomed(wndHandle)) ShowWindow(wndHandle, SW_RESTORE); // only if currently maximized
-            }
-            else if (action == "minimize") {
-                SendMessage(wndHandle, WM_SYSCOMMAND, SC_MINIMIZE, 0);
-            }
-            else if (action == "restore") {
-                SendMessage(wndHandle, WM_SYSCOMMAND, SC_RESTORE, 0);
-            }
+        }
+        else if (action == "show") {
+            ShowWindow(wndHandle, SW_SHOW);
+        }
+        else if (action == "hide") {
+            ShowWindow(wndHandle, SW_HIDE);
+        }
+        else if (action == "maximize") {
+            SendMessage(wndHandle, WM_SYSCOMMAND, SC_MAXIMIZE, 0);
+        }
+        else if (action == "unmaximize") {
+            if (IsZoomed(wndHandle)) ShowWindow(wndHandle, SW_RESTORE); // only if currently maximized
+        }
+        else if (action == "minimize") {
+            SendMessage(wndHandle, WM_SYSCOMMAND, SC_MINIMIZE, 0);
+        }
+        else if (action == "restore") {
+            SendMessage(wndHandle, WM_SYSCOMMAND, SC_RESTORE, 0);
+        }
     }
 private:
 
