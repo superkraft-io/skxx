@@ -1,5 +1,3 @@
-console.log('sk_global_js_core.js')
-
 //Fundamental core functions
 function getDirname(asArray) {
     var stack = (new Error()).stack
@@ -94,8 +92,6 @@ class SK_Global_Core {
         })
 
         this.initialized = true
-
-        console.log('SK Global Core successfully initialized. Accessable via sk_api')
     }
 
     fetch(path, data, onPreParse){
@@ -180,5 +176,4 @@ class SK_Global_Core {
 }
 
 
-console.log('sk_api: ', Date.now())
 window.sk_api = new SK_Global_Core({ id: Date.now().toString() })

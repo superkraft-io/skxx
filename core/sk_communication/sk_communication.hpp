@@ -64,7 +64,6 @@ public:
                 }
                 else if (response->type == SK_Communication_Packet_Type::sk_comm_pt_web) {
                     #if defined(SK_OS_windows)
-                        if (response->responseless) response->setAsOK();
                         webPayload->put_Response(response->getForWeb().get());
                     #elif defined(SK_OS_apple)
                         resHandler(packet);
@@ -225,7 +224,7 @@ public:
 		}
 
 
-		target->request(packet->sender, packet->target, "sk.sb.forwardedPacket", packet->asIPCMessage(), [packet, sender](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
+		target->request(packet->sender, packet->target, "sk.sb.forwardedPacket", packet->asIPCMessage(), false, [packet, sender](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
 			responsePacket->id = packet->id;
 			sender->sendResponse(responsePacket);
 

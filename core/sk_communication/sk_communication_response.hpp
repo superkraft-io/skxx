@@ -26,9 +26,10 @@ public:
     #if defined(SK_BUNDLE_MODE_DEEP) || defined(SK_BUNDLE_MODE_SHALLOW)
         SK_SoftBackend_Bundle_Library* bundle_library;
     #endif
-    
+
+
 	SK_Communication_Packet_Type type;
-	SK_Communication_Config* config;
+	SK_Communication_Config* config = nullptr;
     nlohmann::json headers{ {"Content-Type", "application/json"} };
 
 	using SK_Communication_Response_CB_setAsOK = std::function<void()>;
@@ -85,6 +86,7 @@ public:
 
 	void setAsOK() {
 		CB_setAsOK();
+        onHandleResponse(this);
 	}
 
 	bool JSON(const nlohmann::json& json) {

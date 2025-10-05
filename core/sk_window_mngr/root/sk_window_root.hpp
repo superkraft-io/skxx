@@ -145,20 +145,21 @@ public:
             {"data", data}
         };
         
-
-        if (skg->sb_ipc){
+        
+        /*if (skg->sb_ipc) {
             SK_IPC_v2* sb_ipc = static_cast<SK_IPC_v2*>(skg->sb_ipc);
-            sb_ipc->request("sk:viewIPC", "sk:sb", "sk::windowEvent::", payload, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
+           
+            sb_ipc->request("sk:viewIPC", "sk:sb", "sk::windowEvent", payload, true, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
                 if (cb != NULL) cb(responsePacket->data);
             });
-        }
+        }*/
 
-		if (ipc) ipc->request("sk:viewIPC", tag, "sk::windowEvent", payload, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
-			//do nothing
+		if (ipc) ipc->request("sk:viewIPC", tag, "sk::windowEvent", payload, true, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
+            if (cb != NULL) cb(responsePacket->data);
 		});
 
         for (auto* subView : subViews) {           // module is SK_Module_ProtonJS_Window
-            if (subView) subView->ipc->request("sk:viewIPC", subView->tag, "sk::windowEvent::" + subView->tag, payload, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
+            if (subView) subView->ipc->request("sk:viewIPC", subView->tag, "sk::windowEvent::" + subView->tag, payload, true, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
                 //do nothing
             });
         }

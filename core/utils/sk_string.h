@@ -10,10 +10,13 @@
 
 BEGIN_SK_NAMESPACE
 
+static std::string base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+
 class SK_String {
 private:
 
 public:
+
     std::string data;
 
     // Constructor
@@ -464,7 +467,6 @@ public:
 
 
 
-    std::string base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
     
     bool is_base64_char(unsigned char c) {
         return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||

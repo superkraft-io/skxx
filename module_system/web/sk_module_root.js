@@ -3,7 +3,7 @@ class SK_Module_Root {
         this.modulePath = modulePath
         this.__moduleInstanceConfig = config
 
-        console.log(`SK_Module_Root initialized with path: ${this.modulePath}`)
+        //console.log(`SK_Module_Root initialized with path: ${this.modulePath}`)
     }
 
     sync(operation, payload){

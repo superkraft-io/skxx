@@ -21,9 +21,9 @@ public:
     nlohmann::json data;
 
     void* responseObj;
-        
+    
 
-    ~SK_Communication_Packet() {
+    virtual ~SK_Communication_Packet() {
         if (response()->config->type == SK_Communication_Packet_Type::sk_comm_pt_ipc) {
             delete static_cast<SK_Communication_Response_IPC*>(responseObj);
         }
@@ -120,7 +120,7 @@ public:
             {"sender", sender},
             {"target", target},
             {"info", info},
-            {"type", info},
+            {"type", info.contains("type") ? info["type"] : nlohmann::json()},
             {"data", data}
         };
 
@@ -132,6 +132,7 @@ public:
             {"msg_id", id},
             {"sender", sender},
             {"target", target},
+            {"type", info.contains("type") ? info["type"] : nlohmann::json()},
             {"data", data}
         };
         json.update(info);

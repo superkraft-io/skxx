@@ -1,5 +1,3 @@
-console.log('sk:proton')
-
 sk_api.__protonjs = {
     window_uuid_counter: "0",
     next_window_uuid: () => {
@@ -124,7 +122,7 @@ class BrowserWindow extends SK_Module_Root {
         
 
         sk_api.ipc.on('sk::windowEvent::' + this.__moduleInstanceConfig.__uuid, (res, respondWith)=>{
-            console.log(res)
+            //console.log(res)
             this.emit(res, respondWith)
         })
         

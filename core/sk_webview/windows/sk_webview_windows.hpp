@@ -286,60 +286,21 @@ public:
                             }).Get(), &mWebRequestToken);
 
                             webview->add_WebMessageReceived(Callback<ICoreWebView2WebMessageReceivedEventHandler>([this](ICoreWebView2* sender, ICoreWebView2WebMessageReceivedEventArgs* args) -> HRESULT {
-                                wil::unique_cotaskmem_string strPtr;
-                                SK_String str;
-                                if (SUCCEEDED(args->TryGetWebMessageAsString(&strPtr))) {
-                                    str = strPtr.get();
-                                }
-
-
-                                if (str.data.size() > 0 && str.data[0] == '@') {
-                                    std::string msg_id;
-                                    if (str.data.substr(1, 4) == "none") {
-                                        msg_id = str.data.substr(5, str.data.size() - 5);
-                                    }
-                                    else if (str.data.substr(1, 6) == "yyjson") {
-                                        msg_id = str.data.substr(7, str.data.size() - 7);
-                                        
-                                        /*
-                                        yyjson_doc* read_doc = yyjson_read(ipcTestStr.c_str(), ipcTestStr.size(), 0);
-                                        if (!read_doc) { throw std::runtime_error("Failed to parse JSON string"); }
-
-                                        yyjson_mut_doc* doc = yyjson_mut_doc_new(nullptr);
-                                        yyjson_mut_val* root = yyjson_val_mut_copy(doc, yyjson_doc_get_root(read_doc));
-                                        yyjson_mut_doc_set_root(doc, root);
-                                       
-
-                                        yyjson_doc_free(read_doc);
-                                        */
-                                    }
-                                    else if (str.data.substr(1, 8) == "nlohmann") {
-                                        msg_id = str.data.substr(9, str.data.size() - 9);
-
-                                        nlohmann::json payload = nlohmann::json::parse(ipcTestStr);
-                                    }
-
-                                    SK_String data = "sk_api.ipc.handleIncoming({type: \"ipcTestResponse\", msg_id: \"" + msg_id + "\"})";
-                                    evaluateScript(data, NULL);
-                                    return S_OK;
-                                }
-
-
                                 wil::unique_cotaskmem_string jsonPStr;
-                                SK_String jsonStr;
-                                if (SUCCEEDED(args->get_WebMessageAsJson(&jsonPStr))) {
-                                    jsonStr = jsonPStr.get();
+                                if (SUCCEEDED(args->get_WebMessageAsJson(jsonPStr.put()))) {  // NOTE: .put()
+                                    SK_String jsonStr = jsonPStr.get();  // copy if SK_String owns its buffer
+                                    nlohmann::json payload = nlohmann::json::parse(jsonStr.c_str());
+
+                                    SK_Communication_Config config{ "sk.view", SK_Communication_Packet_Type::sk_comm_pt_ipc, &payload };
+                                    skg->onCommunicationRequest(&config,
+                                        [&](const SK_String& ipcResponseData) {
+                                            SK_String js = "sk_api.ipc.handleIncoming(" + ipcResponseData + ")";
+                                            evaluateScript(js, nullptr);
+                                        },
+                                        nullptr);
                                 }
 
-                                nlohmann::json payload = nlohmann::json::parse(jsonStr.data);
-
-                                SK_Communication_Config config { "sk.view", SK_Communication_Packet_Type::sk_comm_pt_ipc, &payload };
-                                skg->onCommunicationRequest(&config, [&](const SK_String& ipcResponseData) {
-                                    SK_String data = "sk_api.ipc.handleIncoming(" + ipcResponseData + ")";
-                                    evaluateScript(data, NULL);
-                                }, NULL);
-
-
+                                // No manual CoTaskMemFree — jsonPStr will free itself.
                                 return S_OK;
                             }).Get(), &mWebMessageReceivedToken);
 
@@ -412,6 +373,33 @@ public:
             evaluateScript_mainThread(_webview, src, cb);
         });
     };
+
+
+
+
+    void sendMsgAsJSON_mainThread(wil::com_ptr<ICoreWebView2> webview, const SK_String& src, SK_WebView_EvaluationComplete_Callback cb) {
+        if (!get_isReady || !get_isReady()) {
+            return;
+        }
+
+        std::wstring wstr = src.toWString();
+        LPCWSTR str = wstr.c_str();
+        HRESULT res = webview->PostWebMessageAsJson(str);
+        int x = 0;
+    };
+
+    void sendMsgAsJSON(const SK_String& src, SK_WebView_EvaluationComplete_Callback cb) {
+        if (skg->threadPool->thisFunctionRunningInMainThread()) {
+            sendMsgAsJSON_mainThread(webview, src, cb);
+            return;
+        }
+
+        wil::com_ptr<ICoreWebView2> _webview = webview;
+
+        skg->threadPool->queueOnMainThread([this, src, cb, _webview]() {
+            sendMsgAsJSON_mainThread(_webview, src, cb);
+        });
+    }
 
     void showDevTools() {
         webview->OpenDevToolsWindow();
