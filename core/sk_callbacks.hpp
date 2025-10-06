@@ -38,7 +38,7 @@ enum SK_Communication_Packet_Type {
 struct SK_Communication_Config {
 	SK_String sender;
 	SK_Communication_Packet_Type type;
-	void* objPtr;
+	void* objPtr = nullptr;
 
 	#if defined(SK_OS_windows)
 		wil::com_ptr<ICoreWebView2Environment> webviewEnvironment;
@@ -83,5 +83,8 @@ using SK_InitSK_CB = std::function<void()>;
 using SK_DestroySK_CB = std::function<void()>;
 using SK_OBJCPPSafeTicker_CB = std::function<void()>;
 using SK_OBJCPPSafeInitializer_CB = std::function<void()>;
+
+
+using SK_deleteCommPacketWithPID_CB = std::function<void(const SK_String& pid)>;
 
 END_SK_NAMESPACE

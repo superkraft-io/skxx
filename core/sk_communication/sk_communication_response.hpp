@@ -82,6 +82,8 @@ public:
         CB_fileFromBuffer = {};
         CB_error = {};
         CB_getIPCResponse = {};
+
+        config = nullptr;
     }
 
 	void setAsOK() {

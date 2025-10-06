@@ -109,6 +109,7 @@ public:
 
 	SK_Communication_onRequest onCommunicationRequest;
 
+    SK_deleteCommPacketWithPID_CB deleteCommPacketWithPID;
     
     
     SK_onMainWindowHWNDAcquired onMainWindowHWNDAcquired;

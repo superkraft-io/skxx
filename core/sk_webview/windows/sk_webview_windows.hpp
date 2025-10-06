@@ -278,6 +278,7 @@ public:
                             webview->AddWebResourceRequestedFilter(L"*", COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
 
                             webview->add_WebResourceRequested(Callback<ICoreWebView2WebResourceRequestedEventHandler>([&](ICoreWebView2* sender, ICoreWebView2WebResourceRequestedEventArgs* args) -> HRESULT {
+                                if (skg->terminating) return S_OK;
 
                                 SK_Communication_Config config{ "sk.sb", SK_Communication_Packet_Type::sk_comm_pt_web, args, environment };
                                 skg->onCommunicationRequest(&config, NULL, NULL);
@@ -286,6 +287,8 @@ public:
                             }).Get(), &mWebRequestToken);
 
                             webview->add_WebMessageReceived(Callback<ICoreWebView2WebMessageReceivedEventHandler>([this](ICoreWebView2* sender, ICoreWebView2WebMessageReceivedEventArgs* args) -> HRESULT {
+                                if (skg->terminating) return S_OK;
+
                                 wil::unique_cotaskmem_string jsonPStr;
                                 if (SUCCEEDED(args->get_WebMessageAsJson(jsonPStr.put()))) {  // NOTE: .put()
                                     SK_String jsonStr = jsonPStr.get();  // copy if SK_String owns its buffer

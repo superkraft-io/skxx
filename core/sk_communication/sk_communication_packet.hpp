@@ -6,13 +6,16 @@
 
 BEGIN_SK_NAMESPACE
 
+using SK_Communication_Packet_onBeforeDestroy_CB = std::function<void(SK_Communication_Packet*)>;
+
 class SK_Communication_Packet {
 public:
     nlohmann::json originalData;
 
     SK_Communication_Packet_Type type = SK_Communication_Packet_Type::sk_comm_pt_ipc;
 
-    SK_String id;
+    SK_String pid = "";
+    SK_String id = "";
 
     SK_String sender;
     SK_String target;
@@ -20,16 +23,20 @@ public:
     nlohmann::json info;
     nlohmann::json data;
 
-    void* responseObj;
+    void* responseObj = nullptr;
     
+    SK_Communication_Packet_onBeforeDestroy_CB onBeforeDestroy;
 
     virtual ~SK_Communication_Packet() {
-        if (response()->config->type == SK_Communication_Packet_Type::sk_comm_pt_ipc) {
-            delete static_cast<SK_Communication_Response_IPC*>(responseObj);
+        if (responseObj == nullptr) {
+            int x = 0;
         }
-        else if (response()->config->type == SK_Communication_Packet_Type::sk_comm_pt_web) {
-            delete static_cast<SK_Communication_Response_Web*>(responseObj);
-        }
+
+        delete static_cast<SK_Communication_Response*>(responseObj);
+
+        responseObj = nullptr;
+
+        onBeforeDestroy(this);
     }
 
 
@@ -47,9 +54,6 @@ public:
             pathOnly = pathOnly.substring(targetEndIdx, pathOnly.length());
         }
         packet->target = targetRoute;
-        
-        int x = 0;
-        
         
         
         SK_String _url = url.replace("/" + targetRoute, "");

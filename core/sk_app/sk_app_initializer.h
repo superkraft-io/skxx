@@ -41,8 +41,14 @@ public:
         SK_IPC_v2* sb_ipc = get_SK_SB_IPC_CB();
         if (sb_ipc == nullptr) return;
 
-        sb_ipc->request("sk:viewIPC", "sk:sb", "sk:appEvent", payload, false, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
-            if (cb != NULL) cb(responsePacket->data);
+        int x = 0;
+
+        sb_ipc->request("sk:viewIPC", "sk:sb", "sk:appEvent", payload, false, [this, cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
+            if (cb != NULL) {
+                cb(responsePacket->data);
+            } else {
+                skg->deleteCommPacketWithPID(responsePacket->pid);
+            }
         });
     }
 

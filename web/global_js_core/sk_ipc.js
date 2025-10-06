@@ -162,7 +162,7 @@ class SK_IPC {
 
         var responseData = responseData_A || responseData_B
 
-        if (!isForwardedPacket){// && !res.responseless) {
+        if (!isForwardedPacket && !res.responseless) {
             this.sendToBE(
                 resJSON.event_id,
                 responseData,
