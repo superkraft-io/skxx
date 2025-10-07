@@ -31,8 +31,9 @@ public:
 	wil::com_ptr<ICoreWebView2Controller> controller = nullptr;
     wil::com_ptr<ICoreWebView2> webview = nullptr;
     wil::com_ptr<ICoreWebView2_17> webview17 = nullptr;
-    EventRegistrationToken mWebMessageReceivedToken;
-    EventRegistrationToken mWebRequestToken;
+    EventRegistrationToken mWebMessageReceivedToken{};
+    EventRegistrationToken mWebRequestToken{};
+    EventRegistrationToken mAccelKeyToken{};
     
 	SK_String currentURL = "";
 
@@ -47,29 +48,44 @@ public:
 
 
     ~SK_WebView() {
-        if (webview) {
-            if (mWebMessageReceivedToken.value)          webview->remove_WebMessageReceived(mWebMessageReceivedToken);
-            if (mWebRequestToken.value) webview->remove_WebResourceRequested(mWebRequestToken);
+        // Must run on the same STA thread where objects were created.
+        auto* vw   = webview.get();
+        auto* ctrl = controller.get();
+
+        // 1) Unhook WEBVIEW events (guard each token)
+        if (vw) {
+            if (mWebMessageReceivedToken.value) {
+                webview->remove_WebMessageReceived(mWebMessageReceivedToken);
+                mWebMessageReceivedToken.value = 0;
+            }
+            if (mWebRequestToken.value) {
+                webview->remove_WebResourceRequested(mWebRequestToken);
+                mWebRequestToken.value = 0;
+            }
+
             webview->RemoveWebResourceRequestedFilter(L"*", COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
         }
 
-
-        if (controller.get() != nullptr) {
-            controller->Close();
-
-            MSG msg;
-            while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
-                TranslateMessage(&msg);
-                DispatchMessage(&msg);
+        // 3) Unhook CONTROLLER events, then close controller
+        if (ctrl) {
+            if (mAccelKeyToken.value) {
+                controller->remove_AcceleratorKeyPressed(mAccelKeyToken);
+                mAccelKeyToken.value = 0;
             }
+            // (Add more controller remove_* calls here if you add more controller events.)
+
+            controller->Close();     // destroys child HWND, releases heavy bits
+            controller.reset();
         }
 
+        // 4) Release view last. Then other COM pointers.
+        webview17.reset();
+        webview.reset();
+        settings.reset();
+        environment12.reset();
+        environment.reset();
 
-        controller = nullptr;
-        webview = nullptr;
-        environment = nullptr;
-
-        
+        // 5) COM uninit only if you were the one who init'd it on this thread
         if (comApartmentInitialized) {
             CoUninitialize();
             comApartmentInitialized = false;
@@ -258,7 +274,7 @@ public:
                                 }
 
                                 return S_OK;
-                                }).Get(), nullptr);
+                            }).Get(), &mAccelKeyToken);
 
                             if (webview == nullptr) {
                                 return S_OK;
@@ -303,7 +319,7 @@ public:
                                         nullptr);
                                 }
 
-                                // No manual CoTaskMemFree — jsonPStr will free itself.
+                                // No manual CoTaskMemFree ï¿½ jsonPStr will free itself.
                                 return S_OK;
                             }).Get(), &mWebMessageReceivedToken);
 

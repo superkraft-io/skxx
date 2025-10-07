@@ -28,11 +28,28 @@ public:
     SK_Communication_Packet_onBeforeDestroy_CB onBeforeDestroy;
 
     virtual ~SK_Communication_Packet() {
+        nlohmann::json().swap(originalData);
+        originalData = nlohmann::json();
+        originalData.clear();
+
+        nlohmann::json().swap(info);
+        info = nlohmann::json();
+        info.clear();
+
+        nlohmann::json().swap(data);
+        data = nlohmann::json();
+        data.clear();
+
         if (responseObj == nullptr) {
             int x = 0;
         }
 
-        delete static_cast<SK_Communication_Response*>(responseObj);
+        if (response()->config->type == SK_Communication_Packet_Type::sk_comm_pt_ipc) {
+            delete static_cast<SK_Communication_Response_IPC*>(responseObj);
+        }
+        else if (response()->config->type == SK_Communication_Packet_Type::sk_comm_pt_web) {
+            delete static_cast<SK_Communication_Response_Web*>(responseObj);
+        }
 
         responseObj = nullptr;
 

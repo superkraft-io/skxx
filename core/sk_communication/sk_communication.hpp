@@ -89,10 +89,16 @@ public:
 
 
     ~SK_Communication() {
-        for (auto*& pkt : active_packets) {
-            delete pkt;      // safe on nullptr too
-            pkt = nullptr;   // defensive: avoid dangling in case of debugging
+        if (active_packets.size() > 0) {
+            int x = 0;
         }
+
+        for (std::size_t i = active_packets.size(); i-- > 0; ) {
+            auto*& pkt = active_packets[i];
+            delete pkt;      // safe even if pkt == nullptr
+            pkt = nullptr;   // keep slot nulled if you reuse the vector
+        }
+
         active_packets.clear();
     }
 

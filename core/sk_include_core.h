@@ -46,7 +46,7 @@
 
 #if defined(SK_OS_windows)
 	#if defined(SK_MODE_DEBUG)
-		#include <vld.h>
+		//#include <vld.h>
 	#endif
 
 	#include <windows.h>

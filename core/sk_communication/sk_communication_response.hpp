@@ -83,7 +83,11 @@ public:
         CB_error = {};
         CB_getIPCResponse = {};
 
-        config = nullptr;
+        #if defined(SK_OS_windows)
+            CB_getWebResponse = {};   // add this as well
+        #endif
+
+        config = nullptr; // non-owning
     }
 
 	void setAsOK() {
@@ -173,6 +177,14 @@ public:
 		};
 	}
 
+    ~SK_Communication_Response_IPC() {
+        int x = 0;
+
+        nlohmann::json().swap(data);
+        data = nlohmann::json();
+        data.clear();
+    }
+
 	void setAsOK() {
 		data = nlohmann::json{};
 	}
@@ -188,8 +200,10 @@ public:
 
 	bool string(const SK_String& str, const SK_String& mimeType = "plain/text") {
 		data = nlohmann::json{
-				{"string", str}
+			{"string", str}
 		};
+
+        headers["Content-Type"] = mimeType;
 
 		return true;
 	}
@@ -261,7 +275,7 @@ public:
         //for linux and android
     #endif
     
-    SK_Communication_Response_Web(const SK_String& _url = "") {
+    SK_Communication_Response_Web(const SK_String& _url) {
         type = SK_Communication_Packet_Type::sk_comm_pt_web;
         
         url = _url;
@@ -302,6 +316,9 @@ public:
     }
 
     ~SK_Communication_Response_Web() {
+        data.clear();
+        data.shrink_to_fit();
+        headers.clear();
         
         #if defined(SK_OS_windows)
             response.reset();
