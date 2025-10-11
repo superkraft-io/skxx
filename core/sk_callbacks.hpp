@@ -87,4 +87,7 @@ using SK_OBJCPPSafeInitializer_CB = std::function<void()>;
 
 using SK_deleteCommPacketWithPID_CB = std::function<void(const SK_String& pid)>;
 
+
+using SK_tickSK_TimerMngr_CB = std::function<void()>;
+
 END_SK_NAMESPACE

@@ -29,6 +29,9 @@
 
 #include "sk_threads/sk_thread_pool.hpp"
 
+#include "sk_timer/sk_timer.h"
+#include "utils/sk_displayUtils/sk_displayUtils.h"
+
 
 #include "../libs/general/curl/curl.h"
 #include "sk_web/sk_curl.hpp"
@@ -76,6 +79,9 @@ public:
         
         return "";
     }
+
+    SK_TimerMngr* timerMngr;
+    SK_Timer* syncTimer;
 
     SK_Path_Utils pathUtils;
     void* machine;
@@ -160,6 +166,8 @@ public:
     SK_DestroySK_CB destroySK;
     SK_OBJCPPSafeTicker_CB OBJCPPSafeTicker;
     SK_OBJCPPSafeInitializer_CB OBJCPPSafeInitializerCB;
+
+    SK_tickSK_TimerMngr_CB tickSK_TimerMngr;
     
     ~SK_Global(){
         delete threadPool;
@@ -176,6 +184,9 @@ public:
         #endif
         
         machine = nullptr;
+
+        //delete syncTimer;
+        //delete timerMngr;
     }
 };
 

@@ -58,6 +58,8 @@ public:
 
             bypasses = _bypasses;
             get_SK_SB_IPC_CB = _Get_SK_SB_IPC_CB;
+
+            isInitialized = true;
         }
     #elif defined(SK_OS_apple)
         #ifdef __OBJC__

@@ -62,15 +62,7 @@ public:
         })
         
         #if defined(SK_APP_TYPE_plugin)
-            .replace("'<sk_plugin_parameters>'", pluginParameters)
-           
-                #if defined(SK_OS_windows)
-                    .replace("/* SK_OS_windows - START", "//SK_OS_windows - START")
-                    .replace("SK_OS_windows - END */", "//SK_OS_windows - END")
-                #elif defined(SK_OS_apple)
-                    //do nothing
-                #endif
-          
+            .replace("'<sk_plugin_parameters>'", pluginParameters)          
         #endif
         
         .replace("<sk_base_url>", SK_Base_URL)
