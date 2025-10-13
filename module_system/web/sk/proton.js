@@ -1,10 +1,3 @@
-function dbgPrint(){
-    console.log('proton.js loaded')
-    debugger
-}
-
-setTimeout(()=>{ dbgPrint() }, 20000)
-
 sk_api.__protonjs = {
     window_uuid_counter: "0",
     next_window_uuid: () => {

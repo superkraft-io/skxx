@@ -108,11 +108,11 @@ public:
             case WM_MOVING:
                 if (!wnd->isMoving) {
                     wnd->isMoving = true;
-                    emitWndEvent(wnd, "will-move", {});
+                    emitWndEvent(wnd, "will-move", {}, true);
                 }
 
-                emitWndEvent(wnd, "move", {});
-                emitWndEvent(wnd, "moved", {});
+                emitWndEvent(wnd, "move", {}, true);
+                emitWndEvent(wnd, "moved", {}, true);
                 break;
 
 
@@ -164,29 +164,29 @@ public:
                             {"height", pRect->bottom - pRect->top},
                         }},
                         {"edge", edge}
-                        });
+                    }, true);
                 }
 
                 switch (wParam) {
                 case SIZE_MAXIMIZED:
-                    emitWndEvent(wnd, "maximize", {});
+                    emitWndEvent(wnd, "maximize", {}, true);
                     break;
                 case SIZE_MINIMIZED:
-                    emitWndEvent(wnd, "minimize", {});
+                    emitWndEvent(wnd, "minimize", {}, true);
                     break;
                 case SIZE_RESTORED:
-                    if (lParam != 0) emitWndEvent(wnd, "resized", {});
-                    else emitWndEvent(wnd, "restore", {});
+                    if (lParam != 0) emitWndEvent(wnd, "resized", {}, true);
+                    else emitWndEvent(wnd, "restore", {}, true);
                     break;
                 }
 
-                emitWndEvent(wnd, "resize", {});
+                emitWndEvent(wnd, "resize", {}, true);
                 break;
             }
 
             case WM_EXITSIZEMOVE:
-                if (wnd->isMoving) emitWndEvent(wnd, "move-end", {});
-                if (wnd->isResizing) emitWndEvent(wnd, "resize-end", {});
+                if (wnd->isMoving) emitWndEvent(wnd, "move-end", {}, true);
+                if (wnd->isResizing) emitWndEvent(wnd, "resize-end", {}, true);
 
                 wnd->isMoving = false;
                 wnd->isResizing = false;
@@ -196,16 +196,16 @@ public:
                 if (wParam == SC_MAXIMIZE) {
                     wnd->isMaximized = true;
                     wnd->isMinimized = false;
-                    emitWndEvent(wnd, "maximize", {});
+                    emitWndEvent(wnd, "maximize", {}, true);
                 }
                 else if (wParam == SC_MINIMIZE) {
                     wnd->isMaximized = false;
                     wnd->isMinimized = true;
-                    emitWndEvent(wnd, "minimize", {});
+                    emitWndEvent(wnd, "minimize", {}, true);
                 }
                 else if (wParam == SC_RESTORE) {
-                    if (wnd->isMaximized) emitWndEvent(wnd, "unmaximize", {});
-                    if (wnd->isMinimized) emitWndEvent(wnd, "restore", {});
+                    if (wnd->isMaximized) emitWndEvent(wnd, "unmaximize", {}, true);
+                    if (wnd->isMinimized) emitWndEvent(wnd, "restore", {}, true);
                     wnd->isMaximized = false;
                     wnd->isMinimized = false;
                 }
@@ -222,7 +222,7 @@ public:
 
             case WM_CLOSE:
                 if (!wnd->shouldClose_2ndPass) {
-                    emitWndEvent(wnd, "close", {}, [wnd](nlohmann::json response) {
+                    emitWndEvent(wnd, "close", {}, false, [wnd](nlohmann::json response) {
                         if (response.contains("defaultPrevented") && response["defaultPrevented"] == true) {
                             wnd->shouldClose = false;
                         }
@@ -233,7 +233,7 @@ public:
                 } else {
                     if (wnd->shouldClose) {
                         DestroyWindow(wnd->wndHandle);
-                        emitWndEvent(wnd, "closed", {});
+                        emitWndEvent(wnd, "closed", {}, true);
                     }
                 }
 
@@ -243,20 +243,20 @@ public:
                 break;
 
             case WM_DESTROY:
-                emitWndEvent(wnd, "closed", {});
+                emitWndEvent(wnd, "closed", {}, true);
                 break;
 
             case WM_KILLFOCUS:
-                emitWndEvent(wnd, "blur", {});
+                emitWndEvent(wnd, "blur", {}, true);
                 break;
 
             case WM_SETFOCUS:
-                emitWndEvent(wnd, "focus", {});
+                emitWndEvent(wnd, "focus", {}, true);
                 break;
 
             case WM_SHOWWINDOW:
-                //if (wParam) emitEvent("show", {});
-                //else emitEvent("hide", {});
+                //if (wParam) emitEvent("show", {}, true);
+                //else emitEvent("hide", {}, true);
                 break;
 
 
@@ -268,23 +268,23 @@ public:
                 break;
 
             case WM_DISPLAYCHANGE:
-                //emitWndEvent(wnd, "enter-full-screen", {});
+                //emitWndEvent(wnd, "enter-full-screen", {}, true);
                 break;
 
             case WM_WINDOWPOSCHANGED:
                 if (((WINDOWPOS*)lParam)->flags & SWP_FRAMECHANGED) {
-                    //if (IsZoomed(hwnd)) emitWndEvent(wnd, "enter-full-screen", {});
-                    //else emitWndEvent(wnd, "leave-full-screen", {});
+                    //if (IsZoomed(hwnd)) emitWndEvent(wnd, "enter-full-screen", {}, true);
+                    //else emitWndEvent(wnd, "leave-full-screen", {}, true);
                 }
                 break;
 
             case WM_ENDSESSION:
-                emitWndEvent(wnd, "session-end", {});
+                emitWndEvent(wnd, "session-end", {}, true);
                 break;
 
             case WM_WINDOWPOSCHANGING:
                 if (((WINDOWPOS*)lParam)->flags & SWP_NOZORDER) {
-                    //emitWndEvent(wnd, "always-on-top-changed", {});
+                    //emitWndEvent(wnd, "always-on-top-changed", {}, true);
                 }
                 break;
 
@@ -351,7 +351,7 @@ public:
                     default: cmd = "unknown"; break;
                 }
 
-                emitWndEvent(wnd, "app-command", { {"command", cmd.toLowerCase()}});
+                emitWndEvent(wnd, "app-command", { {"command", cmd.toLowerCase()}}, true);
             }
 
             case WM_NCHITTEST: {
@@ -388,7 +388,7 @@ public:
                                 {"y", y}
                             }}
                         },
-
+                        false,
                         [wnd, x, y](nlohmann::json response) {
                             if (response.contains("defaultPrevented") && response["defaultPrevented"] == true) {
                                 wnd->shouldPreventSysCtxMenu = true;
@@ -808,7 +808,7 @@ public:
         webview.callResize = [&]() { update(); };
         webview.notifyReadyToShow = [this, cb]() {
             isReady = true;
-            emitWndEvent(this, "ready-to-show", {});
+            emitWndEvent(this, "ready-to-show", {}, true);
             if (cb) cb(this);
         };
 
@@ -1051,7 +1051,7 @@ public:
         else SetWindowPos(wndHandle, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 
 
-        emitWndEvent(this, "always-on-top-changed", { {"isAlwaysOnTop", flag} });
+        emitWndEvent(this, "always-on-top-changed", { {"isAlwaysOnTop", flag} }, true);
     }
 
     void setFullscreen(bool activate) {
@@ -1067,7 +1067,7 @@ public:
 
             updateWebView();
 
-            if (config.data["fullscreen"]) emitWndEvent(this, "leave-fullscreen", {});
+            if (config.data["fullscreen"]) emitWndEvent(this, "leave-fullscreen", {}, true);
             config.data["fullscreen"] = false;
 
             return;
@@ -1088,8 +1088,17 @@ public:
 
         updateWebView();
 
-        emitWndEvent(this, "enter-fullscreen", {});
+        emitWndEvent(this, "enter-fullscreen", {}, true);
         config.data["fullscreen"] = true;
+    }
+
+    void readInfo(const SK_String& attribute, SK_Communication_Response& respondWith) {
+        if (attribute == "isMaximized") {
+            respondWith.JSON({ {"value", isMaximized} });
+        }
+        else if (attribute == "isFullscreen") {
+            respondWith.JSON({ {"value", config.data["fullscreen"]} });
+        }
     }
 
     void handleWindowAction(const nlohmann::json& payload){
@@ -1146,6 +1155,8 @@ public:
             SendMessage(wndHandle, WM_SYSCOMMAND, SC_RESTORE, 0);
         }
     }
+
+    
 private:
 
 };
