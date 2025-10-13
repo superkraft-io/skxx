@@ -471,6 +471,10 @@ public:
             CREATESTRUCT* pCreate = reinterpret_cast<CREATESTRUCT*>(lParam);
             wnd = static_cast<SK_Window*>(pCreate->lpCreateParams);
             SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(wnd));
+
+            if (wnd->config.data.contains("mainWindow") && wnd->config.data["mainWindow"] == true) {
+                wnd = wnd->skg->mainWindow;
+            }
         }
         else {
             //Retrieve the owner so that other messages can utilize the window
@@ -1093,11 +1097,16 @@ public:
     }
 
     void readInfo(const SK_String& attribute, SK_Communication_Response& respondWith) {
+        SK_Window* wnd = this;
+        if (wnd->config.data.contains("mainWindow") && wnd->config.data["mainWindow"] == true) {
+            wnd = skg->mainWindow;
+        }
+
         if (attribute == "isMaximized") {
-            respondWith.JSON({ {"value", isMaximized} });
+            respondWith.JSON({ {"value", wnd->isMaximized} });
         }
         else if (attribute == "isFullscreen") {
-            respondWith.JSON({ {"value", config.data["fullscreen"]} });
+            respondWith.JSON({ {"value", wnd->config.data["fullscreen"]} });
         }
     }
 
@@ -1146,7 +1155,12 @@ public:
             SendMessage(wndHandle, WM_SYSCOMMAND, SC_MAXIMIZE, 0);
         }
         else if (action == "unmaximize") {
-            if (IsZoomed(wndHandle)) ShowWindow(wndHandle, SW_RESTORE); // only if currently maximized
+            if (config.data.contains("fullscreenable") && config.data["fullscreenable"] == true) {
+                if (IsZoomed(wndHandle)) ShowWindow(wndHandle, SW_RESTORE); // only if currently maximized
+                return;
+            }
+
+            SendMessage(wndHandle, WM_SYSCOMMAND, SC_RESTORE, 0);
         }
         else if (action == "minimize") {
             SendMessage(wndHandle, WM_SYSCOMMAND, SC_MINIMIZE, 0);
