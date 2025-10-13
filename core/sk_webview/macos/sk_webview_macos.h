@@ -59,9 +59,11 @@ public:
     void create(bool offsetWhenDebugging);
     void update();
     void navigate(const SK_String& url);
+    void showDevTools();
     void evaluateScript_mainThread(void* _Nonnull _webview, const SK_String& src, SK_WebView_EvaluationComplete_Callback cb);
     void evaluateScript(const SK_String& src, SK_WebView_EvaluationComplete_Callback cb);
-    void showDevTools();
+    void sendMsgAsJSON_mainThread(void* _Nonnull _webview, const SK_String& src, SK_WebView_EvaluationComplete_Callback cb);
+    void sendMsgAsJSON(const SK_String& src, SK_WebView_EvaluationComplete_Callback cb);
 };
 
 END_SK_NAMESPACE

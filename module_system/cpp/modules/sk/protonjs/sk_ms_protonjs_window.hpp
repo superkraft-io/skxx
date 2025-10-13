@@ -24,13 +24,13 @@ public:
     }
     
     void handleOperation(const SK_String& operation, nlohmann::json& payload, SK_Communication_Response& respondWith) {
-        
         SK_String wndID = payload["__moduleInstanceConfig"]["__uuid"];
         SK_Window* wnd = wndMngr->findWindowByTag(wndID);
         
         
               if (operation == "construct") construct(wnd, payload, respondWith);
          else if (operation == "configure") configure(wnd, payload, respondWith);
+         else if (operation == "readInfo") readInfo(wnd, payload, respondWith);
          else if (operation == "loadURL") loadURL(wnd, payload, respondWith);
          else if (operation == "windowAction") windowAction(wnd, payload, respondWith);
     };
@@ -116,6 +116,11 @@ public:
         }
 
         respondWith.JSON_OK();
+    }
+    
+    void readInfo(SK_Window* wnd, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+        SK_String attribute = payload["attribute"];
+        wnd->readInfo(attribute, respondWith);
     }
 
     void handleDetailedAttributeAssignment(SK_Window* wnd, const SK_String& attribute, const nlohmann::json& value) {

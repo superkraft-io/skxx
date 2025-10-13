@@ -1,3 +1,10 @@
+function dbgPrint(){
+    console.log('proton.js loaded')
+    debugger
+}
+
+setTimeout(()=>{ dbgPrint() }, 20000)
+
 sk_api.__protonjs = {
     window_uuid_counter: "0",
     next_window_uuid: () => {
@@ -112,7 +119,8 @@ class BrowserWindow extends SK_Module_Root {
     constructor(opt = {}) {
         super('proton')
 
-        this.listeners = {}
+        this.eventID = 0
+        this.events = {}
 
 
         this.__moduleInstanceConfig.__target = 'window'
@@ -261,11 +269,21 @@ class BrowserWindow extends SK_Module_Root {
     }
     
 
-    emit(res, respondWith) {
+    emit(res, respondWith){
+        var event = this.events[res.eventID]
+        if (!event) return respondWith({})
+
+        for (var id in event){
+            var listener = event[id]
+            listener.cb(res.data, respondWith)
+        }
+    }
+        
+    emitToListener(cb, respondWith){
         var listenerCB = this.listeners[res.eventID]
         
-        if (res.eventID === 'blur') sk_api.__protonjs.app.emit({eventID: 'browser-window-blur', data: {window: this}}, ()=>{})
-        if (res.eventID === 'focus') sk_api.__protonjs.app.emit({eventID: 'browser-window-focus', data: {window: this}}, ()=>{})
+        if (res.eventID === 'blur') if (sk_api.__protonjs.app) sk_api.__protonjs.app.emit({eventID: 'browser-window-blur', data: {window: this}}, ()=>{})
+        if (res.eventID === 'focus') if (sk_api.__protonjs.app) sk_api.__protonjs.app.emit({eventID: 'browser-window-focus', data: {window: this}}, ()=>{})
         
 
        
@@ -302,12 +320,22 @@ class BrowserWindow extends SK_Module_Root {
     }
 
     on(eventID, cb) {
-        var listener = this.listeners[eventID]
-        if (!listener) this.listeners[eventID] = cb
+        this.eventID++
+        var event = this.events[eventID]
+        if (!event){
+            this.events[eventID] = {}
+            event = this.events[eventID]
+        }
+        
+        event[this.eventID] = {id: this.eventID, cb: cb}
+
+        return this.eventID
     }
 
-    off(eventID, callback) {
-        delete this.listeners[eventID]
+    off(event, eventID, callback) {
+        try {
+            delete this.events[event][eventID]
+        } catch(err){}
     }
 
 
@@ -316,7 +344,8 @@ class BrowserWindow extends SK_Module_Root {
 
 
     setAttrSync(attribute, value) { this.sync('configure', { attribute: attribute, value: value }) }
-    getAttrSync(attribute, value) { return this.sync('configure', { attribute: attribute, read: true }) }
+    getAttrSync(attribute) { return this.sync('configure', { attribute: attribute, read: true }) }
+    readInfoSync(attribute) { return this.sync('readInfo', { attribute: attribute }) }
 
     static getAllWindows() {
         return this.async('getAllWindows')
@@ -560,7 +589,7 @@ class BrowserWindow extends SK_Module_Root {
     }
 
     isMaximized() {
-        throw 'Not implemented yet'
+        return (this.readInfoSync('isMaximized')).value
     }
 
     minimize() {
@@ -580,7 +609,7 @@ class BrowserWindow extends SK_Module_Root {
     }
 
     isFullScreen() {
-        throw 'Not implemented yet'
+        return (this.readInfoSync('isFullscreen')).value
     }
 
     setSimpleFullScreen(flag) {

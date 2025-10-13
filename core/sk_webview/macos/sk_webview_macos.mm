@@ -9,6 +9,7 @@
 #import <WebKit/WebKit.h>
 #import <AppKit/AppKit.h>
 
+#define WKJSE(key) error.userInfo[@#key]
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -257,11 +258,29 @@ void SK_WebView::navigate(const SK_String& url) {
     }
 }
 
+void SK_WebView::showDevTools() {
+    //seemingly not available on MacOS
+}
+
 void SK_WebView::evaluateScript_mainThread(void* _webview, const SK_String& src, SK_WebView_EvaluationComplete_Callback cb) {
     [(__bridge WKWebView*)_webview evaluateJavaScript: src
                  completionHandler:^(id result, NSError *error) {
         if (error) {
-            NSLog(@"Error: %@", error.localizedDescription);
+            NSLog(@"JS exception: %@ (%@:%@:%@)\n%@",
+                   error.userInfo[@"WKJavaScriptExceptionMessage"],
+                   error.userInfo[@"WKJavaScriptExceptionSourceURL"],
+                   error.userInfo[@"WKJavaScriptExceptionLineNumber"],
+                   error.userInfo[@"WKJavaScriptExceptionColumnNumber"],
+                   error.userInfo[NSLocalizedDescriptionKey]);
+            
+            try {
+                std::fprintf(stderr, "%s\n", src.data.c_str());
+            } catch (const std::exception& e) {
+                std::fprintf(stderr, "Could not print script for debugging: %s\n", e.what());
+            } catch (...) {
+                std::fprintf(stderr, "Could not print script for debugging (unknown exception)\n");
+            }
+            
         } else {
             if (cb != nullptr) {
                  if ([result isKindOfClass:[NSString class]]) {
@@ -288,8 +307,14 @@ void SK_WebView::evaluateScript(const SK_String& src, SK_WebView_EvaluationCompl
     });
 }
 
-void SK_WebView::showDevTools() {
-    //seemingly not available on MacOS
+
+void SK_WebView::sendMsgAsJSON_mainThread(void* _webview, const SK_String& src, SK_WebView_EvaluationComplete_Callback cb) {
+    evaluateScript_mainThread(_webview, src, cb);
+};
+
+void SK_WebView::sendMsgAsJSON(const SK_String& src, SK_WebView_EvaluationComplete_Callback cb) {
+    evaluateScript(src, cb);
 }
+
 
 END_SK_NAMESPACE

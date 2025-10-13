@@ -1,9 +1,6 @@
 #pragma once
 
 #define NOMINMAX
-#include <windows.h>
-#include <dxgi1_6.h>
-#include <wrl/client.h>
 #include <vector>
 #include <set>
 #include <string>
@@ -14,14 +11,21 @@
 #include <atomic>
 #include <chrono>
 
-#pragma comment(lib, "dxgi.lib")
-#pragma comment(lib, "user32.lib")
 
 #include "../../sk_common.hpp"
 
 BEGIN_SK_NAMESPACE
 
 #if defined(SK_OS_windows)
+
+#include <windows.h>
+#include <dxgi1_6.h>
+#include <wrl/client.h>
+
+#pragma comment(lib, "dxgi.lib")
+#pragma comment(lib, "user32.lib")
+
+
 class SK_DisplayUtils {
 public:
     using OnHighestFpsChanged = std::function<void(double /*old*/, double /*now*/)>;
@@ -140,7 +144,135 @@ private:
 };
 
 #elif defined(SK_OS_macos)
-    //macos...
+
+#include <CoreGraphics/CoreGraphics.h>
+
+class SK_DisplayUtils {
+public:
+    using OnHighestFpsChanged = std::function<void(double /*old*/, double /*now*/)>;
+
+    // -------- One-shot queries (mirrors Windows version) --------
+    static inline double getHighestFPS() {
+        double maxHz = 0.0;
+        enumerateAllModes([&](double hz) { if (hz > maxHz) maxHz = hz; });
+        return maxHz;
+    }
+
+    static inline double getHighestFPSCurrent() {
+        double maxHz = 0.0;
+        enumerateCurrentModes([&](double hz) { if (hz > maxHz) maxHz = hz; });
+        return maxHz;
+    }
+
+    // -------- Polling watcher (no threads) --------
+    // Call begin..., then call tick() from your own timer/loop on the main thread.
+    static inline void beginMonitoringHighestFPS(OnHighestFpsChanged cb,
+        bool useCurrentNotSupported = false,
+        bool fireImmediately = true,
+        std::chrono::milliseconds minPollInterval = std::chrono::milliseconds{ 0 })
+    {
+        s_cb() = std::move(cb);
+        s_useCurrent() = useCurrentNotSupported;
+        s_minInterval() = minPollInterval;
+        s_lastCheck() = Clock::now() - s_minInterval(); // allow immediate check
+
+        const double now = s_useCurrent() ? getHighestFPSCurrent() : getHighestFPS();
+        s_lastHz() = now;
+
+        if (fireImmediately && s_cb()) {
+            s_cb()(now, now);
+        }
+    }
+
+    static inline void endMonitoringHighestFPS() {
+        s_cb() = nullptr;
+    }
+
+    static inline void tick() {
+        const auto nowT = Clock::now();
+        if (nowT - s_lastCheck() < s_minInterval()) return;
+        s_lastCheck() = nowT;
+
+        const double oldHz = s_lastHz();
+        const double nowHz = s_useCurrent() ? getHighestFPSCurrent() : getHighestFPS();
+        if (nowHz != oldHz) {
+            s_lastHz() = nowHz;
+            if (s_cb()) s_cb()(oldHz, nowHz);
+        }
+    }
+
+private:
+    // ---- Helpers ----
+    template<typename F>
+    static inline void enumerateAllModes(F&& onHz) {
+        // List active displays
+        uint32_t displayCount = 0;
+        if (CGGetActiveDisplayList(0, nullptr, &displayCount) != kCGErrorSuccess || displayCount == 0)
+            return;
+
+        std::vector<CGDirectDisplayID> displays(displayCount);
+        if (CGGetActiveDisplayList(displayCount, displays.data(), &displayCount) != kCGErrorSuccess)
+            return;
+
+        for (CGDirectDisplayID did : displays) {
+            // Get all modes for this display
+            CFArrayRef modes = CGDisplayCopyAllDisplayModes(did, nullptr);
+            if (!modes) continue;
+
+            // De-duplicate by milli-hz like on Windows, because the list can have many repeats
+            std::set<int> mhzSeen;
+
+            const CFIndex n = CFArrayGetCount(modes);
+            for (CFIndex i = 0; i < n; ++i) {
+                auto mode = static_cast<CGDisplayModeRef>(const_cast<void*>(CFArrayGetValueAtIndex(modes, i)));
+                if (!mode) continue;
+
+                // CGDisplayModeGetRefreshRate may return 0 for variable refresh/proMotion modes.
+                const double hz = CGDisplayModeGetRefreshRate(mode);
+                if (hz <= 0.0) continue; // ignore unknown/variable entries
+
+                const int mhz = int(std::lround(hz * 1000.0));
+                if (mhzSeen.insert(mhz).second) {
+                    onHz(hz);
+                }
+            }
+
+            CFRelease(modes);
+        }
+    }
+
+    template<typename F>
+    static inline void enumerateCurrentModes(F&& onHz) {
+        // List active displays
+        uint32_t displayCount = 0;
+        if (CGGetActiveDisplayList(0, nullptr, &displayCount) != kCGErrorSuccess || displayCount == 0)
+            return;
+
+        std::vector<CGDirectDisplayID> displays(displayCount);
+        if (CGGetActiveDisplayList(displayCount, displays.data(), &displayCount) != kCGErrorSuccess)
+            return;
+
+        for (CGDirectDisplayID did : displays) {
+            CGDisplayModeRef cur = CGDisplayCopyDisplayMode(did);
+            if (!cur) continue;
+
+            const double hz = CGDisplayModeGetRefreshRate(cur);
+            if (hz > 0.0) {
+                onHz(hz);
+            }
+            CFRelease(cur);
+        }
+    }
+
+    // ---- state (function-local statics = header-only safe) ----
+    using Clock = std::chrono::steady_clock;
+    static inline std::function<void(double, double)>& s_cb() { static std::function<void(double,double)> cb; return cb; }
+    static inline bool& s_useCurrent() { static bool b = false; return b; }
+    static inline double& s_lastHz() { static double v = 0.0; return v; }
+    static inline std::chrono::milliseconds& s_minInterval() { static std::chrono::milliseconds d{0}; return d; }
+    static inline Clock::time_point& s_lastCheck() { static Clock::time_point t{ Clock::now() - std::chrono::seconds(3600) }; return t; }
+};
+
 #endif
 
 

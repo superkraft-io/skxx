@@ -135,7 +135,7 @@ public:
     
     
     
-    void emitWndEvent(SK_Window_Root* wnd, const SK_String& eventID, const nlohmann::json& data, SK_Window_Root_windowEventMsg_CB cb = NULL){
+    void emitWndEvent(SK_Window_Root* wnd, const SK_String& eventID, const nlohmann::json& data, bool responseless, SK_Window_Root_windowEventMsg_CB cb = NULL){
         if (wnd->__closed) return;
         
         nlohmann::json payload {
@@ -145,22 +145,25 @@ public:
             {"data", data}
         };
         
+        SK::SK_Window_Root* firstSubView = nullptr;
+        if (subViews.size() > 0){
+            firstSubView = subViews[0];
+        }
         
-        /*if (skg->sb_ipc) {
+        if (skg->sb_ipc) {
             SK_IPC_v2* sb_ipc = static_cast<SK_IPC_v2*>(skg->sb_ipc);
+            
+            SK_String wndTag = tag;
+            if (firstSubView) wndTag = firstSubView->tag;
            
-            sb_ipc->request("sk:viewIPC", "sk:sb", "sk::windowEvent", payload, true, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
+            sb_ipc->request("sk:viewIPC", "sk:sb", "sk::windowEvent::" + wndTag, payload, responseless, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
                 if (cb != NULL) cb(responsePacket->data);
             });
-        }*/
-
-		if (ipc) ipc->request("sk:viewIPC", tag, "sk::windowEvent", payload, true, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
-            if (cb != NULL) cb(responsePacket->data);
-		});
-
-        for (auto* subView : subViews) {           // module is SK_Module_ProtonJS_Window
+        }
+        
+        for (auto* subView : subViews) {
             if (subView) subView->ipc->request("sk:viewIPC", subView->tag, "sk::windowEvent::" + subView->tag, payload, true, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
-                //do nothing
+                //do nothing. all window related logic is handled by the window creator, which would be the soft backend
             });
         }
     }
