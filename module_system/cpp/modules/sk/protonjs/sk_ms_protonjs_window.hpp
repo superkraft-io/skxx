@@ -86,10 +86,10 @@ public:
             #endif
             
             wnd->windowClassName = "SK_Window_" + wndID;
+        
+            wnd->createWebView();
             
             skg->setMainWindowSize(wnd->config["width"], wnd->config["height"]);
-
-            wnd->createWebView();
         }
         else {
             wnd->create();

@@ -271,8 +271,10 @@ void SK_WebView::evaluateScript_mainThread(void* _webview, const SK_String& src,
                    error.userInfo[@"WKJavaScriptExceptionSourceURL"],
                    error.userInfo[@"WKJavaScriptExceptionLineNumber"],
                    error.userInfo[@"WKJavaScriptExceptionColumnNumber"],
-                   error.userInfo[NSLocalizedDescriptionKey]);
+                   error.userInfo[NSLocalizedDescriptionKey]
+            );
             
+            /*
             try {
                 std::fprintf(stderr, "%s\n", src.data.c_str());
             } catch (const std::exception& e) {
@@ -280,7 +282,7 @@ void SK_WebView::evaluateScript_mainThread(void* _webview, const SK_String& src,
             } catch (...) {
                 std::fprintf(stderr, "Could not print script for debugging (unknown exception)\n");
             }
-            
+            */
         } else {
             if (cb != nullptr) {
                  if ([result isKindOfClass:[NSString class]]) {

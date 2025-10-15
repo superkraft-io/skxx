@@ -21,7 +21,7 @@ var start = async function(){
 
     var accepted_modes = ['none', 'shallow', 'deep']
 
-    var bundle_mode = args.config.split('-')[1].split('_')[0]
+    var bundle_mode = args.config.split('-')[(args.ide === 'xcode' ? 2 : 1)].split('_')[0]
     var root_path = path.resolve(__dirname)
     var output_path = path.resolve(root_path + '../../../sk_target_build_defs.h')
 
@@ -50,7 +50,7 @@ var start = async function(){
 
     try { fs.rmSync(output_path, {force: true}) } catch(err) {}
     fs.writeFileSync(output_path, lines.join('\n'))
-    fs.chmodSync(output_path, 600)
+    fs.chmodSync(output_path, 777)
 
 
     var bundlerExitError = false

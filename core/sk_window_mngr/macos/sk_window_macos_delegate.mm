@@ -142,15 +142,17 @@
     
     self.skWindow->isClosed = true;
     
-    if (self.skWindow->subViews.size() > 0){
-        SK::SK_Window_Root* firstSubView = self.skWindow->subViews[0];
-        
-        if (firstSubView->config.data.contains("mainWindow") && firstSubView->config.data["mainWindow"] == true){
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [NSApp terminate:nil];
-            });
+    #if defined(SK_APP_TYPE_app)
+        if (self.skWindow->subViews.size() > 0){
+            SK::SK_Window_Root* firstSubView = self.skWindow->subViews[0];
+            
+            if (firstSubView->config.data.contains("mainWindow") && firstSubView->config.data["mainWindow"] == true){
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [NSApp terminate:nil];
+                });
+            }
         }
-    }
+    #endif
 }
 
 - (void)windowDidResignKey:(NSNotification *)notification {

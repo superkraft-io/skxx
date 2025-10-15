@@ -58,7 +58,7 @@ public:
         
         if (!ignore){
             #ifdef __OBJC__
-                [NSEvent removeMonitor:mouseDownToken];
+                if (mouseDownToken) [NSEvent removeMonitor:mouseDownToken];
                 mouseDownToken = nil;
             
                 if (config.data["mainWindow"] == false){
@@ -195,7 +195,10 @@ public:
         
             [NSAnimationContext beginGrouping];
             [[NSAnimationContext currentContext] setDuration:0];
-            [webview.webview.animator setFrame:frame];
+        
+            bool inMainThread =  skg->threadPool->thisFunctionRunningInMainThread();
+            SK_WebView* wv = &webview;
+            [webview.webview setFrame:frame];
             [NSAnimationContext endGrouping];
             
             // 4. Force immediate update

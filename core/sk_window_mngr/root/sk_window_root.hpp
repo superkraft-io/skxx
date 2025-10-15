@@ -76,7 +76,7 @@ public:
 
     ~SK_Window_Root(){
         subViews.clear();
-        subViews.shrink_to_fit();
+        //subViews.shrink_to_fit();
     }
     
 	virtual void initialize(const unsigned int& _wndIdx) {

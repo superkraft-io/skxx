@@ -1,3 +1,4 @@
+const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
@@ -137,7 +138,7 @@ module.exports = {
     runNode(script, args = []) {
         return new Promise((resolve, reject) => {
             setTimeout(()=>{
-                const child = spawn(process.execPath, ['--inspect-port=0', path.resolve(script), ...args], {
+                const child = spawn(process.execPath, [path.resolve(script), ...args], {
                     stdio: 'inherit', // or ['ignore','pipe','pipe'] to capture
                 });
                 child.on('error', err => reject(err));
@@ -201,5 +202,21 @@ module.exports = {
 
         // Normalize & sort for stable output
         return out.map(p => path.resolve(p)).sort((a, b) => a.localeCompare(b));
+    },
+
+    printRuntimeUser() {
+        const info = [];
+        try { info.push(`username: ${os.userInfo().username}`); } catch {}
+        if (process.geteuid) info.push(`euid: ${process.geteuid()}`);
+        if (process.getegid) info.push(`egid: ${process.getegid()}`);
+        if (process.getuid)  info.push(`uid: ${process.getuid()}`);
+        if (process.getgid)  info.push(`gid: ${process.getgid()}`);
+        info.push(`groups: ${process.getgroups ? process.getgroups().join(',') : 'n/a'}`);
+        info.push(`home: ${os.homedir()}`);
+        info.push(`cwd: ${process.cwd()}`);
+        info.push(`umask: ${process.umask().toString(8)}`);
+        info.push(`SUDO_USER: ${process.env.SUDO_USER || ''}`);
+        info.push(`USER: ${process.env.USER || process.env.LOGNAME || ''}`);
+        console.error(`[whoami] ${info.join(' | ')}`);
     }
 }

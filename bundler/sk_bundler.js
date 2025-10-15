@@ -10,6 +10,8 @@ const fs = require('fs')
 const path = require('path')
 var utils = require('./modules/sk_utils.js')
 
+utils.printRuntimeUser()
+
 if (utils.getOS() === 'unknown'){
     utils.reportError({msg: '[SK++ Bundler] Unsupported OS. Only Windows, MacOS and Linux are supported.'})
 }
@@ -149,8 +151,16 @@ var run = async ()=>{
     fs.writeFileSync(libraryPath, libraryTemplate)
 
     console.log(`Finalizing...`)
-
-
+    var filesToPermit = await utils.listFilesRecursive(bundleRoot, { followSymlinks: false })
+    for (var i = 0; i < filesToPermit.length; i++) {
+        var file = filesToPermit[i];
+        try {
+            fs.chmodSync(file, 777)
+            fs.chownSync(file, process.getuid(), process.getgid());
+        } catch(err) {
+            console.warn(` - Warning: Could not set permissions for file ${file}. ${err.message}`)
+        }
+    }
     //ensuring all files have been written before exiting
     console.log(`Done!`)
 }
