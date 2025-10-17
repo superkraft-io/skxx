@@ -64,7 +64,6 @@ public:
     }
     
     void haveAllWindowsClosed(const nlohmann::json& payload, SK_Communication_Response& respondWith) {
-        size_t total = wndMngr->list.size();
         respondWith.JSON({{"allClosed", false}});
     }
 };

@@ -13,19 +13,18 @@ class SK_Window : public SK_Window_Root {
 public:
 
     #ifdef __OBJC__
-        __weak NSWindow* wndHandle;
-        __weak NSView* contentView;
+        __weak NSWindow* wndHandle = nil;
+        __weak NSView* contentView = nil;
     
-        NSWindow* wndHandle_strong;
-        NSView* contentView_strong;
+        __strong NSWindow* wndHandle_strong = nil;
+        __strong NSView* contentView_strong = nil;
     
-        SK_Window_MacOS_Delegate* wndDelegate;
-        NSView* backgroundPanel;
-        NSVisualEffectView* vibrantView;
+        __strong SK_Window_MacOS_Delegate* wndDelegate = nil;
+        __strong NSView* backgroundPanel = nil;
+        __strong NSVisualEffectView* vibrantView = nil;
     
-        __strong NSEvent* lastMouseDownEvent = nil;
-    
-        id mouseDownToken;
+        __strong id mouseDownToken = nil;
+        __weak NSEvent* lastMouseDownEvent = nil;
     
         NSRect savedUserFrame;
     #endif
@@ -46,45 +45,48 @@ public:
         });
     }
 
-    ~SK_Window() {
-        
-        bool ignore = false;
-        
-        #if defined(SK_FRAMEWORK_superkraft)
-        #else
-            if (tag == "sb") ignore = true;
-        #endif
-        
-        
-        if (!ignore){
-            #ifdef __OBJC__
-                if (mouseDownToken) [NSEvent removeMonitor:mouseDownToken];
-                mouseDownToken = nil;
+    	
+
+    #ifdef __OBJC__
+    void objcTeardown() {
+        @autoreleasepool {            // 1) Stop monitors/observers FIRST
+            /*if (mouseDownToken) {
+                mouseDownToken = nil; //causes crash. since it's a __strong reference, ARC should handle it. (But will it handle it???)
+            }*/
             
-                if (config.data["mainWindow"] == false){
-                    if (wndHandle){
-                        [wndHandle close];
-                        //wndHandle = nil;
-                    }
-                    
-                    backgroundPanel = nil;
-                    //contentView = nil;
-                    vibrantView = nil;
-                }
+            // 2) Detach delegate before closing to avoid callbacks into half-dead C++.
+            if (wndHandle) {
+                [wndHandle setDelegate:nil];
+            }
             
-           
-                if (wndDelegate){
-                    wndDelegate.skWindow = nil;
+            
+            if (wndDelegate) {
+                wndDelegate.skWindow = nil;
+                wndDelegate = nil;	
+            }	
+            
+            // 3) Close window (may synchronously fire delegate/callbacks)
+            if (!isInMainWindow()) {
+                if (wndHandle) {
+                    //[wndHandle close];     // no delegate attached now
+                    //wndHandle = nil;    //<<< this will cause crash if uncommented. // optional: nil if you’re sure no one uses it later
                 }
-                wndDelegate = nil;
-            #endif
+                backgroundPanel = nil;
+                vibrantView = nil;
+                contentView = nil;    // uncomment only if you own it; otherwise leave to close
+            }
         }
-        
-        delete ipc;
-        
-        if (onDestroyed != NULL) onDestroyed();
-         
     }
+    
+    ~SK_Window(){
+        if (![NSThread isMainThread]) {
+            __block SK_Window* selfPtr = this;
+            dispatch_sync(dispatch_get_main_queue(), ^{ selfPtr->objcTeardown(); });
+        } else {
+            objcTeardown();
+        }
+    }
+    #endif
 
     void initialize(const unsigned int& _wndIdx) override {
         SK_Window_Root::initialize(_wndIdx);
@@ -92,11 +94,17 @@ public:
     }
     
     #ifdef __OBJC__
-        void setDelegate(){
-            wndDelegate = [[SK_Window_MacOS_Delegate alloc] init];
-            wndDelegate.skWindow = this;
-            [wndHandle setDelegate:wndDelegate];
-        }
+        void setDelegate() {
+            if (![NSThread isMainThread]) {
+              __block SK_Window* selfPtr = this;
+              dispatch_sync(dispatch_get_main_queue(), ^{ selfPtr->setDelegate(); });
+              return;
+            }
+
+            wndDelegate =		 [SK_Window_MacOS_Delegate new];   // retained by __strong ivar
+            wndDelegate.skWindow = this;                    // OK: assign to C++ pointer
+            [wndHandle setDelegate:wndDelegate];            // NSWindow does NOT retain; you do
+          }
     #endif
     
     void create() {
@@ -410,7 +418,7 @@ public:
                    
                     if (!bypass){
                         ignoreUpdateByConfig = true;
-                        if (config.data.contains("mainWindow") && config.data["mainWindow"] == false) [wndHandle setFrame:frame display:YES animate:NO];
+                        if (!isInMainWindow()) [wndHandle setFrame:frame display:YES animate:NO];
                         //[wndHandle setContentSize:frame.size];
                         
                         frame.origin.x = 0;
@@ -456,7 +464,7 @@ public:
                 
                 if (needsReposition || needsResize) {
                     NSPoint origin = NSMakePoint(config.data["x"], config.data["y"]);
-                    if (config.data.contains("mainWindow") && config.data["mainWindow"] == false){
+                    if (!isInMainWindow()){
                         ignoreUpdateByConfig = true;
                         [wndHandle setFrameOrigin:origin];
                         ignoreUpdateByConfig = false;
@@ -560,7 +568,7 @@ public:
             if (isMaximized()) return;
             
             SK_Window* wnd = this;
-            if (config.data.contains("mainWindow") && config.data["mainWindow"] == true) wnd = skg->mainWindow;
+            if (isInMainWindow()) wnd = skg->mainWindow;
             
             wnd->savedUserFrame = wndHandle.frame;
             
@@ -580,7 +588,7 @@ public:
             
             if (isMaximized()){
                 SK_Window* wnd = this;
-                if (config.data.contains("mainWindow") && config.data["mainWindow"] == true) wnd = skg->mainWindow;
+                if (isInMainWindow()) wnd = skg->mainWindow;
                 
                 wnd->isZooming = true;
                 
@@ -650,18 +658,22 @@ public:
         void finalizeCreation(){
             setDelegate();
             
+            #ifdef __OBJC__
             mouseDownToken = [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskLeftMouseDown handler:^NSEvent* (NSEvent *e) {
+                // Create a strong reference inside the block to ensure the object
+                // is not deallocated while the handler is executing
+                
                 if (!wndHandle) return e;
                 if (e.windowNumber != wndHandle.windowNumber) return e;
-                setLastMouseDownEvent(e);          // retain it for later
-                return e;                     // let the click propagate (or return nil to swallow)
+
+                // Use strongSelf to access members
+                lastMouseDownEvent = e;
+                
+                return e;
             }];
+            #endif
         }
-    
-        void setLastMouseDownEvent(NSEvent* e) {
-            lastMouseDownEvent = e;
-        }
-        
+            
         void beginMoveFromStoredMouseDown(NSEvent* event) {
             if (event) {
                 [wndHandle performWindowDragWithEvent:event];
@@ -691,7 +703,7 @@ public:
                 if (action == "beginMoveWindow") {
                     SK_Window* wnd = this;
                     
-                    if (config.data.contains("mainWindow") && config.data["mainWindow"] == true) wnd = skg->mainWindow;
+                    if (isInMainWindow()) wnd = skg->mainWindow;
                     
                     if (wnd->lastMouseDownEvent) {
                         //[wndHandle performWindowDragWithEvent: lastMouseDown];

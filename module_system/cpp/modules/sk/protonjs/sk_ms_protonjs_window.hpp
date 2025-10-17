@@ -26,8 +26,7 @@ public:
     void handleOperation(const SK_String& operation, nlohmann::json& payload, SK_Communication_Response& respondWith) {
         SK_String wndID = payload["__moduleInstanceConfig"]["__uuid"];
         SK_Window* wnd = wndMngr->findWindowByTag(wndID);
-        
-        
+                
               if (operation == "construct") construct(wnd, payload, respondWith);
          else if (operation == "configure") configure(wnd, payload, respondWith);
          else if (operation == "readInfo") readInfo(wnd, payload, respondWith);
@@ -36,8 +35,10 @@ public:
     };
 
     void construct(SK_Window* _wnd, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
-        
-        if (_wnd != nullptr) return;
+        if (_wnd != nullptr){
+            respondWith.error();
+            return;
+        }
         
    
         

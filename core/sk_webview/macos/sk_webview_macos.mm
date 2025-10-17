@@ -26,7 +26,7 @@ using namespace SK;
     SK_Communication_Config config{self.tag, SK_Communication_Packet_Type::sk_comm_pt_web, (__bridge void *)urlSchemeTask.request};
     if (!self.skg) return;
     
-    self.skg->onCommunicationRequest(&config, NULL, [&](SK_Communication_Packet* packet) -> void* {
+    self.skg->onCommunicationRequest(config, NULL, [&](SK_Communication_Packet* packet) -> void* {
         if (packet == nullptr){
             return (static_cast<Superkraft*>(self.skg->sk))->comm->packetFromWebRequest(urlSchemeTask.request, config.sender);
         }
@@ -67,7 +67,7 @@ using namespace SK;
             SK_Communication_Config config{self.tag, SK_Communication_Packet_Type::sk_comm_pt_ipc, &json};
             
             SK_WebView* webview = static_cast<SK_WebView*>(self.webView);
-            self.skg->onCommunicationRequest(&config, [&, webview](const SK_String& ipcResponseData) {
+            self.skg->onCommunicationRequest(config, [&, webview](const SK_String& ipcResponseData) {
                 SK_String data = "sk_api.ipc.handleIncoming(" + ipcResponseData + ")";
                 webview->evaluateScript(data.c_str(), NULL);
             }, NULL);
@@ -132,8 +132,6 @@ SK_WebView::~SK_WebView(){
     
     [webview removeFromSuperview];
     
-    webview = nil;
-    
     messageHandler.webView = nil;
     messageHandler.skg = nil;
     
@@ -141,6 +139,8 @@ SK_WebView::~SK_WebView(){
     urlHandler.skg = nil;
     
     [webview.backForwardList performSelector:@selector(_removeAllItems)];
+    
+    webview = nil;
 }
 
 void SK_WebView::create(bool offsetWhenDebugging) {
@@ -202,12 +202,16 @@ void SK_WebView::create(bool offsetWhenDebugging) {
     
     // Optionally enable isInspectable for macOS 13.3+
     if (@available(macOS 13.3, *)) {
+        webview.inspectable = YES;   // <- correct property name in Obj-C
+    }
+    
+    /*if (@available(macOS 13.3, *)) {
         @try {
             [webview setValue:@YES forKey:@"isInspectable"];
         } @catch (NSException* exception) {
             NSLog(@"Exception enabling isInspectable: %@", exception);
         }
-    }
+    }*/
 
     // Disable magnification
     [webview setAllowsMagnification:NO];

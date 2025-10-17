@@ -9,8 +9,6 @@
 
 #pragma mark - NSWindowDelegate Methods
 
-
-
 - (void)windowDidChangeOcclusionState:(NSNotification*)notification {
     NSWindow* window = notification.object;
 

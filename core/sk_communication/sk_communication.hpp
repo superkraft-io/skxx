@@ -26,7 +26,7 @@ public:
     #if defined(SK_OS_windows)
 		skg->onCommunicationRequest = [&](SK_Communication_Config* config, SK_Communication_handlePacket_Response_IPC_CB ipcResponseCallback, void* resHandler) {
     #elif defined(SK_OS_apple)
-		skg->onCommunicationRequest = [&](SK_Communication_Config* config, SK_Communication_handlePacket_Response_IPC_CB ipcResponseCallback, SK_Communication_AppleCB_CB resHandler) {
+		skg->onCommunicationRequest = [&](const SK_Communication_Config& config, SK_Communication_handlePacket_Response_IPC_CB ipcResponseCallback, SK_Communication_AppleCB_CB resHandler) {
     #endif
             if (skg->terminating) return; //what's the point of handling any type of communication packet if the app is terminating? (there are actually good reasons but I don't care right now)
 
@@ -41,13 +41,13 @@ public:
 			#endif
 
 
-			if (config->type == SK_Communication_Packet_Type::sk_comm_pt_ipc) {
-				packet = packetFromIPCMessage((*static_cast<nlohmann::json*>(config->objPtr)));
+			if (config.type == SK_Communication_Packet_Type::sk_comm_pt_ipc) {
+				packet = packetFromIPCMessage((*static_cast<nlohmann::json*>(config.objPtr)));
 			}
-			else if (config->type == SK_Communication_Packet_Type::sk_comm_pt_web) {
+			else if (config.type == SK_Communication_Packet_Type::sk_comm_pt_web) {
 				#if defined(SK_OS_windows)
-					webPayload = static_cast<ICoreWebView2WebResourceRequestedEventArgs*>(config->objPtr);
-					packet = packetFromWebRequest(webPayload, config->sender);
+					webPayload = static_cast<ICoreWebView2WebResourceRequestedEventArgs*>(config.objPtr);
+					packet = packetFromWebRequest(webPayload, config.sender);
 				#elif defined(SK_OS_apple)
                     packet = static_cast<SK_Communication_Packet*>(resHandler(nullptr));
 				#elif defined(SK_OS_linux) || defined(SK_OS_android)

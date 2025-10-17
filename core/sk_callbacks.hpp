@@ -54,7 +54,7 @@ using SK_Communication_handlePacket_Response_IPC_CB = std::function<void(const S
 #if defined(SK_OS_windows)
 	using SK_Communication_onRequest = std::function<void(SK_Communication_Config* config, SK_Communication_handlePacket_Response_IPC_CB ipcResponseCallback, void* nullArg)>;
 #elif defined(SK_OS_apple)
-	using SK_Communication_onRequest = std::function<void(SK_Communication_Config* config, SK_Communication_handlePacket_Response_IPC_CB ipcResponseCallback, SK_Communication_AppleCB_CB preparePacket)>;
+	using SK_Communication_onRequest = std::function<void(const SK_Communication_Config& config, SK_Communication_handlePacket_Response_IPC_CB ipcResponseCallback, SK_Communication_AppleCB_CB preparePacket)>;
 #endif
 
 using SK_ThreadPool_ProcessMainThreadTasks = std::function<void()>;

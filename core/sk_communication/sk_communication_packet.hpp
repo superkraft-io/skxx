@@ -40,14 +40,14 @@ public:
         data = nlohmann::json();
         data.clear();
 
-        if (responseObj == nullptr) {
-            int x = 0;
-        }
-
-        if (response()->config->type == SK_Communication_Packet_Type::sk_comm_pt_ipc) {
+        SK_Communication_Response* res = response();
+        SK_Communication_Config cfg = res->config;
+        
+        
+        if (cfg.type == SK_Communication_Packet_Type::sk_comm_pt_ipc) {
             delete static_cast<SK_Communication_Response_IPC*>(responseObj);
         }
-        else if (response()->config->type == SK_Communication_Packet_Type::sk_comm_pt_web) {
+        else if (cfg.type == SK_Communication_Packet_Type::sk_comm_pt_web) {
             delete static_cast<SK_Communication_Response_Web*>(responseObj);
         }
 

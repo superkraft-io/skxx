@@ -29,7 +29,7 @@ public:
 
 
 	SK_Communication_Packet_Type type;
-	SK_Communication_Config* config = nullptr;
+    SK_Communication_Config config{};
     nlohmann::json headers{ {"Content-Type", "application/json"} };
 
 	using SK_Communication_Response_CB_setAsOK = std::function<void()>;
@@ -86,8 +86,6 @@ public:
         #if defined(SK_OS_windows)
             CB_getWebResponse = {};   // add this as well
         #endif
-
-        config = nullptr; // non-owning
     }
 
 	void setAsOK() {

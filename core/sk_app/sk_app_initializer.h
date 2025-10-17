@@ -13,11 +13,11 @@ using SK_App_Initializer_AppEvent_CB = std::function<void(nlohmann::json data)>;
 
 class SK_App_Initializer {
 public:
-    SK_Global* skg;
+    SK_Global* skg = nullptr;
     
     #ifdef __OBJC__
-        NSObject* observer;
-        CFRunLoopObserverRef sk_observer;
+        NSObject* observer= nullptr;
+        CFRunLoopObserverRef sk_observer = nullptr;
     #endif
     
     nlohmann::json bypasses;
@@ -134,12 +134,16 @@ public:
                 }
 
                 // 2. Clean up CoreFoundation resources
-                if (sk_observer) {
-                    CFRunLoopRemoveObserver(CFRunLoopGetCurrent(), sk_observer, kCFRunLoopCommonModes);
-                    CFRelease(sk_observer);
-                    sk_observer = nullptr;
-                }
-
+                #if defined(SK_APP_TYPE_app)
+                    if (sk_observer) {
+                        if (CFRunLoopObserverIsValid(sk_observer)) {
+                            CFRunLoopObserverInvalidate(sk_observer);
+                        }
+                        CFRelease(sk_observer);
+                        sk_observer = nullptr;
+                    }
+                #endif
+                
                 // 3. Clear other members
                 bypasses.clear();
                 get_SK_SB_IPC_CB = nullptr;

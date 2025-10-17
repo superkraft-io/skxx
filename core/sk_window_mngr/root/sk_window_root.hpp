@@ -75,7 +75,7 @@ public:
     }
 
     ~SK_Window_Root(){
-        subViews.clear();
+        //subViews.clear();
         //subViews.shrink_to_fit();
     }
     
@@ -94,8 +94,6 @@ public:
 
 	virtual void configWithInfo(const nlohmann::json& _info) {
 		config.combineWith(_info);
-
-        void* addr = &config_updateTracker;
         
 		config_updateTracker.update(_info);
 		for (auto& [key, value] : config_updateTracker.items()) {
@@ -120,12 +118,7 @@ public:
 	}
 
 	bool checkNeedsUpdateAndReset(const SK_String& attribute) {
-        
         void* addr = &config_updateTracker;
-        
-        if (attribute == "resizable") {
-            int x = 0;
-        }
         
 		bool needsUpdate = config_updateTracker[attribute];
 		config_updateTracker[attribute] = false;
@@ -182,6 +175,11 @@ public:
         subViews.erase(it);
     }
 
+    
+    bool isInMainWindow(){
+        if (config.data.contains("mainWindow") && config.data["mainWindow"] == true) return true;
+        return false;
+    }
 private:
 
 };
