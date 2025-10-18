@@ -105,7 +105,7 @@ public:
             }
             
             operator NSString*() const {
-                return [[NSString alloc] initWithCString:data.c_str() encoding:NSUTF8StringEncoding];
+                return [NSString stringWithUTF8String:data.c_str()]; // +0
             }
     
             operator NSURL*() const {

@@ -420,7 +420,7 @@ public:
             if (packet->info["method"] == "POST") {
                 NSData* bodyData = request.HTTPBody;
                 if (bodyData) {
-                    NSString* bodyString = [[NSString alloc]initWithData:bodyData encoding : NSUTF8StringEncoding];
+                    NSString* __strong bodyString = [[NSString alloc]initWithData:bodyData encoding:NSUTF8StringEncoding];
                     packet->info["body"] = SK_String(bodyString);
                 }
             }

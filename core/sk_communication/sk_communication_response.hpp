@@ -10,8 +10,33 @@ class SK_Communication_Response;
 #if defined(SK_OS_apple)
     #ifdef __OBJC__
         struct SK_Communicaton_Response_Apple {
-            NSData* data;
-            NSHTTPURLResponse* response;
+            NSData *data = nil;
+            NSHTTPURLResponse *response = nil;
+
+            SK_Communicaton_Response_Apple(NSData *d, NSHTTPURLResponse *r)
+            : data(d), response(r) {
+                if (data)     CFRetain((__bridge CFTypeRef)data);
+                if (response) CFRetain((__bridge CFTypeRef)response);
+            }
+            SK_Communicaton_Response_Apple(const SK_Communicaton_Response_Apple& o)
+            : data(o.data), response(o.response) {
+                if (data)     CFRetain((__bridge CFTypeRef)data);
+                if (response) CFRetain((__bridge CFTypeRef)response);
+            }
+            SK_Communicaton_Response_Apple& operator=(const SK_Communicaton_Response_Apple& o) {
+                if (this != &o) {
+                    if (data)     CFRelease((__bridge CFTypeRef)data);
+                    if (response) CFRelease((__bridge CFTypeRef)response);
+                    data = o.data; response = o.response;
+                    if (data)     CFRetain((__bridge CFTypeRef)data);
+                    if (response) CFRetain((__bridge CFTypeRef)response);
+                }
+                return *this;
+            }
+            ~SK_Communicaton_Response_Apple() {
+                if (data)     CFRelease((__bridge CFTypeRef)data);
+                if (response) CFRelease((__bridge CFTypeRef)response);
+            }
         };
     #endif
 #endif
@@ -466,7 +491,7 @@ public:
         
     #elif defined(SK_OS_apple)
         #ifdef __OBJC__
-            SK_Communicaton_Response_Apple getWebResponse() {
+            /*SK_Communicaton_Response_Apple getWebResponse() {
                 NSInteger _statusCode = statusCode;
                 
                 headers["Content-Length"] = data.size();
@@ -482,6 +507,22 @@ public:
                 };
                 
                 return res;
+            }*/
+    
+            SK_Communicaton_Response_Apple getWebResponse() {
+                NSInteger _statusCode = statusCode;
+                
+                headers["Content-Length"] = data.size();
+
+                NSData *body = SK_String(data);
+                NSHTTPURLResponse *resp = [[NSHTTPURLResponse alloc]
+                   initWithURL:url
+                    statusCode:_statusCode
+                   HTTPVersion:@"HTTP/1.1"
+                  headerFields:getHeadersAsNSDictionary()
+                ];
+
+                return SK_Communicaton_Response_Apple(body, resp); // struct retains both
             }
         
             NSDictionary* getHeadersAsNSDictionary(){

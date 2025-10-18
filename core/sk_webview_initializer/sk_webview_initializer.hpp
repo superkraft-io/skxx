@@ -118,11 +118,14 @@ public:
            );
         #elif defined(SK_OS_apple)
             #ifdef __OBJC__
-                WKUserScript *userScript = [[WKUserScript alloc] initWithSource:data
+                NSString *source = [NSString stringWithUTF8String:data.c_str()];
+                WKUserScript *userScript = [[WKUserScript alloc] initWithSource:source
                                                                   injectionTime:WKUserScriptInjectionTimeAtDocumentStart
                                                                forMainFrameOnly:NO];
-
-                [castWebView(webview).configuration.userContentController addUserScript:userScript];
+        
+                WKUserContentController *ucc = castWebView(webview).configuration.userContentController;
+                //[ucc removeAllUserScripts];
+                [ucc addUserScript:userScript];
             #endif
         #endif
         

@@ -52,15 +52,11 @@ using namespace SK;
     if (self.webView) {
         NSDictionary* dict = (NSDictionary*) message.body;
         NSData* data = [NSJSONSerialization dataWithJSONObject:dict options:NSJSONWritingPrettyPrinted error:nil];
-        NSString* jsonString = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-        //mIWebView->OnMessageFromWebView([jsonString UTF8String]);
         
-        SK_String _jsonString = jsonString;
-        if (_jsonString.indexOf("getInfo") > -1){
-            int x = 0;
-        }
-        
-        nlohmann::json json = nlohmann::json::parse([jsonString UTF8String], nullptr, false);
+        const char* bytes = static_cast<const char*>([data bytes]);
+        size_t len = [data length];
+
+        nlohmann::json json = nlohmann::json::parse(bytes, bytes + len, /*cb*/nullptr, /*allow_exceptions*/false);
         
         bool isSK_IPC_call = json.contains("isSK_IPC_call");
         if (isSK_IPC_call) {
