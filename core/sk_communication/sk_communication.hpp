@@ -24,7 +24,7 @@ public:
         };
 
     #if defined(SK_OS_windows)
-		skg->onCommunicationRequest = [&](SK_Communication_Config* config, SK_Communication_handlePacket_Response_IPC_CB ipcResponseCallback, void* resHandler) {
+		skg->onCommunicationRequest = [&](const SK_Communication_Config& config, SK_Communication_handlePacket_Response_IPC_CB ipcResponseCallback, void* resHandler) {
     #elif defined(SK_OS_apple)
 		skg->onCommunicationRequest = [&](const SK_Communication_Config& config, SK_Communication_handlePacket_Response_IPC_CB ipcResponseCallback, SK_Communication_AppleCB_CB resHandler) {
     #endif

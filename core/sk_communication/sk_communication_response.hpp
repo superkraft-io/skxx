@@ -477,7 +477,7 @@ public:
             wil::unique_cotaskmem_string _responseHeaders = stringToUniqueCoTaskMemString(_headers);
 
             // Create the response with status code, headers, and content stream
-            hr = config->webviewEnvironment->CreateWebResourceResponse(contentStream.get(),   // The stream containing the custom content
+            hr = config.webviewEnvironment->CreateWebResourceResponse(contentStream.get(),   // The stream containing the custom content
                 statusCode,             // HTTP status code
                 _statusMessage.get(),   // Status message
                 _responseHeaders.get(), // Headers
