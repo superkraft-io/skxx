@@ -90,4 +90,6 @@ using SK_deleteCommPacketWithPID_CB = std::function<void(const SK_String& pid)>;
 
 using SK_tickSK_TimerMngr_CB = std::function<void()>;
 
+using SK_enableDebug_Views_CB = std::function<void(const bool& enable)>;
+
 END_SK_NAMESPACE

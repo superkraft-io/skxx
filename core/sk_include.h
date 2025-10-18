@@ -169,6 +169,8 @@ public:
 
     SK_tickSK_TimerMngr_CB tickSK_TimerMngr;
     
+    SK_enableDebug_Views_CB enableDebug_Views;
+
     ~SK_Global(){
         delete threadPool;
         threadPool = nullptr;

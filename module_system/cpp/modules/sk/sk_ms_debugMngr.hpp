@@ -17,8 +17,19 @@ public:
     }
 
     void handleOperation(const SK_String& operation, nlohmann::json& payload, SK_Communication_Response& respondWith) {
-             if (operation == "showDevTools") showDevTools(payload, respondWith);
+             if (operation == "enable") enable(payload, respondWith);
+        else if (operation == "showDevTools") showDevTools(payload, respondWith);
     };
+
+    void enable(nlohmann::json& payload, SK_Communication_Response& respondWith) {
+        bool enable = false;
+        if (payload.contains("enable")) enable = payload["enable"];
+       
+        if (skg->enableDebug_Views) skg->enableDebug_Views(enable);
+
+        respondWith.JSON_OK();
+    }
+
 
     void showDevTools(const nlohmann::json& payload, SK_Communication_Response& respondWith) {
         SK_String target = payload["target"];
@@ -43,6 +54,8 @@ public:
         
         respondWith.JSON_OK();
     };
+
+    
 };
 
 END_SK_NAMESPACE

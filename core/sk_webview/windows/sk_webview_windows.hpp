@@ -30,10 +30,13 @@ public:
 	wil::com_ptr<ICoreWebView2Settings> settings;
 	wil::com_ptr<ICoreWebView2Controller> controller = nullptr;
     wil::com_ptr<ICoreWebView2> webview = nullptr;
+    wil::com_ptr<ICoreWebView2_11> webview11 = nullptr;
     wil::com_ptr<ICoreWebView2_17> webview17 = nullptr;
     EventRegistrationToken mWebMessageReceivedToken{};
     EventRegistrationToken mWebRequestToken{};
     EventRegistrationToken mAccelKeyToken{};
+    EventRegistrationToken mContextMenuToken;
+    EventRegistrationToken mNewWindowToken;
     
 	SK_String currentURL = "";
 
@@ -44,8 +47,9 @@ public:
 
     SK_WebView_onGetUserDataPath onGetUserDataPath;
 
-    std::string ipcTestStr = "{\"L1_obj1\":{\"L2_str1\":\"another string - level 2 object of obj 1 at level 1 - but this is much longer\",\"L2_obj1\":{\"string\":\"another string but not as long\"}},\"L1_obj2\":{\"L2_str1ng\":\"short string\",\"L2_str1\":\"this is a very long string - this is a very long string - this is a very long string - this is a very long string - this is a very long string\",\"L2_obj1\":{\"string\":\"kind of a lonigsh string - this is a story all about how mynlife got flipped upside down\"}}}";
-
+    bool debugEnabled = false;
+    int debugKeyPressCount = 0;
+    SK_Timer* debugActivatorTimer;
 
     ~SK_WebView() {
         // Must run on the same STA thread where objects were created.
@@ -80,6 +84,7 @@ public:
 
         // 4) Release view last. Then other COM pointers.
         webview17.reset();
+        webview11.reset();
         webview.reset();
         settings.reset();
         environment12.reset();
@@ -237,16 +242,32 @@ public:
 
                                 HRESULT hr = controller->get_CoreWebView2(&webview);
                                 if (SUCCEEDED(hr) && webview != nullptr) {
-                                    hr = webview->QueryInterface(IID_PPV_ARGS(&webview17));
+                                    hr = webview->QueryInterface(IID_PPV_ARGS(&webview11));
                                     if (SUCCEEDED(hr)) {
-                                        // Successfully obtained ICoreWebView2_17 interface
-                                        // You can now use webview17 to access new features
-                                        int x = 0;
+                                        webview11->add_ContextMenuRequested(Callback<ICoreWebView2ContextMenuRequestedEventHandler>([this](ICoreWebView2* sender, ICoreWebView2ContextMenuRequestedEventArgs* args) -> HRESULT {
+                                            wil::com_ptr<ICoreWebView2ContextMenuRequestedEventArgs> eventArgs = args;
+                                            wil::com_ptr<ICoreWebView2Deferral> deferral;
+                                            FAILED(eventArgs->GetDeferral(&deferral));
+
+                                            wil::com_ptr<ICoreWebView2ContextMenuItemCollection> menuItems;
+                                            FAILED(eventArgs->get_MenuItems(&menuItems));
+
+                                            if (!debugEnabled) eventArgs->put_Handled(TRUE);
+
+                                            // Example: Add a custom item
+                                            // Use ICoreWebView2Environment::CreateContextMenuItem(...)
+
+                                            // When your custom menu is done, or you want the WebView2 to continue:
+                                            deferral->Complete();
+
+                                            return S_OK;
+                                        }).Get(), &mContextMenuToken);
                                     }
                                     else {
-                                        // ICoreWebView2_17 not supported on this runtime version
-                                        int x = 0;
+                                        throw "[SK++] Could not create context menu controller";
                                     }
+
+                                    webview->QueryInterface(IID_PPV_ARGS(&webview17));
                                 }
                             }
                             else {
@@ -260,8 +281,7 @@ public:
                                 args->get_KeyEventKind(&keyEventKind);
 
                                 // Only process key down events
-                                if (keyEventKind == COREWEBVIEW2_KEY_EVENT_KIND_KEY_DOWN ||
-                                    keyEventKind == COREWEBVIEW2_KEY_EVENT_KIND_SYSTEM_KEY_DOWN) {
+                                if (keyEventKind == COREWEBVIEW2_KEY_EVENT_KIND_KEY_DOWN || keyEventKind == COREWEBVIEW2_KEY_EVENT_KIND_SYSTEM_KEY_DOWN) {
 
                                     UINT key;
                                     args->get_VirtualKey(&key);
@@ -270,7 +290,30 @@ public:
                                     PostWindowMessage(WM_KEYDOWN, key, 0);
 
                                     // Mark the event as handled
-                                    args->put_Handled(TRUE);
+                                    //args->put_Handled(TRUE);
+
+                                    if (key == VK_F12) {
+                                        tryActivateDebug();
+
+                                        wil::com_ptr<ICoreWebView2AcceleratorKeyPressedEventArgs2> args2;
+                                        HRESULT hr = args->QueryInterface(IID_PPV_ARGS(&args2));
+                                        
+                                        if (SUCCEEDED(hr) && args2) {
+                                            args2->put_IsBrowserAcceleratorKeyEnabled(FALSE);
+                                        }
+                                    }
+
+                                    if (key == 'I') {
+                                        bool isCtrlPressed = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+                                        bool isShiftPressed = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+
+
+                                        if (isCtrlPressed && isShiftPressed) {
+                                            if (debugEnabled) showDevTools();
+                                            else args->put_Handled(TRUE);
+                                            return S_OK;
+                                        }
+                                    }
                                 }
 
                                 return S_OK;
@@ -323,6 +366,21 @@ public:
                                 return S_OK;
                             }).Get(), &mWebMessageReceivedToken);
 
+                            /*webview->add_NewWindowRequested(Callback<ICoreWebView2NewWindowRequestedEventHandler>([this](ICoreWebView2* sender, ICoreWebView2NewWindowRequestedEventArgs* args) -> HRESULT {
+                                // The event is raised for new windows, including DevTools (which is a new window).
+                                wil::unique_cotaskmem_string uri;
+                                args->get_Uri(&uri);
+
+                                if (wcsncmp(uri.get(), L"devtools://", 11) == 0) {
+                                    if (!debugEnabled) args->put_Handled(TRUE);
+                                    return S_OK;
+                                }
+
+                                // For all other new window requests (like a normal pop-up or a link that opens a new tab), 
+                                // allow the default handling or use custom logic.
+                                return S_OK;
+
+                            }).Get(), &mNewWindowToken);*/
 
 
                             //----  Lets make the webview transparent  ----//
@@ -339,6 +397,7 @@ public:
 
                             return S_OK;
                         }).Get());
+
                     return S_OK;
                 }
             ).Get()
@@ -424,6 +483,34 @@ public:
         webview->OpenDevToolsWindow();
     };
 
+
+    //Debugugging stuff (available in release mode as well)
+    void configDebugging() {
+        debugActivatorTimer = skg->timerMngr->add(10000);
+        debugActivatorTimer->setCallback([&]() {
+            debugKeyPressCount = 0;
+            enableDebug(false);
+            debugActivatorTimer->stop();
+        });
+        debugActivatorTimer->stop();
+    };
+
+    void enableDebug(const bool& enable) {
+        debugEnabled = enable;
+        debugActivatorTimer->reset();
+        debugActivatorTimer->stop();
+    };
+
+    void tryActivateDebug() {
+        debugActivatorTimer->reset();
+        debugActivatorTimer->start();
+        debugKeyPressCount++;
+
+        if (debugKeyPressCount >= 10) {
+            debugKeyPressCount = 0;
+            enableDebug(!debugEnabled);
+        }
+    };
 };
 
 END_SK_NAMESPACE

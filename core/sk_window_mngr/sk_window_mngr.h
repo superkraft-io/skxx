@@ -49,8 +49,9 @@ public:
 
             return it->second[it->second.size() - 1];
         }
-#elif defined(SK_OS_macos) || defined(SK_OS_ios)
-#endif
+	#elif defined(SK_OS_macos) || defined(SK_OS_ios)
+		//...
+	#endif
 
 };
 
@@ -139,6 +140,17 @@ public:
 				}
 			//#endif
 		};
+
+		skg->enableDebug_Views = [&](const bool& enable) {
+			for (auto it = list.begin(); it != list.end(); ++it) {
+				if (it->second) {
+					SK_Window* wnd = it->second;
+
+					wnd->webview.enableDebug(enable);
+				}
+			}
+		};
+
 	}
 
 	~SK_Window_Mngr() {
@@ -152,6 +164,7 @@ public:
 		wnd->skg = skg;
 		wnd->ipc->skg = skg;
 		wnd->webview.skg = skg;
+		wnd->webview.configDebugging();
 
 		wnd->initialize(wndIdx);
 
