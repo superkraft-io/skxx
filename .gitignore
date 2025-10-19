@@ -23,3 +23,5 @@ demos/macos/sk_cpp.xcodeproj/xcuserdata/splitterai.xcuserdatad/xcdebugger/
 libs/windows/ultralight_1.3/
 
 libs/windows/wil/
+
+bundler/node_modules/

@@ -10,58 +10,93 @@ public:
 
     SK_Module_System* modsys;
 
-    #if defined(SK_OS_windows)
-        wil::com_ptr<ICoreWebView2> webview;
-    #elif defined(SK_OS_apple)
-        #ifdef __OBJC__
-            WKWebView *webview;
-        #endif
-    #endif
+    SK_String pluginParameters = "";
 
-    void init(void* _webview, bool isHardBackend){
-        #if defined(SK_OS_windows)
-            webview = static_cast<ICoreWebView2*>(_webview);
-        #elif defined(SK_OS_apple)
-            #ifdef __OBJC__
-                webview = (__bridge WKWebView*)_webview;
-            #endif
-        #endif
-        
-        inject_core();
+   
+
+    
+    ~SK_WebView_Initializer(){
+        modsys = nullptr;
+        skg = nullptr;
+    }
+    
+    
+    
+    #if defined(SK_OS_windows)
+        wil::com_ptr<ICoreWebView2> castWebview(void* webview) {
+            if (!webview) return nullptr;
+
+            return static_cast<ICoreWebView2*>(webview);
+        }
+    #elif defined(SK_OS_apple) && defined(__OBJC__)
+        WKWebView* castWebView(void* webview) {
+            if (!webview) return nil;
+            return (__bridge WKWebView*)webview;
+        }
+    #endif
+    
+    
+    
+    void init(void* webview, SK_Window* wnd = NULL){
+        inject_core(webview, wnd);
     }
 
-    void inject_core(){
+    void inject_core(void* webview, SK_Window* wnd = NULL){
         #if defined(SK_OS_windows)
-            injectData("window.__SK_IPC_Send  = data => { window.chrome.webview.postMessage(data) }");
+            injectData(webview, "window.__SK_IPC_Send  = data => { window.chrome.webview.postMessage(data) }");
         #endif
         
-        injectData("window.sk_api = {}");
+        injectData(webview, "window.sk_api = {}");
 
         SK_Path_Utils* pathUtils = &skg->pathUtils;
         SK_String payload = generateFromFiles(std::vector<SK_String>{
             pathUtils->paths["global_js_core"] + "/sk_ipc.js",
             pathUtils->paths["module_system"] + "/sk_module.js",
             pathUtils->paths["module_system"] + "/sk_module_root.js",
+            
+            pathUtils->paths["global_js_core"] + "/sk_dawPluginMngr.js",
+
             pathUtils->paths["global_js_core"] + "/sk_global_js_core.js",
             
             pathUtils->paths["global_js_core"] + "/sk_debug_mode.js"
         })
+        
+        #if defined(SK_APP_TYPE_plugin)
+            .replace("'<sk_plugin_parameters>'", pluginParameters)          
+        #endif
+        
         .replace("<sk_base_url>", SK_Base_URL)
         .replace("'<sk_static_info>'", getStaticInfo())
         .replace("'<sk_native_actions>'", modsys->nativeActions->listActions());
 
-        injectData(payload);
+        if (wnd) {
+            SK_String windowScript = generateFromFiles(std::vector<SK_String>{
+                pathUtils->paths["global_js_core"] + "/sk_window_control.js",
+            });
+
+            windowScript = windowScript
+                .replace("{/* <wnd_config> */}", wnd->config.data.dump(4))
+                .replace("'<wnd_id>'", "'" + wnd->tag + "'");
+
+            payload = payload.replace("//<window_interface>", windowScript);
+        }
+
+        injectData(webview, payload);
     }
 
     SK_String generateFromFiles(const std::vector<SK_String>& paths){
         SK_String data;
 
         for (int i = 0; i < paths.size(); i++) {
+            SK_String path = paths[i];
+            
             SK_File file;
-
-            #ifdef SK_MODE_DEBUG
+            
+            #if defined(SK_BUNDLE_MODE_NONE)
                 file.loadFromDisk(paths[i]);
             #else
+                SK_SoftBackend_Bundle_Entry_Info* entry = skg->bundle_library->findByPath(path);
+                file.data = entry->dataAs_SKString().data;
             #endif
 
             data += "\n\r" + file;
@@ -71,9 +106,9 @@ public:
         return data;
     }
 
-    void injectData(const SK_String& data){
+    void injectData(void* webview, const SK_String& data){
         #if defined(SK_OS_windows)
-            webview->AddScriptToExecuteOnDocumentCreated(
+            castWebview(webview)->AddScriptToExecuteOnDocumentCreated(
                 data.toWString().c_str(),
                 Callback<ICoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler>(
                     [this](HRESULT error, PCWSTR id) -> HRESULT {
@@ -81,13 +116,16 @@ public:
                     }
                 ).Get()
            );
-        #elif defined(SK_OS_macos) || defined(SK_OS_ios)
+        #elif defined(SK_OS_apple)
             #ifdef __OBJC__
-                WKUserScript *userScript = [[WKUserScript alloc] initWithSource:data
+                NSString *source = [NSString stringWithUTF8String:data.c_str()];
+                WKUserScript *userScript = [[WKUserScript alloc] initWithSource:source
                                                                   injectionTime:WKUserScriptInjectionTimeAtDocumentStart
                                                                forMainFrameOnly:NO];
-
-                [webview.configuration.userContentController addUserScript:userScript];
+        
+                WKUserContentController *ucc = castWebView(webview).configuration.userContentController;
+                //[ucc removeAllUserScripts];
+                [ucc addUserScript:userScript];
             #endif
         #endif
         
@@ -104,6 +142,7 @@ public:
             {"argv"   , "<argv>"},
             {"argv0"  , argv0},
             {"mode"   , SK_MODE},
+            {"bundle_mode", SK_BUNDLE_MODE},
             {"name"   , appName},
             {"version", appVersion}
         };
@@ -122,6 +161,7 @@ public:
 
     SK_String getStaticInfo() {
         nlohmann::json res {
+            {"os", SK_OS},
             {"application", getAppInfo()},
             {"machine", static_cast<SK_Machine*>(skg->machine)->getStaticInfo()}
         };

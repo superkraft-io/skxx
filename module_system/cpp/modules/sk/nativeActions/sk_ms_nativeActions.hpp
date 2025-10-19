@@ -3,7 +3,7 @@
 #include "../../../../../core/sk_common.hpp"
 #include "../../../../../../sk_app_nativeActions/sk_app_nativeActions.hpp"
 
-#include "core/sk_ms_cNA_handleParamMouseEvent.hpp"
+#include "core/sk_ms_cNA_handlePluginParamMouseEvent.hpp"
 
 BEGIN_SK_NAMESPACE
 
@@ -11,20 +11,28 @@ class SK_Module_NativeActions {
 public:
     SK_Global* skg;
 
-    SK_MS_cNA_handleParamComponentMouseEvent handleParamComponentMouseEvent;
+    SK_MS_cNA_handlePluginParamMouseEvent handlePluginParamMouseEvent;
     
     SK_App_NativeActions* appActions;
 
     SK_Module_NativeActions(SK_Global* _skg) {
         skg = _skg;
-
-        appActions = new SK_App_NativeActions();
+        
+        handlePluginParamMouseEvent.skg = skg;
+        
+        appActions = new SK_App_NativeActions(skg);
+    }
+    
+    ~SK_Module_NativeActions(){
+        delete appActions;
+        
+        skg = nullptr;
     }
 
-    void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+    void handleOperation(const SK_String& operation, nlohmann::json& payload, SK_Communication_Response& respondWith) {
         if (appActions->handleOperation(operation, payload, respondWith)) return;
 
-        if (operation == "handleParamComponentMouseEvent") handleParamComponentMouseEvent.handleOperation(payload, respondWith);
+        if (operation == "handlePluginParamMouseEvent") handlePluginParamMouseEvent.handleOperation(payload, respondWith);
 
     };
 
@@ -41,7 +49,7 @@ public:
         if (keysString.length() > 0) keysString += ",";
 
         keysString = "[" + keysString;
-        keysString += "'handleParamComponentMouseEvent']";
+        keysString += "'handlePluginParamMouseEvent']";
 
         return keysString;
     }

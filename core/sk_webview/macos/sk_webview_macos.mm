@@ -9,12 +9,13 @@
 #import <WebKit/WebKit.h>
 #import <AppKit/AppKit.h>
 
+#define WKJSE(key) error.userInfo[@#key]
 
 NS_ASSUME_NONNULL_BEGIN
 
 using namespace SK;
 
-
+@class WKContextMenuElementInfo;
 
 @implementation SK_WebView_URLSchemeHandler
 - (void)webView:(WKWebView *)webView startURLSchemeTask:(id <WKURLSchemeTask>)urlSchemeTask {
@@ -23,7 +24,9 @@ using namespace SK;
     
     
     SK_Communication_Config config{self.tag, SK_Communication_Packet_Type::sk_comm_pt_web, (__bridge void *)urlSchemeTask.request};
-    self.skg->onCommunicationRequest(&config, NULL, [&](SK_Communication_Packet* packet) -> void* {
+    if (!self.skg) return;
+    
+    self.skg->onCommunicationRequest(config, NULL, [&](SK_Communication_Packet* packet) -> void* {
         if (packet == nullptr){
             return (static_cast<Superkraft*>(self.skg->sk))->comm->packetFromWebRequest(urlSchemeTask.request, config.sender);
         }
@@ -49,22 +52,18 @@ using namespace SK;
     if (self.webView) {
         NSDictionary* dict = (NSDictionary*) message.body;
         NSData* data = [NSJSONSerialization dataWithJSONObject:dict options:NSJSONWritingPrettyPrinted error:nil];
-        NSString* jsonString = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-        //mIWebView->OnMessageFromWebView([jsonString UTF8String]);
         
-        SK_String _jsonString = jsonString;
-        if (_jsonString.indexOf("getInfo") > -1){
-            int x = 0;
-        }
-        
-        nlohmann::json json = nlohmann::json::parse([jsonString UTF8String], nullptr, false);
+        const char* bytes = static_cast<const char*>([data bytes]);
+        size_t len = [data length];
+
+        nlohmann::json json = nlohmann::json::parse(bytes, bytes + len, /*cb*/nullptr, /*allow_exceptions*/false);
         
         bool isSK_IPC_call = json.contains("isSK_IPC_call");
         if (isSK_IPC_call) {
             SK_Communication_Config config{self.tag, SK_Communication_Packet_Type::sk_comm_pt_ipc, &json};
             
             SK_WebView* webview = static_cast<SK_WebView*>(self.webView);
-            self.skg->onCommunicationRequest(&config, [&, webview](const SK_String& ipcResponseData) {
+            self.skg->onCommunicationRequest(config, [&, webview](const SK_String& ipcResponseData) {
                 SK_String data = "sk_api.ipc.handleIncoming(" + ipcResponseData + ")";
                 webview->evaluateScript(data.c_str(), NULL);
             }, NULL);
@@ -115,9 +114,46 @@ using namespace SK;
 
 NS_ASSUME_NONNULL_END
 
+@implementation SK_WebView_MacOS
+
+- (BOOL)acceptsFirstResponder {
+    return YES;
+}
+
+- (void)willOpenMenu:(NSMenu *)menu withEvent:(NSEvent *)event {
+    SK_WebView* sk_webview_parent = static_cast<SK_WebView*>(self.sk_webview_parent);
+    
+    if (!sk_webview_parent->debugEnabled) [menu removeAllItems];
+}
+
+- (void)didCloseMenu:(NSMenu *)menu withEvent:(NSEvent *)event {
+    SK_WebView* sk_webview_parent = static_cast<SK_WebView*>(self.sk_webview_parent);
+    
+    if (!sk_webview_parent->debugEnabled) [super didCloseMenu:menu withEvent:event];
+}
+
+- (void)keyDown:(NSEvent *)event {
+    SK_WebView* sk_webview_parent = static_cast<SK_WebView*>(self.sk_webview_parent);
+    
+    UInt16 code = event.keyCode;
+    NSEventModifierFlags flags = event.modifierFlags & NSEventModifierFlagDeviceIndependentFlagsMask;
+
+    if (code == 111) {
+        sk_webview_parent->tryActivateDebug();
+    }
+    
+    [super keyDown:event];
+}
+
+@end
+
+
+
 BEGIN_SK_NAMESPACE
 
 SK_WebView::~SK_WebView(){
+    if (!webview) return;
+    
     [webview.configuration.userContentController removeScriptMessageHandlerForName:@"SK_IPC_Handler"];
     [webview.configuration.userContentController removeAllUserScripts];
     
@@ -127,8 +163,6 @@ SK_WebView::~SK_WebView(){
     
     [webview removeFromSuperview];
     
-    webview = nil;
-    
     messageHandler.webView = nil;
     messageHandler.skg = nil;
     
@@ -136,6 +170,8 @@ SK_WebView::~SK_WebView(){
     urlHandler.skg = nil;
     
     [webview.backForwardList performSelector:@selector(_removeAllItems)];
+    
+    webview = nil;
 }
 
 void SK_WebView::create(bool offsetWhenDebugging) {
@@ -144,7 +180,7 @@ void SK_WebView::create(bool offsetWhenDebugging) {
     #if defined(SK_MODE_DEBUG)
         if (offsetWhenDebugging){
             //when we are debugging, we want to expose a bit of the soft backend so that we can right click on it to open its dev tools
-            int offset = 64;
+            int offset = 32;
             int width = frame.size.width;
             width = width - offset;
             frame.origin.x = offset;
@@ -185,7 +221,9 @@ void SK_WebView::create(bool offsetWhenDebugging) {
                                  forMainFrameOnly:YES]];
     
     // Create the WKWebView
-    webview = [[WKWebView alloc] initWithFrame:frame configuration:config];
+    webview = [[SK_WebView_MacOS  alloc] initWithFrame:frame configuration:config];
+    webview.sk_webview_parent = this;
+   
     
     webviewDelegate = [[SK_Webview_MacOS_Delegate alloc] init];
     webviewDelegate.windowHandle = parentWndHandle;
@@ -194,14 +232,6 @@ void SK_WebView::create(bool offsetWhenDebugging) {
     webview.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
     [webview setValue:@NO forKey:@"drawsBackground"];
     
-    // Optionally enable isInspectable for macOS 13.3+
-    if (@available(macOS 13.3, *)) {
-        @try {
-            [webview setValue:@YES forKey:@"isInspectable"];
-        } @catch (NSException* exception) {
-            NSLog(@"Exception enabling isInspectable: %@", exception);
-        }
-    }
 
     // Disable magnification
     [webview setAllowsMagnification:NO];
@@ -209,7 +239,21 @@ void SK_WebView::create(bool offsetWhenDebugging) {
     // Add WKWebView to the parent window's content view
     [parentContentView addSubview:webview];
 
-    skg->onWebViewReady(static_cast<void*>(webview), false);
+    
+    webview.translatesAutoresizingMaskIntoConstraints = false;
+    [NSLayoutConstraint activateConstraints:@[
+        #if defined(SK_MODE_DEBUG)
+            [webview.leadingAnchor constraintEqualToAnchor:parentContentView.leadingAnchor constant:32],
+        #else
+            [webview.leadingAnchor constraintEqualToAnchor:parentContentView.leadingAnchor],
+        #endif
+        
+        [webview.trailingAnchor constraintEqualToAnchor:parentContentView.trailingAnchor],
+        [webview.topAnchor constraintEqualToAnchor:parentContentView.topAnchor],
+        [webview.bottomAnchor constraintEqualToAnchor:parentContentView.bottomAnchor]
+    ]];
+    
+    skg->onWebViewReady(parentWnd, static_cast<void*>(webview), false);
 
     // Navigate to the initial URL
     navigate(currentURL);
@@ -238,11 +282,31 @@ void SK_WebView::navigate(const SK_String& url) {
     }
 }
 
+void SK_WebView::showDevTools() {
+    //seemingly not available on MacOS
+}
+
 void SK_WebView::evaluateScript_mainThread(void* _webview, const SK_String& src, SK_WebView_EvaluationComplete_Callback cb) {
     [(__bridge WKWebView*)_webview evaluateJavaScript: src
                  completionHandler:^(id result, NSError *error) {
         if (error) {
-            NSLog(@"Error: %@", error.localizedDescription);
+            NSLog(@"JS exception: %@ (%@:%@:%@)\n%@",
+                   error.userInfo[@"WKJavaScriptExceptionMessage"],
+                   error.userInfo[@"WKJavaScriptExceptionSourceURL"],
+                   error.userInfo[@"WKJavaScriptExceptionLineNumber"],
+                   error.userInfo[@"WKJavaScriptExceptionColumnNumber"],
+                   error.userInfo[NSLocalizedDescriptionKey]
+            );
+            
+            /*
+            try {
+                std::fprintf(stderr, "%s\n", src.data.c_str());
+            } catch (const std::exception& e) {
+                std::fprintf(stderr, "Could not print script for debugging: %s\n", e.what());
+            } catch (...) {
+                std::fprintf(stderr, "Could not print script for debugging (unknown exception)\n");
+            }
+            */
         } else {
             if (cb != nullptr) {
                  if ([result isKindOfClass:[NSString class]]) {
@@ -269,8 +333,45 @@ void SK_WebView::evaluateScript(const SK_String& src, SK_WebView_EvaluationCompl
     });
 }
 
-void SK_WebView::showDevTools() {
-    //seemingly not available on MacOS
+
+void SK_WebView::sendMsgAsJSON_mainThread(void* _webview, const SK_String& src, SK_WebView_EvaluationComplete_Callback cb) {
+    evaluateScript_mainThread(_webview, src, cb);
 }
+
+void SK_WebView::sendMsgAsJSON(const SK_String& src, SK_WebView_EvaluationComplete_Callback cb) {
+    evaluateScript(src, cb);
+}
+
+
+void SK_WebView::configDebugging() {
+    debugActivatorTimer = skg->timerMngr->add(10000);
+    debugActivatorTimer->setCallback([&]() {
+        debugKeyPressCount = 0;
+        enableDebug(false);
+        debugActivatorTimer->stop();
+    });
+    debugActivatorTimer->stop();
+};
+
+void SK_WebView::enableDebug(const bool& enable) {
+    debugEnabled = enable;
+    debugActivatorTimer->reset();
+    debugActivatorTimer->stop();
+    
+    if (@available(macOS 13.3, *)) {
+        webview.inspectable = (enable ? YES : NO);
+    }
+};
+
+void SK_WebView::tryActivateDebug() {
+    debugActivatorTimer->reset();
+    debugActivatorTimer->start();
+    debugKeyPressCount++;
+
+    if (debugKeyPressCount >= 10) {
+        debugKeyPressCount = 0;
+        enableDebug(!debugEnabled);
+    }
+};
 
 END_SK_NAMESPACE

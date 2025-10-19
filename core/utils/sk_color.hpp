@@ -289,10 +289,6 @@ public:
 
         auto skcAddr = &SK_Colors::list;
 
-        int size = SK_Colors::list.size();
-
-        int x = 0;
-
         auto it = SK_Colors::list.find(color);
         if (it != SK_Colors::list.end()) {
             return it->second;

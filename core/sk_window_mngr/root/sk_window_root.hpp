@@ -8,15 +8,17 @@ BEGIN_SK_NAMESPACE
 
 using SK_Window_Root_onDestroyed_CB = std::function<void()>;
 using SK_Window_Root_windowEventMsg_CB = std::function<void(nlohmann::json data)>;
+using SK_Window_Root_windowAction_CB = std::function<void(SK_Communication_Packet* packet)>;
 
-class SK_Window;
+//class SK_Window;
 
 class SK_Window_Root {
 public:
 	SK_Global* skg;
 
     SK_Window_Root_onDestroyed_CB onDestroyed;
-    
+    SK_Window_Root_windowAction_CB onWindowAction;
+
 	unsigned int wndIdx;
     SK_String windowClassName = "SK_Window";
 	SK_String tag;
@@ -34,12 +36,16 @@ public:
 		{ "title", true}
 	};
 
+
+    std::vector<SK_Window_Root*> subViews; //other SK_Window objects that also should receive window events
+
 	SK_Point maxSizeFull {-1, -1};
 
-    SK_Window* parent;
+    //SK_Window* parent = nullptr;
     
     std::optional<int> zIndex = NULL;
 
+    bool __closed = false;
     
 	bool isReady = false;
     bool isClosed = false;
@@ -58,22 +64,45 @@ public:
     bool shouldClose = true;
 	bool shouldClose_2ndPass = false;
 
+    bool activateMoving = false;
+
 	SK_Color backgroundColor = "greenyellow";
 
     SK_WebView webview;
     
+    SK_Window_Root() {
+        
+    }
+
+    ~SK_Window_Root(){
+        //subViews.clear();
+        //subViews.shrink_to_fit();
+    }
+    
 	virtual void initialize(const unsigned int& _wndIdx) {
         wndIdx = _wndIdx;
+
+        ipc->onMessage = [&](const SK_String& sender, SK_Communication_Packet* packet) {
+            SK_String action = "";
+            if (packet->data.contains("action")) action = SK_String(packet->data["action"]);
+
+            if (action == "windowAction") {
+                onWindowAction(packet);
+            }
+        };
     }
 
 	virtual void configWithInfo(const nlohmann::json& _info) {
 		config.combineWith(_info);
-
+        
 		config_updateTracker.update(_info);
 		for (auto& [key, value] : config_updateTracker.items()) {
-			value = true;
+            if (key == "resizable"){
+                int x = 0;
+            }
+            
+            config_updateTracker[key] = true;
 		}
-
 	}
 
 	bool needsWindowUpdate() {
@@ -89,6 +118,8 @@ public:
 	}
 
 	bool checkNeedsUpdateAndReset(const SK_String& attribute) {
+        void* addr = &config_updateTracker;
+        
 		bool needsUpdate = config_updateTracker[attribute];
 		config_updateTracker[attribute] = false;
 		return needsUpdate;
@@ -97,7 +128,9 @@ public:
     
     
     
-    void emitWndEvent(SK_Window_Root* wnd, const SK_String& eventID, const nlohmann::json& data, SK_Window_Root_windowEventMsg_CB cb = NULL){
+    void emitWndEvent(SK_Window_Root* wnd, const SK_String& eventID, const nlohmann::json& data, bool responseless, SK_Window_Root_windowEventMsg_CB cb = NULL){
+        if (wnd->__closed) return;
+        
         nlohmann::json payload {
             {"action", "windowEvent"},
             {"windowID", wnd->tag},
@@ -105,17 +138,47 @@ public:
             {"data", data}
         };
         
-
-        if (skg->sb_ipc){
+        SK::SK_Window_Root* firstSubView = nullptr;
+        if (subViews.size() > 0){
+            firstSubView = subViews[0];
+        }
+        
+        if (skg->sb_ipc) {
             SK_IPC_v2* sb_ipc = static_cast<SK_IPC_v2*>(skg->sb_ipc);
-            sb_ipc->request("sk:viewIPC", "sk:sb", "sk::windowEvent::" + wnd->tag, payload, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
+            
+            SK_String wndTag = tag;
+            if (firstSubView) wndTag = firstSubView->tag;
+           
+            sb_ipc->request("sk:viewIPC", "sk:sb", "sk::windowEvent::" + wndTag, payload, responseless, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
                 if (cb != NULL) cb(responsePacket->data);
             });
         }
+        
+        for (auto* subView : subViews) {
+            if (subView) subView->ipc->request("sk:viewIPC", subView->tag, "sk::windowEvent::" + subView->tag, payload, true, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
+                //do nothing. all window related logic is handled by the window creator, which would be the soft backend
+            });
+        }
+    }
 
-		if (ipc) ipc->request("sk:viewIPC", tag, "sk::windowEvent", payload, [cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
-			//do nothing
-		});
+    
+    void addSubView(SK_Window_Root* wnd) {
+        if (!wnd) return;
+        if (std::find(subViews.begin(), subViews.end(), wnd) != subViews.end()) return;
+        subViews.push_back(wnd);
+    }
+
+    void removeSubView(SK_Window_Root* wnd) {
+        if (!wnd) return;
+        auto it = std::find(subViews.begin(), subViews.end(), wnd);
+        if (it == subViews.end()) return;
+        subViews.erase(it);
+    }
+
+    
+    bool isInMainWindow(){
+        if (config.data.contains("mainWindow") && config.data["mainWindow"] == true) return true;
+        return false;
     }
 private:
 

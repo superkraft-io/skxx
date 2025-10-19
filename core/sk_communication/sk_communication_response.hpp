@@ -10,8 +10,33 @@ class SK_Communication_Response;
 #if defined(SK_OS_apple)
     #ifdef __OBJC__
         struct SK_Communicaton_Response_Apple {
-            NSData* data;
-            NSHTTPURLResponse* response;
+            NSData *data = nil;
+            NSHTTPURLResponse *response = nil;
+
+            SK_Communicaton_Response_Apple(NSData *d, NSHTTPURLResponse *r)
+            : data(d), response(r) {
+                if (data)     CFRetain((__bridge CFTypeRef)data);
+                if (response) CFRetain((__bridge CFTypeRef)response);
+            }
+            SK_Communicaton_Response_Apple(const SK_Communicaton_Response_Apple& o)
+            : data(o.data), response(o.response) {
+                if (data)     CFRetain((__bridge CFTypeRef)data);
+                if (response) CFRetain((__bridge CFTypeRef)response);
+            }
+            SK_Communicaton_Response_Apple& operator=(const SK_Communicaton_Response_Apple& o) {
+                if (this != &o) {
+                    if (data)     CFRelease((__bridge CFTypeRef)data);
+                    if (response) CFRelease((__bridge CFTypeRef)response);
+                    data = o.data; response = o.response;
+                    if (data)     CFRetain((__bridge CFTypeRef)data);
+                    if (response) CFRetain((__bridge CFTypeRef)response);
+                }
+                return *this;
+            }
+            ~SK_Communicaton_Response_Apple() {
+                if (data)     CFRelease((__bridge CFTypeRef)data);
+                if (response) CFRelease((__bridge CFTypeRef)response);
+            }
         };
     #endif
 #endif
@@ -23,21 +48,31 @@ using SK_Communication_Response_CB_onHandleResponse = std::function<void(SK_Comm
 
 class SK_Communication_Response {
 public:
+    #if defined(SK_BUNDLE_MODE_DEEP) || defined(SK_BUNDLE_MODE_SHALLOW)
+        SK_SoftBackend_Bundle_Library* bundle_library;
+    #endif
+
+
 	SK_Communication_Packet_Type type;
-	SK_Communication_Config* config;
+    SK_Communication_Config config{};
+    nlohmann::json headers{ {"Content-Type", "application/json"} };
 
 	using SK_Communication_Response_CB_setAsOK = std::function<void()>;
 	using SK_Communication_Response_CB_JSON = std::function<bool(const nlohmann::json& json)>;
 	using SK_Communication_Response_CB_JSON_OK = std::function<bool()>;
 	using SK_Communication_Response_CB_string = std::function<bool(const SK_String& str, const SK_String& mimeType)>;
-	using SK_Communication_Response_CB_file = std::function<bool(const SK_String& path, const SK_String& mimeType)>;
+    using SK_Communication_Response_CB_file = std::function<bool(const SK_String& path, const SK_String& mimeType)>;
+    using SK_Communication_Response_CB_fileFromBundle = std::function<bool(const SK_String& path, const SK_String& mimeType)>;
+    using SK_Communication_Response_CB_fileFromBuffer = std::function<bool(const SK_String& path, const SK_String& mimeType)>;
 	using SK_Communication_Response_CB_error = std::function<void(int code, SK_String msg)>;
 
 	SK_Communication_Response_CB_setAsOK CB_setAsOK;
 	SK_Communication_Response_CB_JSON CB_JSON;
 	SK_Communication_Response_CB_JSON_OK CB_JSON_OK;
 	SK_Communication_Response_CB_string CB_string;
-	SK_Communication_Response_CB_file CB_file;
+    SK_Communication_Response_CB_file CB_file;
+    SK_Communication_Response_CB_fileFromBundle CB_fileFromBundle;
+    SK_Communication_Response_CB_fileFromBuffer CB_fileFromBuffer;
 	SK_Communication_Response_CB_error CB_error;
 
 	SK_Communication_Response_CB_packageIPCResponse packageIPCResponse;
@@ -59,10 +94,28 @@ public:
 	SK_Communication_Response_CB_onHandleResponse onHandleResponse;
 
 	bool async = false;
+    bool responseless = false;
 
+
+    ~SK_Communication_Response() {
+        CB_setAsOK = {};
+        CB_JSON = {};
+        CB_JSON_OK = {};
+        CB_string = {};
+        CB_file = {};
+        CB_fileFromBundle = {};
+        CB_fileFromBuffer = {};
+        CB_error = {};
+        CB_getIPCResponse = {};
+
+        #if defined(SK_OS_windows)
+            CB_getWebResponse = {};   // add this as well
+        #endif
+    }
 
 	void setAsOK() {
 		CB_setAsOK();
+        onHandleResponse(this);
 	}
 
 	bool JSON(const nlohmann::json& json) {
@@ -83,11 +136,23 @@ public:
 		return res;
 	}
 
-	bool file(const SK_String& path, const SK_String& mimeType = "auto") {
-		bool res = CB_file(path, mimeType);
-		onHandleResponse(this);
-		return res;
-	}
+    bool file(const SK_String& path, const SK_String& mimeType = "auto") {
+        bool res = CB_file(path, mimeType);
+        onHandleResponse(this);
+        return res;
+    }
+    
+    bool fileFromBundle(const SK_String& path, const SK_String& mimeType = "auto") {
+        bool res = CB_fileFromBundle(path, mimeType);
+        onHandleResponse(this);
+        return res;
+    }
+    
+    bool fileFromBuffer(const SK_String& buffer, const SK_String& mimeType = "auto") {
+        bool res = CB_fileFromBuffer(buffer, mimeType);
+        onHandleResponse(this);
+        return res;
+    }
 
 	void error(int code = 404, SK_String msg = "Not Found") {
 		CB_error(code, msg);
@@ -121,17 +186,27 @@ public:
 	SK_Communication_Response_IPC() {
 		type = SK_Communication_Packet_Type::sk_comm_pt_ipc;
 
-		CB_setAsOK = [&]() { setAsOK(); };
-		CB_JSON = [&](nlohmann::json json) { return JSON(json); };
-		CB_JSON_OK = [&]() { return JSON_OK(); };
-		CB_string = [&](SK_String str, SK_String mimeType) { return string(str, mimeType); };
-		CB_file = [&](SK_String path, SK_String mimeType) { return file(path, mimeType); };
-		CB_error = [&](int code, SK_String msg) { error(code, msg); };
+		CB_setAsOK = [this]() { setAsOK(); };
+		CB_JSON = [this](nlohmann::json json) { return JSON(json); };
+		CB_JSON_OK = [this]() { return JSON_OK(); };
+		CB_string = [this](SK_String str, SK_String mimeType) { return string(str, mimeType); };
+        CB_file = [this](SK_String path, SK_String mimeType) { return file(path, mimeType); };
+        CB_fileFromBundle = [this](SK_String path, SK_String mimeType) { return fileFromBundle(path, mimeType); };
+        CB_fileFromBuffer = [this](SK_String path, SK_String mimeType) { return fileFromBuffer(path, mimeType); };
+		CB_error = [this](int code, SK_String msg) { error(code, msg); };
 
-		CB_getIPCResponse = [&]() {
+		CB_getIPCResponse = [this]() {
 			return packageIPCResponse(data);
 		};
 	}
+
+    ~SK_Communication_Response_IPC() {
+        int x = 0;
+
+        nlohmann::json().swap(data);
+        data = nlohmann::json();
+        data.clear();
+    }
 
 	void setAsOK() {
 		data = nlohmann::json{};
@@ -148,29 +223,55 @@ public:
 
 	bool string(const SK_String& str, const SK_String& mimeType = "plain/text") {
 		data = nlohmann::json{
-				{"string", str}
+			{"string", str}
 		};
+
+        headers["Content-Type"] = mimeType;
 
 		return true;
 	}
 
-	bool file(const SK_String& path, const SK_String& mimeType = "auto") {
-		std::vector<char> fileData;
+    bool file(const SK_String& path, const SK_String& mimeType = "auto") {
+        std::vector<char> fileData;
 
-		SK_File file;
-		if (file.loadFromDisk(path.replaceAll("\\", "/").c_str())) {
-			fileData = std::vector<char>(file.data.begin(), file.data.end());
-			data = nlohmann::json {
-				{"data", fileData}
-			};
+        SK_File file;
+        if (file.loadFromDisk(path.replaceAll("\\", "/").c_str())) {
+            return fileFromBuffer(file.data, (mimeType == "auto" ? file.mimeType : mimeType));
+        }
 
-			return true;
-		}
+        error(); //something went wrong reading the file so we return a 404
 
-		error(); //something went wrong reading the file so we return a 404
+        return false;
+    }
+    
+    bool fileFromBundle(const SK_String& path, const SK_String& mimeType = "auto") {
+        #if defined(SK_BUNDLE_MODE_NONE)
+            error();
+            return false;
+        #else
+            SK_String _path = SK_String(std::filesystem::path(path).lexically_normal().string()).replaceAll("\\", "/").replaceAll("//", "/");
 
-		return false;
-	}
+            SK_SoftBackend_Bundle_Entry_Info* entry = bundle_library->findByPath(_path);
+            
+            if (!entry){
+                error(); //something went wrong reading the file so we return a 404
+                return false;
+            }
+            
+            SK_String fileData = entry->dataAs_SKString();
+            
+            return fileFromBuffer(fileData, (mimeType == "auto" ? SK_String(SK_Web_MIME_utils::GetInstance().fromFilename(entry->filename)) : mimeType));
+        #endif
+    }
+    
+    bool fileFromBuffer(const SK_String& buffer, const SK_String& mimeType){
+        data = nlohmann::json {
+            {"data", std::vector<char>(buffer.data.begin(), buffer.data.end())},
+            {"mimeType", mimeType}
+        };
+
+        return true;
+    }
 
 	void error(int code = 404, SK_String msg = "Not Found") {
 		data = nlohmann::json{ {"error", code}, {"message", msg} };
@@ -184,7 +285,6 @@ public:
     SK_String errorType = "plain/text";
     int statusCode = 404;
     SK_String statusMessage = "Not found";
-    nlohmann::json headers{ {"Content-Type", "application/json"} };
     std::vector<char> data;
     SK_String url;
 
@@ -198,7 +298,7 @@ public:
         //for linux and android
     #endif
     
-    SK_Communication_Response_Web(const SK_String& _url = "") {
+    SK_Communication_Response_Web(const SK_String& _url) {
         type = SK_Communication_Packet_Type::sk_comm_pt_web;
         
         url = _url;
@@ -206,12 +306,14 @@ public:
         SK_String defaultData = "{\"error\":\"404\",\"message\":\"Not found\"}";
         data = std::vector<char>(defaultData.data.begin(), defaultData.data.end());
 
-        CB_setAsOK = [&]() { setAsOK(); };
-        CB_JSON = [&](nlohmann::json json) { return JSON(json); };
-        CB_JSON_OK = [&]() { return JSON_OK(); };
-        CB_string = [&](SK_String str, SK_String mimeType) { return string(str, mimeType); };
-        CB_file = [&](SK_String path, SK_String mimeType) { return file(path, mimeType); };
-        CB_error = [&](int code, SK_String msg) { error(code, msg); };
+        CB_setAsOK = [this]() { setAsOK(); };
+        CB_JSON = [this](nlohmann::json json) { return JSON(json); };
+        CB_JSON_OK = [this]() { return JSON_OK(); };
+        CB_string = [this](SK_String str, SK_String mimeType) { return string(str, mimeType); };
+        CB_file = [this](SK_String path, SK_String mimeType) { return file(path, mimeType); };
+        CB_fileFromBundle = [this](SK_String path, SK_String mimeType) { return fileFromBundle(path, mimeType); };
+        CB_fileFromBuffer = [this](SK_String path, SK_String mimeType) { return fileFromBuffer(path, mimeType); };
+        CB_error = [this](int code, SK_String msg) { error(code, msg); };
 
         #if defined(SK_OS_windows)
             wil::com_ptr<ICoreWebView2WebResourceResponse> response;
@@ -225,10 +327,10 @@ public:
         
         
         #if defined(SK_OS_windows)
-            CB_getWebResponse = [&]() { return getWebResponse(); };
+            CB_getWebResponse = [this]() { return getWebResponse(); };
         #elif defined(SK_OS_apple)
             #ifdef __OBJC__
-                CB_getWebResponse = [&]() {
+                CB_getWebResponse = [this]() {
                     return getWebResponse();
                 };
             #endif
@@ -237,6 +339,9 @@ public:
     }
 
     ~SK_Communication_Response_Web() {
+        data.clear();
+        data.shrink_to_fit();
+        headers.clear();
         
         #if defined(SK_OS_windows)
             response.reset();
@@ -288,15 +393,39 @@ public:
     bool file(const SK_String& path, const SK_String& mimeType = "auto") {
         SK_File file;
         if (file.loadFromDisk(path.replaceAll("\\", "/").c_str())) {
-            headers["Content-Type"] = (mimeType == "auto" ? file.mimeType : mimeType);
-            data = std::vector<char>(file.data.begin(), file.data.end());
-            setAsOK();
-            return true;
+            return fileFromBuffer(file.data, (mimeType == "auto" ? file.mimeType : mimeType));
         }
 
         error(); //something went wrong reading the file so we return a 404
 
         return false;
+    }
+    
+    bool fileFromBundle(const SK_String& path, const SK_String& mimeType = "auto") {
+        #if defined(SK_BUNDLE_MODE_NONE)
+            error();
+            return false;
+        #else
+            SK_String _path = SK_String(std::filesystem::path(path).lexically_normal().string()).replaceAll("\\", "/").replaceAll("//", "/");
+
+            SK_SoftBackend_Bundle_Entry_Info* entry = bundle_library->findByPath(_path);
+            
+            if (!entry){
+                error(); //something went wrong reading the file so we return a 404
+                return false;
+            }
+            
+            SK_String fileData = entry->dataAs_SKString();
+            
+            return fileFromBuffer(fileData, (mimeType == "auto" ? SK_String(SK_Web_MIME_utils::GetInstance().fromFilename(entry->filename)) : mimeType));
+        #endif
+    }
+    
+    bool fileFromBuffer(const SK_String& buffer, const SK_String& mimeType) {
+        headers["Content-Type"] = mimeType;
+        data = std::vector<char>(buffer.data.begin(), buffer.data.end());
+        setAsOK();
+        return true;
     }
 
     void error(int code = 404, const SK_String& msg = "Not Found") {
@@ -348,7 +477,7 @@ public:
             wil::unique_cotaskmem_string _responseHeaders = stringToUniqueCoTaskMemString(_headers);
 
             // Create the response with status code, headers, and content stream
-            hr = config->webviewEnvironment->CreateWebResourceResponse(contentStream.get(),   // The stream containing the custom content
+            hr = config.webviewEnvironment->CreateWebResourceResponse(contentStream.get(),   // The stream containing the custom content
                 statusCode,             // HTTP status code
                 _statusMessage.get(),   // Status message
                 _responseHeaders.get(), // Headers
@@ -362,7 +491,7 @@ public:
         
     #elif defined(SK_OS_apple)
         #ifdef __OBJC__
-            SK_Communicaton_Response_Apple getWebResponse() {
+            /*SK_Communicaton_Response_Apple getWebResponse() {
                 NSInteger _statusCode = statusCode;
                 
                 headers["Content-Length"] = data.size();
@@ -378,6 +507,22 @@ public:
                 };
                 
                 return res;
+            }*/
+    
+            SK_Communicaton_Response_Apple getWebResponse() {
+                NSInteger _statusCode = statusCode;
+                
+                headers["Content-Length"] = data.size();
+
+                NSData *body = SK_String(data);
+                NSHTTPURLResponse *resp = [[NSHTTPURLResponse alloc]
+                   initWithURL:url
+                    statusCode:_statusCode
+                   HTTPVersion:@"HTTP/1.1"
+                  headerFields:getHeadersAsNSDictionary()
+                ];
+
+                return SK_Communicaton_Response_Apple(body, resp); // struct retains both
             }
         
             NSDictionary* getHeadersAsNSDictionary(){

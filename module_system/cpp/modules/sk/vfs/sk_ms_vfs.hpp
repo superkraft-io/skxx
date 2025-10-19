@@ -16,10 +16,21 @@ public:
 
     ~SK_Module_vfs() {
         for (int i = 0; i < entries.size(); i++) delete entries[i];
+        skg = nullptr;
     }
 
-    void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
-        SK_String path = payload["path"];
+    void handleOperation(const SK_String& operation, nlohmann::json& payload, SK_Communication_Response& respondWith) {
+        SK_String _path = payload["path"];
+        if (_path.length() == 0) payload["path"] = "/";
+        
+        
+        SK_String path = SK_String(std::filesystem::path(_path).lexically_normal().string()).replaceAll("\\", "/");
+        if (path.length() > 1 && path.substring(path.length() - 1, 1) == "/") path = path.substring(0, path.length() - 1);
+    
+        _path = SK_String(_path);
+        if (_path.length() == 0) payload["path"] = "/";
+        
+        
         SK_String data = payload["data"];
 
 
@@ -88,9 +99,13 @@ public:
     };
 
     void writeFile(const SK_String& path, const SK_String& data, SK_Communication_Response& respondWith) {
-        entries.push_back(new SK_Module_vfs_file());
+        SK_Module_vfs_file* file = findByPath(path);
 
-        SK_Module_vfs_file* file = entries.at(entries.size() - 1);
+        if (file == nullptr) {
+            entries.push_back(new SK_Module_vfs_file());
+            file = entries.at(entries.size() - 1);
+        }
+
         file->path = path;
         file->data = data;
 

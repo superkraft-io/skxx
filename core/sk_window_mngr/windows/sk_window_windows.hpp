@@ -19,6 +19,8 @@ using SK_Window_WndEvent_CB = std::function<void(const SK_String& eventID, nlohm
 class SK_Window : public SK_Window_Root {
 public:
 
+    bool ignoreUpdateByConfig = false;
+
     UINT(WINAPI* sk__GetDpiForWindow)(HWND) = nullptr;
 
     float getHWNDScale(HWND hwnd)
@@ -63,10 +65,30 @@ public:
         ipc->on("isReady", [&](const nlohmann::json& data, SK_Communication_Packet* packet) {
             packet->response()->JSON({ {"isReady", isReady} });
         });
+
+        onWindowAction = [&](SK_Communication_Packet* packet) {
+            //do something here
+        };
+
+        ipc->onMessage = [&, this](const SK_String& sender, SK_Communication_Packet* packet) {
+            SK_String action = "";
+            if (packet->data.contains("action")) action = SK_String(packet->data["action"]);
+            if (action == "startDraggingWindow") {
+                ReleaseCapture();
+
+                // Use current cursor position (screen coords)
+                POINT pt;
+                GetCursorPos(&pt);
+
+                // Tell the window �the user pressed down on the title bar here�
+                SendMessage(wndHandle, WM_NCLBUTTONDOWN, HTCAPTION, MAKELPARAM(pt.x, pt.y));
+            }
+        };
     }
 
     ~SK_Window() {
 		UnregisterClassW(windowClassName.toWString().c_str(), wc.hInstance);
+		delete ipc;
 	}
 
 
@@ -86,11 +108,11 @@ public:
             case WM_MOVING:
                 if (!wnd->isMoving) {
                     wnd->isMoving = true;
-                    emitWndEvent(wnd, "will-move", {});
+                    emitWndEvent(wnd, "will-move", {}, true);
                 }
 
-                emitWndEvent(wnd, "move", {});
-                emitWndEvent(wnd, "moved", {});
+                emitWndEvent(wnd, "move", {}, true);
+                emitWndEvent(wnd, "moved", {}, true);
                 break;
 
 
@@ -142,29 +164,29 @@ public:
                             {"height", pRect->bottom - pRect->top},
                         }},
                         {"edge", edge}
-                        });
+                    }, true);
                 }
 
                 switch (wParam) {
                 case SIZE_MAXIMIZED:
-                    emitWndEvent(wnd, "maximize", {});
+                    emitWndEvent(wnd, "maximize", {}, true);
                     break;
                 case SIZE_MINIMIZED:
-                    emitWndEvent(wnd, "minimize", {});
+                    emitWndEvent(wnd, "minimize", {}, true);
                     break;
                 case SIZE_RESTORED:
-                    if (lParam != 0) emitWndEvent(wnd, "resized", {});
-                    else emitWndEvent(wnd, "restore", {});
+                    if (lParam != 0) emitWndEvent(wnd, "resized", {}, true);
+                    else emitWndEvent(wnd, "restore", {}, true);
                     break;
                 }
 
-                emitWndEvent(wnd, "resize", {});
+                emitWndEvent(wnd, "resize", {}, true);
                 break;
             }
 
             case WM_EXITSIZEMOVE:
-                if (wnd->isMoving) emitWndEvent(wnd, "move-end", {});
-                if (wnd->isResizing) emitWndEvent(wnd, "resize-end", {});
+                if (wnd->isMoving) emitWndEvent(wnd, "move-end", {}, true);
+                if (wnd->isResizing) emitWndEvent(wnd, "resize-end", {}, true);
 
                 wnd->isMoving = false;
                 wnd->isResizing = false;
@@ -174,16 +196,16 @@ public:
                 if (wParam == SC_MAXIMIZE) {
                     wnd->isMaximized = true;
                     wnd->isMinimized = false;
-                    emitWndEvent(wnd, "maximize", {});
+                    emitWndEvent(wnd, "maximize", {}, true);
                 }
                 else if (wParam == SC_MINIMIZE) {
                     wnd->isMaximized = false;
                     wnd->isMinimized = true;
-                    emitWndEvent(wnd, "minimize", {});
+                    emitWndEvent(wnd, "minimize", {}, true);
                 }
                 else if (wParam == SC_RESTORE) {
-                    if (wnd->isMaximized) emitWndEvent(wnd, "unmaximize", {});
-                    if (wnd->isMinimized) emitWndEvent(wnd, "restore", {});
+                    if (wnd->isMaximized) emitWndEvent(wnd, "unmaximize", {}, true);
+                    if (wnd->isMinimized) emitWndEvent(wnd, "restore", {}, true);
                     wnd->isMaximized = false;
                     wnd->isMinimized = false;
                 }
@@ -200,7 +222,7 @@ public:
 
             case WM_CLOSE:
                 if (!wnd->shouldClose_2ndPass) {
-                    emitWndEvent(wnd, "close", {}, [wnd](nlohmann::json response) {
+                    emitWndEvent(wnd, "close", {}, false, [wnd](nlohmann::json response) {
                         if (response.contains("defaultPrevented") && response["defaultPrevented"] == true) {
                             wnd->shouldClose = false;
                         }
@@ -211,7 +233,7 @@ public:
                 } else {
                     if (wnd->shouldClose) {
                         DestroyWindow(wnd->wndHandle);
-                        emitWndEvent(wnd, "closed", {});
+                        emitWndEvent(wnd, "closed", {}, true);
                     }
                 }
 
@@ -221,20 +243,20 @@ public:
                 break;
 
             case WM_DESTROY:
-                emitWndEvent(wnd, "closed", {});
+                emitWndEvent(wnd, "closed", {}, true);
                 break;
 
             case WM_KILLFOCUS:
-                emitWndEvent(wnd, "blur", {});
+                emitWndEvent(wnd, "blur", {}, true);
                 break;
 
             case WM_SETFOCUS:
-                emitWndEvent(wnd, "focus", {});
+                emitWndEvent(wnd, "focus", {}, true);
                 break;
 
             case WM_SHOWWINDOW:
-                //if (wParam) emitEvent("show", {});
-                //else emitEvent("hide", {});
+                //if (wParam) emitEvent("show", {}, true);
+                //else emitEvent("hide", {}, true);
                 break;
 
 
@@ -246,23 +268,23 @@ public:
                 break;
 
             case WM_DISPLAYCHANGE:
-                //emitWndEvent(wnd, "enter-full-screen", {});
+                //emitWndEvent(wnd, "enter-full-screen", {}, true);
                 break;
 
             case WM_WINDOWPOSCHANGED:
                 if (((WINDOWPOS*)lParam)->flags & SWP_FRAMECHANGED) {
-                    //if (IsZoomed(hwnd)) emitWndEvent(wnd, "enter-full-screen", {});
-                    //else emitWndEvent(wnd, "leave-full-screen", {});
+                    //if (IsZoomed(hwnd)) emitWndEvent(wnd, "enter-full-screen", {}, true);
+                    //else emitWndEvent(wnd, "leave-full-screen", {}, true);
                 }
                 break;
 
             case WM_ENDSESSION:
-                emitWndEvent(wnd, "session-end", {});
+                emitWndEvent(wnd, "session-end", {}, true);
                 break;
 
             case WM_WINDOWPOSCHANGING:
                 if (((WINDOWPOS*)lParam)->flags & SWP_NOZORDER) {
-                    //emitWndEvent(wnd, "always-on-top-changed", {});
+                    //emitWndEvent(wnd, "always-on-top-changed", {}, true);
                 }
                 break;
 
@@ -329,7 +351,16 @@ public:
                     default: cmd = "unknown"; break;
                 }
 
-                emitWndEvent(wnd, "app-command", { {"command", cmd.toLowerCase()}});
+                emitWndEvent(wnd, "app-command", { {"command", cmd.toLowerCase()}}, true);
+            }
+
+            case WM_NCHITTEST: {
+                if (wnd->activateMoving) {
+                    POINT pt{ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+                    ScreenToClient(hwnd, &pt);
+
+                    return HTCAPTION;
+                }
             }
         }
 
@@ -357,7 +388,7 @@ public:
                                 {"y", y}
                             }}
                         },
-
+                        false,
                         [wnd, x, y](nlohmann::json response) {
                             if (response.contains("defaultPrevented") && response["defaultPrevented"] == true) {
                                 wnd->shouldPreventSysCtxMenu = true;
@@ -440,6 +471,10 @@ public:
             CREATESTRUCT* pCreate = reinterpret_cast<CREATESTRUCT*>(lParam);
             wnd = static_cast<SK_Window*>(pCreate->lpCreateParams);
             SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(wnd));
+
+            if (wnd->config.data.contains("mainWindow") && wnd->config.data["mainWindow"] == true) {
+                wnd = wnd->skg->mainWindow;
+            }
         }
         else {
             //Retrieve the owner so that other messages can utilize the window
@@ -508,10 +543,10 @@ public:
                     float scale = wnd->getHWNDScale(hwnd);
 
                     // Set the maximum size dynamically
-                    pMinMaxInfo->ptMinTrackSize.x = wnd->config.data["minWidth"] * scale;
-                    pMinMaxInfo->ptMinTrackSize.y = wnd->config.data["minHeight"] * scale;
-                    pMinMaxInfo->ptMaxTrackSize.x = (wnd->config.data["maxWidth"]  > 0 ? wnd->config.data["maxWidth"] * scale : wnd->maxSizeFull.x);
-                    pMinMaxInfo->ptMaxTrackSize.y = (wnd->config.data["maxHeight"] > 0 ? wnd->config.data["maxHeight"] * scale : wnd->maxSizeFull.y);
+                    pMinMaxInfo->ptMinTrackSize.x = float(wnd->config.data["minWidth"]) * scale;
+                    pMinMaxInfo->ptMinTrackSize.y = float(wnd->config.data["minHeight"]) * scale;
+                    pMinMaxInfo->ptMaxTrackSize.x = (wnd->config.data["maxWidth"]  > 0 ? float(wnd->config.data["maxWidth"]) * scale : float(wnd->maxSizeFull.x));
+                    pMinMaxInfo->ptMaxTrackSize.y = (wnd->config.data["maxHeight"] > 0 ? float(wnd->config.data["maxHeight"]) * scale : float(wnd->maxSizeFull.y));
                 }
                 return 0;
             }
@@ -531,7 +566,7 @@ public:
                 diff.y = (wndRect.bottom - wndRect.top) - clientRect.bottom;
 
 
-                SetWindowPos(hwnd, 0, rect->left, rect->top, wnd->config.data["width"] + diff.x, wnd->config.data["height"] + diff.y, 0);
+                SetWindowPos(hwnd, 0, rect->left, rect->top, long(wnd->config.data["width"]) + diff.x, long(wnd->config.data["height"]) + diff.y, 0);
 
                 return 0;
             }
@@ -777,7 +812,7 @@ public:
         webview.callResize = [&]() { update(); };
         webview.notifyReadyToShow = [this, cb]() {
             isReady = true;
-            emitWndEvent(this, "ready-to-show", {});
+            emitWndEvent(this, "ready-to-show", {}, true);
             if (cb) cb(this);
         };
 
@@ -883,19 +918,25 @@ public:
     }
 
     void updateWindowByConfig() {
-        if (wndHandle == NULL) return;
+        if (wndHandle == NULL || ignoreUpdateByConfig == true) return;
 
        
         float scale = getHWNDScale(wndHandle);
 
         //movable: handled in WindowProc
         if (checkNeedsUpdateAndReset("title")) SetWindowTextW(wndHandle, SK_String(config.data["title"]).toWString().c_str());
-        if (checkNeedsUpdateAndReset("resizable")) setStyle(WS_SIZEBOX, config.data["resizable"]);
+
+        bool isResizable = false;
+        if (config.data.contains("resizable") == true) {
+            isResizable = config.data["resizable"];
+        }
+        if (checkNeedsUpdateAndReset("resizable")) setStyle(WS_SIZEBOX, isResizable);
+
         if (checkNeedsUpdateAndReset("alwaysOnTop")) setAlwaysOnTop(config.data["alwaysOnTop"]);
         if (checkNeedsUpdateAndReset("maximizable")) setStyle(WS_MAXIMIZEBOX, config.data["maximizable"]);
         if (checkNeedsUpdateAndReset("minimizable")) setStyle(WS_MINIMIZEBOX, config.data["minimizable"]);
         if (checkNeedsUpdateAndReset("backgroundColor")) backgroundColor = config.data["backgroundColor"];
- /* WIP */ if (checkNeedsUpdateAndReset("focusable")) setStyle(WS_EX_NOACTIVATE, !config.data["focusable"], true);
+        /* WIP */ if (checkNeedsUpdateAndReset("focusable")) setStyle(WS_EX_NOACTIVATE, !config.data["focusable"], true);
         if (checkNeedsUpdateAndReset("skipTaskbar")) setStyle(WS_EX_APPWINDOW, config.data["skipTaskbar"], true);
         
         if (checkNeedsUpdateAndReset("frame")) {
@@ -932,10 +973,11 @@ public:
         }
 
 
-
+     
         //everything below this comment should come last
 
         if (!isMaximized) {
+            
             if (checkNeedsUpdateAndReset("center") && config.data["center"] == true) {
                 RECT  wndRect;
                 GetWindowRect(wndHandle, &wndRect);
@@ -958,21 +1000,46 @@ public:
                 config.data["x"] = posx;
                 config.data["y"] = posy;
             }
-
+           
             bool needsReposition = false;
             bool needsResize = false;
             if (checkNeedsUpdateAndReset("x") || checkNeedsUpdateAndReset("y")) needsReposition = true;
             if (checkNeedsUpdateAndReset("width") || checkNeedsUpdateAndReset("width")) needsResize = true;
             
-            if (needsReposition || needsResize) SetWindowPos(wndHandle, NULL, config.data["x"], config.data["y"], config["width"] * scale, config["height"] * scale, SWP_NOZORDER);
 
+
+
+            int w = config["width"] * scale;
+            int h = config["height"] * scale;
+
+
+
+            bool bypass = false;
+
+            if (skg) {
+                if (skg->onBeforeWndResize) {
+                    ignoreUpdateByConfig = true;
+                    SK_Point size = skg->onBeforeWndResize(this);
+                    ignoreUpdateByConfig = false;
+
+                    if (size.x == -2) bypass = true;
+
+                    if (size.x > -1) w = size.x;
+                    if (size.y > -1) h = size.y;
+                }
+            }
+
+            if (!bypass) {
+                if (config.data.contains("mainWindow") && config.data["mainWindow"] == false) {
+                    if (needsReposition || needsResize) SetWindowPos(wndHandle, NULL, config.data["x"], config.data["y"], w, h, SWP_NOZORDER);
+                }
+            }
+            
             if (needsResize) update();
 
             if (checkNeedsUpdateAndReset("show")) ShowWindow(wndHandle, (config["show"] ? SW_SHOW : SW_HIDE));
-
-            
         }
-
+        
         if (needsWindowUpdate()) {
             InvalidateRect(wndHandle, NULL, TRUE);
             UpdateWindow(wndHandle);
@@ -988,7 +1055,7 @@ public:
         else SetWindowPos(wndHandle, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 
 
-        emitWndEvent(this, "always-on-top-changed", { {"isAlwaysOnTop", flag} });
+        emitWndEvent(this, "always-on-top-changed", { {"isAlwaysOnTop", flag} }, true);
     }
 
     void setFullscreen(bool activate) {
@@ -1004,7 +1071,7 @@ public:
 
             updateWebView();
 
-            if (config.data["fullscreen"]) emitWndEvent(this, "leave-fullscreen", {});
+            if (config.data["fullscreen"]) emitWndEvent(this, "leave-fullscreen", {}, true);
             config.data["fullscreen"] = false;
 
             return;
@@ -1025,9 +1092,85 @@ public:
 
         updateWebView();
 
-        emitWndEvent(this, "enter-fullscreen", {});
+        emitWndEvent(this, "enter-fullscreen", {}, true);
         config.data["fullscreen"] = true;
     }
+
+    void readInfo(const SK_String& attribute, SK_Communication_Response& respondWith) {
+        SK_Window* wnd = this;
+        if (wnd->config.data.contains("mainWindow") && wnd->config.data["mainWindow"] == true) {
+            wnd = skg->mainWindow;
+        }
+
+        if (attribute == "isMaximized") {
+            respondWith.JSON({ {"value", wnd->isMaximized} });
+        }
+        else if (attribute == "isFullscreen") {
+            respondWith.JSON({ {"value", wnd->config.data["fullscreen"]} });
+        }
+    }
+
+    void handleWindowAction(const nlohmann::json& payload){
+        SK_String action = "";
+        if (payload.contains("action")) action = SK_String(payload["action"]);
+
+        if (action == "beginMoveWindow") {
+            ReleaseCapture();
+
+            // Use current cursor position (screen coords)
+            POINT pt;
+            GetCursorPos(&pt);
+
+            // Tell the window �the user pressed down on the title bar here�
+            SendMessage(wndHandle, WM_NCLBUTTONDOWN, HTCAPTION, MAKELPARAM(pt.x, pt.y));
+        }
+        else if (action == "close") { 
+            SendMessage(wndHandle, WM_SYSCOMMAND, SC_CLOSE, 0);
+        }
+        else if (action == "focus") {
+            if (IsIconic(wndHandle)) ShowWindow(wndHandle, SW_RESTORE); // if minimized
+            ShowWindow(wndHandle, SW_SHOW);                      // make sure it's visible
+            BringWindowToTop(wndHandle);
+            SetForegroundWindow(wndHandle);                      // give it focus/activation
+            SetActiveWindow(wndHandle);
+        }
+        else if (action == "blur") {
+            // Windows doesn't have a direct "blur" for top-level windows.
+            // Best effort: activate another window; if none, minimize this one.
+            HWND other = GetWindow(wndHandle, GW_HWNDPREV);
+            if (!other || !IsWindow(other)) other = GetWindow(wndHandle, GW_HWNDNEXT);
+            if (other && other != wndHandle) {
+                SetForegroundWindow(other);
+            } else {
+                ShowWindow(wndHandle, SW_MINIMIZE); // fallback so it's not active
+            }
+        }
+        else if (action == "show") {
+            ShowWindow(wndHandle, SW_SHOW);
+        }
+        else if (action == "hide") {
+            ShowWindow(wndHandle, SW_HIDE);
+        }
+        else if (action == "maximize") {
+            SendMessage(wndHandle, WM_SYSCOMMAND, SC_MAXIMIZE, 0);
+        }
+        else if (action == "unmaximize") {
+            if (config.data.contains("fullscreenable") && config.data["fullscreenable"] == true) {
+                if (IsZoomed(wndHandle)) ShowWindow(wndHandle, SW_RESTORE); // only if currently maximized
+                return;
+            }
+
+            SendMessage(wndHandle, WM_SYSCOMMAND, SC_RESTORE, 0);
+        }
+        else if (action == "minimize") {
+            SendMessage(wndHandle, WM_SYSCOMMAND, SC_MINIMIZE, 0);
+        }
+        else if (action == "restore") {
+            SendMessage(wndHandle, WM_SYSCOMMAND, SC_RESTORE, 0);
+        }
+    }
+
+    
 private:
 
 };

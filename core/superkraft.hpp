@@ -8,21 +8,50 @@ class Superkraft {
 public:
 	SK_Global* skg;
 
-	SK_Project_BinaryData binaryData;
-
 	SK_Machine* machine;
-	SK_WebView_Initializer wvinit;
+	SK_WebView_Initializer* wvinit;
 	SK_Window_Mngr* wndMngr;
 	SK_Module_System* modsys;
 
 	SK_Communication* comm;
+    
+    SK_Timer fpsWatcher;
 
-   
+    #if defined(SK_BUNDLE_MODE_DEEP) || defined(SK_BUNDLE_MODE_SHALLOW)
+        SK_SoftBackend_Bundle_Library* bundle_library;
+    #endif
+    
+    bool isReady = false;
     
 	Superkraft() {
 		skg = new SK_Global();
 		skg->sk = this;
 
+        skg->timerMngr = new SK_TimerMngr();
+        skg->syncTimer = skg->timerMngr->add(1);// 1000 / SK_DisplayUtils::getHighestFPSCurrent());
+        skg->syncTimer->start();
+        
+
+        fpsWatcher.setInterval(200);
+        fpsWatcher.setCallback([this]() {
+            SK_DisplayUtils::tick();
+        });
+
+        SK_DisplayUtils::beginMonitoringHighestFPS(
+            [this](double oldHz, double newHz) {
+                double interval = 1000 / newHz;
+                //skg->syncTimer->setInterval(interval);
+            },
+            true,
+            true,
+            std::chrono::seconds(1)
+        );
+        
+        #if defined(SK_BUNDLE_MODE_DEEP) || defined(SK_BUNDLE_MODE_SHALLOW)
+            bundle_library = new SK_SoftBackend_Bundle_Library();
+            skg->bundle_library = bundle_library;
+        #endif
+        
 		machine = new SK_Machine(skg);
 		skg->machine = machine;
 		machine->init();
@@ -31,24 +60,30 @@ public:
 		wndMngr = new SK_Window_Mngr(skg);
 		comm = new SK_Communication(skg);
 
-		wvinit.skg = skg;
+        wvinit = new SK_WebView_Initializer();
+		wvinit->skg = skg;
 
 		modsys = new SK_Module_System(skg);
-		modsys->bdfs->binaryData = &binaryData;
         
         modsys->proton->app->wndMngr = wndMngr;
         modsys->proton->window->wndMngr = wndMngr;
 
-		wvinit.modsys = modsys;
+		wvinit->modsys = modsys;
 
 
 		skg->pathUtils.init();
 
 		SK_File configFile;
-		if (!configFile.loadFromDisk(skg->pathUtils.paths["config"])) {
-			throw std::runtime_error("[SK++] No config file found!");
-		}
-		skg->sk_config = nlohmann::json::parse(std::string(configFile));
+        
+        #if defined(SK_ROUTE_FS_TO_BDFS)
+            configFile.data = bundle_library->findByPath("/config.json")->dataAs_SKString().data;
+        #else
+            if (!configFile.loadFromDisk(skg->pathUtils.paths["config"])) {
+                throw std::runtime_error("[SK++] No config file found!");
+            }
+        #endif
+        
+		skg->sk_config = nlohmann::json::parse(configFile.data);
 
 
 
@@ -57,18 +92,31 @@ public:
 	}
 
 	~Superkraft() {
-		delete skg;
+        SK_DisplayUtils::endMonitoringHighestFPS();
+
 		delete machine;
+        skg->machine = nullptr;
+        
+        delete wvinit;
+        wvinit = nullptr;
+        
 		delete wndMngr;
+        wndMngr = nullptr;
+       
 		delete modsys;
+        modsys = nullptr;
+       
 		delete comm;
+        comm = nullptr;
+        
+        delete skg;
+        skg = nullptr;
+        
+        #if defined(SK_BUNDLE_MODE_DEEP) || defined(SK_BUNDLE_MODE_SHALLOW)
+            delete bundle_library;
+            bundle_library = nullptr;
+        #endif
 	}
-    
-    
-    /*static inline Superkraft* sk() {
-		Superkraft* instance = static_cast<Superkraft*>(SK_Global::GetInstance().sk);
-		return instance ? instance : nullptr;
-	}*/
 };
 
 END_SK_NAMESPACE

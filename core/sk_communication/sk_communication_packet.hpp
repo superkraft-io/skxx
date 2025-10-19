@@ -6,13 +6,16 @@
 
 BEGIN_SK_NAMESPACE
 
+using SK_Communication_Packet_onBeforeDestroy_CB = std::function<void(SK_Communication_Packet*)>;
+
 class SK_Communication_Packet {
 public:
     nlohmann::json originalData;
 
     SK_Communication_Packet_Type type = SK_Communication_Packet_Type::sk_comm_pt_ipc;
 
-    SK_String id;
+    SK_String pid = "";
+    SK_String id = "";
 
     SK_String sender;
     SK_String target;
@@ -20,16 +23,37 @@ public:
     nlohmann::json info;
     nlohmann::json data;
 
-    void* responseObj;
-        
+    void* responseObj = nullptr;
+    
+    SK_Communication_Packet_onBeforeDestroy_CB onBeforeDestroy;
 
-    ~SK_Communication_Packet() {
-        if (response()->config->type == SK_Communication_Packet_Type::sk_comm_pt_ipc) {
+    virtual ~SK_Communication_Packet() {
+        nlohmann::json().swap(originalData);
+        originalData = nlohmann::json();
+        originalData.clear();
+
+        nlohmann::json().swap(info);
+        info = nlohmann::json();
+        info.clear();
+
+        nlohmann::json().swap(data);
+        data = nlohmann::json();
+        data.clear();
+
+        SK_Communication_Response* res = response();
+        SK_Communication_Config cfg = res->config;
+        
+        
+        if (cfg.type == SK_Communication_Packet_Type::sk_comm_pt_ipc) {
             delete static_cast<SK_Communication_Response_IPC*>(responseObj);
         }
-        else if (response()->config->type == SK_Communication_Packet_Type::sk_comm_pt_web) {
-            //delete static_cast<SK_Communication_Response_Web*>(responseObj);
+        else if (cfg.type == SK_Communication_Packet_Type::sk_comm_pt_web) {
+            delete static_cast<SK_Communication_Response_Web*>(responseObj);
         }
+
+        responseObj = nullptr;
+
+        onBeforeDestroy(this);
     }
 
 
@@ -47,9 +71,6 @@ public:
             pathOnly = pathOnly.substring(targetEndIdx, pathOnly.length());
         }
         packet->target = targetRoute;
-        
-        int x = 0;
-        
         
         
         SK_String _url = url.replace("/" + targetRoute, "");
@@ -120,7 +141,7 @@ public:
             {"sender", sender},
             {"target", target},
             {"info", info},
-            {"type", info},
+            {"type", info.contains("type") ? info["type"] : nlohmann::json()},
             {"data", data}
         };
 
@@ -132,6 +153,7 @@ public:
             {"msg_id", id},
             {"sender", sender},
             {"target", target},
+            {"type", info.contains("type") ? info["type"] : nlohmann::json()},
             {"data", data}
         };
         json.update(info);

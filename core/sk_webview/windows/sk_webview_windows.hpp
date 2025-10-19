@@ -20,15 +20,23 @@ public:
 
     SK_WebViewResourceHandler* wvrh;
 
+    void* parentWnd;
     SK_String parentClassName;
-
 	HWND* parentHwnd;
+    bool comApartmentInitialized = false;
 
     wil::com_ptr<ICoreWebView2Environment> environment;
+    wil::com_ptr<ICoreWebView2Environment12> environment12;
 	wil::com_ptr<ICoreWebView2Settings> settings;
 	wil::com_ptr<ICoreWebView2Controller> controller = nullptr;
-	wil::com_ptr<ICoreWebView2> webview = nullptr;
-    EventRegistrationToken mWebMessageReceivedToken;
+    wil::com_ptr<ICoreWebView2> webview = nullptr;
+    wil::com_ptr<ICoreWebView2_11> webview11 = nullptr;
+    wil::com_ptr<ICoreWebView2_17> webview17 = nullptr;
+    EventRegistrationToken mWebMessageReceivedToken{};
+    EventRegistrationToken mWebRequestToken{};
+    EventRegistrationToken mAccelKeyToken{};
+    EventRegistrationToken mContextMenuToken;
+    EventRegistrationToken mNewWindowToken;
     
 	SK_String currentURL = "";
 
@@ -39,15 +47,53 @@ public:
 
     SK_WebView_onGetUserDataPath onGetUserDataPath;
 
-    std::string ipcTestStr = "{\"L1_obj1\":{\"L2_str1\":\"another string - level 2 object of obj 1 at level 1 - but this is much longer\",\"L2_obj1\":{\"string\":\"another string but not as long\"}},\"L1_obj2\":{\"L2_str1ng\":\"short string\",\"L2_str1\":\"this is a very long string - this is a very long string - this is a very long string - this is a very long string - this is a very long string\",\"L2_obj1\":{\"string\":\"kind of a lonigsh string - this is a story all about how mynlife got flipped upside down\"}}}";
-
+    bool debugEnabled = false;
+    int debugKeyPressCount = 0;
+    SK_Timer* debugActivatorTimer;
 
     ~SK_WebView() {
-        if (controller.get() != nullptr) {
-            controller->Close();
-            controller = nullptr;
-            webview = nullptr;
-            environment = nullptr;
+        // Must run on the same STA thread where objects were created.
+        auto* vw   = webview.get();
+        auto* ctrl = controller.get();
+
+        // 1) Unhook WEBVIEW events (guard each token)
+        if (vw) {
+            if (mWebMessageReceivedToken.value) {
+                webview->remove_WebMessageReceived(mWebMessageReceivedToken);
+                mWebMessageReceivedToken.value = 0;
+            }
+            if (mWebRequestToken.value) {
+                webview->remove_WebResourceRequested(mWebRequestToken);
+                mWebRequestToken.value = 0;
+            }
+
+            webview->RemoveWebResourceRequestedFilter(L"*", COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
+        }
+
+        // 3) Unhook CONTROLLER events, then close controller
+        if (ctrl) {
+            if (mAccelKeyToken.value) {
+                controller->remove_AcceleratorKeyPressed(mAccelKeyToken);
+                mAccelKeyToken.value = 0;
+            }
+            // (Add more controller remove_* calls here if you add more controller events.)
+
+            controller->Close();     // destroys child HWND, releases heavy bits
+            controller.reset();
+        }
+
+        // 4) Release view last. Then other COM pointers.
+        webview17.reset();
+        webview11.reset();
+        webview.reset();
+        settings.reset();
+        environment12.reset();
+        environment.reset();
+
+        // 5) COM uninit only if you were the one who init'd it on this thread
+        if (comApartmentInitialized) {
+            CoUninitialize();
+            comApartmentInitialized = false;
         }
     }
 
@@ -163,13 +209,13 @@ public:
         }
 
         HRESULT iniHR = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
-        if (FAILED(iniHR))
-        {
-            __debugbreak;
+        if (SUCCEEDED(iniHR)) {
+            comApartmentInitialized = true;
+        } else if (iniHR == RPC_E_CHANGED_MODE) {
+            // Thread already initialized differently; skip uninitialize.
+        } else {
             throw "Could not initialize webview";
-            return;
         }
-
 
         HRESULT hr = CreateCoreWebView2EnvironmentWithOptions(nullptr, _udPath, options.Get(),
             Callback<ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>(
@@ -181,7 +227,11 @@ public:
 
                     environment = env;
 
-                   
+                    HRESULT hr12 = env->QueryInterface(IID_PPV_ARGS(&environment12));
+                    if (FAILED(hr12)) {
+                        // Handle the error if the cast fails
+                        return hr12;
+                    }
 
                     // Create a CoreWebView2Controller and get the associated CoreWebView2 whose parent is the main window hWnd
                     env->CreateCoreWebView2Controller(*parentHwnd, Callback<ICoreWebView2CreateCoreWebView2ControllerCompletedHandler>(
@@ -189,7 +239,39 @@ public:
                                                        
                             if (_controller != nullptr) {
                                 controller = _controller;
-                                controller->get_CoreWebView2(&webview);
+
+                                HRESULT hr = controller->get_CoreWebView2(&webview);
+                                if (SUCCEEDED(hr) && webview != nullptr) {
+                                    hr = webview->QueryInterface(IID_PPV_ARGS(&webview11));
+                                    if (SUCCEEDED(hr)) {
+                                        webview11->add_ContextMenuRequested(Callback<ICoreWebView2ContextMenuRequestedEventHandler>([this](ICoreWebView2* sender, ICoreWebView2ContextMenuRequestedEventArgs* args) -> HRESULT {
+                                            wil::com_ptr<ICoreWebView2ContextMenuRequestedEventArgs> eventArgs = args;
+                                            wil::com_ptr<ICoreWebView2Deferral> deferral;
+                                            FAILED(eventArgs->GetDeferral(&deferral));
+
+                                            wil::com_ptr<ICoreWebView2ContextMenuItemCollection> menuItems;
+                                            FAILED(eventArgs->get_MenuItems(&menuItems));
+
+                                            if (!debugEnabled) eventArgs->put_Handled(TRUE);
+
+                                            // Example: Add a custom item
+                                            // Use ICoreWebView2Environment::CreateContextMenuItem(...)
+
+                                            // When your custom menu is done, or you want the WebView2 to continue:
+                                            deferral->Complete();
+
+                                            return S_OK;
+                                        }).Get(), &mContextMenuToken);
+                                    }
+                                    else {
+                                        throw "[SK++] Could not create context menu controller";
+                                    }
+
+                                    webview->QueryInterface(IID_PPV_ARGS(&webview17));
+                                }
+                            }
+                            else {
+                                throw "[SK++ / sk_webview_windows.hpp] FAILED TO CREATE WEBVIEW CONTROLLER";
                             }
 
 
@@ -199,8 +281,7 @@ public:
                                 args->get_KeyEventKind(&keyEventKind);
 
                                 // Only process key down events
-                                if (keyEventKind == COREWEBVIEW2_KEY_EVENT_KIND_KEY_DOWN ||
-                                    keyEventKind == COREWEBVIEW2_KEY_EVENT_KIND_SYSTEM_KEY_DOWN) {
+                                if (keyEventKind == COREWEBVIEW2_KEY_EVENT_KIND_KEY_DOWN || keyEventKind == COREWEBVIEW2_KEY_EVENT_KIND_SYSTEM_KEY_DOWN) {
 
                                     UINT key;
                                     args->get_VirtualKey(&key);
@@ -209,11 +290,34 @@ public:
                                     PostWindowMessage(WM_KEYDOWN, key, 0);
 
                                     // Mark the event as handled
-                                    args->put_Handled(TRUE);
+                                    //args->put_Handled(TRUE);
+
+                                    if (key == VK_F12) {
+                                        tryActivateDebug();
+
+                                        wil::com_ptr<ICoreWebView2AcceleratorKeyPressedEventArgs2> args2;
+                                        HRESULT hr = args->QueryInterface(IID_PPV_ARGS(&args2));
+                                        
+                                        if (SUCCEEDED(hr) && args2) {
+                                            args2->put_IsBrowserAcceleratorKeyEnabled(FALSE);
+                                        }
+                                    }
+
+                                    if (key == 'I') {
+                                        bool isCtrlPressed = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+                                        bool isShiftPressed = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+
+
+                                        if (isCtrlPressed && isShiftPressed) {
+                                            if (debugEnabled) showDevTools();
+                                            else args->put_Handled(TRUE);
+                                            return S_OK;
+                                        }
+                                    }
                                 }
 
                                 return S_OK;
-                                }).Get(), nullptr);
+                            }).Get(), &mAccelKeyToken);
 
                             if (webview == nullptr) {
                                 return S_OK;
@@ -233,79 +337,56 @@ public:
                             webview->AddWebResourceRequestedFilter(L"*", COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL);
 
                             webview->add_WebResourceRequested(Callback<ICoreWebView2WebResourceRequestedEventHandler>([&](ICoreWebView2* sender, ICoreWebView2WebResourceRequestedEventArgs* args) -> HRESULT {
+                                if (skg->terminating) return S_OK;
 
                                 SK_Communication_Config config{ "sk.sb", SK_Communication_Packet_Type::sk_comm_pt_web, args, environment };
-                                skg->onCommunicationRequest(&config, NULL, NULL);
+                                skg->onCommunicationRequest(config, NULL, NULL);
 
                                 return S_OK;
-                            }).Get(), nullptr);
+                            }).Get(), &mWebRequestToken);
 
                             webview->add_WebMessageReceived(Callback<ICoreWebView2WebMessageReceivedEventHandler>([this](ICoreWebView2* sender, ICoreWebView2WebMessageReceivedEventArgs* args) -> HRESULT {
-                                wil::unique_cotaskmem_string strPtr;
-                                SK_String str;
-                                if (SUCCEEDED(args->TryGetWebMessageAsString(&strPtr))) {
-                                    str = strPtr.get();
-                                }
-
-
-                                if (str.data.size() > 0 && str.data[0] == '@') {
-                                    std::string msg_id;
-                                    if (str.data.substr(1, 4) == "none") {
-                                        msg_id = str.data.substr(5, str.data.size() - 5);
-                                    }
-                                    else if (str.data.substr(1, 6) == "yyjson") {
-                                        msg_id = str.data.substr(7, str.data.size() - 7);
-                                        
-                                        /*
-                                        yyjson_doc* read_doc = yyjson_read(ipcTestStr.c_str(), ipcTestStr.size(), 0);
-                                        if (!read_doc) { throw std::runtime_error("Failed to parse JSON string"); }
-
-                                        yyjson_mut_doc* doc = yyjson_mut_doc_new(nullptr);
-                                        yyjson_mut_val* root = yyjson_val_mut_copy(doc, yyjson_doc_get_root(read_doc));
-                                        yyjson_mut_doc_set_root(doc, root);
-                                       
-
-                                        yyjson_doc_free(read_doc);
-                                        */
-                                    }
-                                    else if (str.data.substr(1, 8) == "nlohmann") {
-                                        msg_id = str.data.substr(9, str.data.size() - 9);
-
-                                        nlohmann::json payload = nlohmann::json::parse(ipcTestStr);
-                                    }
-
-                                    SK_String data = "sk_api.ipc.handleIncoming({type: \"ipcTestResponse\", msg_id: \"" + msg_id + "\"})";
-                                    evaluateScript(data, NULL);
-                                    return S_OK;
-                                }
-
+                                if (skg->terminating) return S_OK;
 
                                 wil::unique_cotaskmem_string jsonPStr;
-                                SK_String jsonStr;
-                                if (SUCCEEDED(args->get_WebMessageAsJson(&jsonPStr))) {
-                                    jsonStr = jsonPStr.get();
+                                if (SUCCEEDED(args->get_WebMessageAsJson(jsonPStr.put()))) {  // NOTE: .put()
+                                    SK_String jsonStr = jsonPStr.get();  // copy if SK_String owns its buffer
+                                    nlohmann::json payload = nlohmann::json::parse(jsonStr.c_str());
+
+                                    SK_Communication_Config config{ "sk.view", SK_Communication_Packet_Type::sk_comm_pt_ipc, &payload };
+                                    skg->onCommunicationRequest(config,
+                                        [&](const SK_String& ipcResponseData) {
+                                            SK_String js = "sk_api.ipc.handleIncoming(" + ipcResponseData + ")";
+                                            evaluateScript(js, nullptr);
+                                        },
+                                        nullptr);
                                 }
 
-                                nlohmann::json payload = nlohmann::json::parse(jsonStr.data);
-
-                                SK_Communication_Config config { "sk.view", SK_Communication_Packet_Type::sk_comm_pt_ipc, &payload };
-                                skg->onCommunicationRequest(&config, [&](const SK_String& ipcResponseData) {
-                                    SK_String data = "sk_api.ipc.handleIncoming(" + ipcResponseData + ")";
-                                    evaluateScript(data, NULL);
-                                }, NULL);
-
-
+                                // No manual CoTaskMemFree � jsonPStr will free itself.
                                 return S_OK;
                             }).Get(), &mWebMessageReceivedToken);
 
+                            /*webview->add_NewWindowRequested(Callback<ICoreWebView2NewWindowRequestedEventHandler>([this](ICoreWebView2* sender, ICoreWebView2NewWindowRequestedEventArgs* args) -> HRESULT {
+                                // The event is raised for new windows, including DevTools (which is a new window).
+                                wil::unique_cotaskmem_string uri;
+                                args->get_Uri(&uri);
 
-                            
+                                if (wcsncmp(uri.get(), L"devtools://", 11) == 0) {
+                                    if (!debugEnabled) args->put_Handled(TRUE);
+                                    return S_OK;
+                                }
+
+                                // For all other new window requests (like a normal pop-up or a link that opens a new tab), 
+                                // allow the default handling or use custom logic.
+                                return S_OK;
+
+                            }).Get(), &mNewWindowToken);*/
 
 
                             //----  Lets make the webview transparent  ----//
                             callResize();
 
-                            skg->onWebViewReady(static_cast<void*>(webview.get()), false);
+                            skg->onWebViewReady(parentWnd, static_cast<void*>(webview.get()), false);
 
                             //  8. Finally we can navigate to the desired URL
                             //webview->Navigate(L"data:text/html, <html style=\"background:transparent;\"><body style=\"background:transparent; color: white;\">WebView 2</body></html>");
@@ -316,6 +397,7 @@ public:
 
                             return S_OK;
                         }).Get());
+
                     return S_OK;
                 }
             ).Get()
@@ -324,7 +406,6 @@ public:
         if (FAILED(hr)) {
             std::wstring logMessage = L"CreateCoreWebView2EnvironmentWithOptions failed. HRESULT: " + std::to_wstring(hr) + L"\n";
             OutputDebugStringW(logMessage.c_str());
-            __debugbreak;
         }
     };
 
@@ -359,7 +440,6 @@ public:
     };
 
     void evaluateScript(const SK_String& src, SK_WebView_EvaluationComplete_Callback cb) {
-
         if (skg->threadPool->thisFunctionRunningInMainThread()) {
             evaluateScript_mainThread(webview, src, cb);
             return;
@@ -372,10 +452,65 @@ public:
         });
     };
 
+
+
+
+    void sendMsgAsJSON_mainThread(wil::com_ptr<ICoreWebView2> webview, const SK_String& src, SK_WebView_EvaluationComplete_Callback cb) {
+        if (!get_isReady || !get_isReady()) {
+            return;
+        }
+
+        std::wstring wstr = src.toWString();
+        LPCWSTR str = wstr.c_str();
+        HRESULT res = webview->PostWebMessageAsJson(str);
+        int x = 0;
+    };
+
+    void sendMsgAsJSON(const SK_String& src, SK_WebView_EvaluationComplete_Callback cb) {
+        if (skg->threadPool->thisFunctionRunningInMainThread()) {
+            sendMsgAsJSON_mainThread(webview, src, cb);
+            return;
+        }
+
+        wil::com_ptr<ICoreWebView2> _webview = webview;
+
+        skg->threadPool->queueOnMainThread([this, src, cb, _webview]() {
+            sendMsgAsJSON_mainThread(_webview, src, cb);
+        });
+    }
+
     void showDevTools() {
         webview->OpenDevToolsWindow();
     };
 
+
+    //Debugugging stuff (available in release mode as well)
+    void configDebugging() {
+        debugActivatorTimer = skg->timerMngr->add(10000);
+        debugActivatorTimer->setCallback([&]() {
+            debugKeyPressCount = 0;
+            enableDebug(false);
+            debugActivatorTimer->stop();
+        });
+        debugActivatorTimer->stop();
+    };
+
+    void enableDebug(const bool& enable) {
+        debugEnabled = enable;
+        debugActivatorTimer->reset();
+        debugActivatorTimer->stop();
+    };
+
+    void tryActivateDebug() {
+        debugActivatorTimer->reset();
+        debugActivatorTimer->start();
+        debugKeyPressCount++;
+
+        if (debugKeyPressCount >= 10) {
+            debugKeyPressCount = 0;
+            enableDebug(!debugEnabled);
+        }
+    };
 };
 
 END_SK_NAMESPACE

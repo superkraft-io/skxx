@@ -49,8 +49,9 @@ public:
 
             return it->second[it->second.size() - 1];
         }
-#elif defined(SK_OS_macos) || defined(SK_OS_ios)
-#endif
+	#elif defined(SK_OS_macos) || defined(SK_OS_ios)
+		//...
+	#endif
 
 };
 
@@ -110,27 +111,46 @@ public:
 		#endif
 
         skg->resizeAllMainWindowViews = [&](int x, int y, int w, int h, float scale) {
-			#if defined(SK_MODE_DEBUG)
+			//#if defined(SK_MODE_DEBUG)
 				for (auto it = list.begin(); it != list.end(); ++it) {
 					if (it->second) {
 						SK_Window* wnd = it->second;
 						
 						if (wnd->config["mainWindow"] == true) {
                             wnd->config.data["scale"]  = scale;
-							wnd->config.data["left"]   = x;
-							wnd->config.data["top"]    = y;
-							wnd->config.data["width"]  = w;
-							wnd->config.data["height"] = h;
-                            wnd->updateWindowByConfig();
 							
-                            #if defined(SK_OS_windows)
-                                wnd->updateWebView();
-                            #endif
+                            wnd->config.data["left"] = x;
+                            wnd->config_updateTracker["left"] = true;
+                            
+                            wnd->config.data["top"] = y;
+                            wnd->config_updateTracker["top"] = true;
+                            
+                            
+							wnd->config.data["width"] = w;
+                            wnd->config_updateTracker["width"] = true;
+                            
+							wnd->config.data["height"] = h;
+                            wnd->config_updateTracker["height"] = true;
+                            
+                            wnd->updateWindowByConfig();
+                            
+                            wnd->updateWebView();
 						}
 					}
 				}
-			#endif
+			//#endif
 		};
+
+		skg->enableDebug_Views = [&](const bool& enable) {
+			for (auto it = list.begin(); it != list.end(); ++it) {
+				if (it->second) {
+					SK_Window* wnd = it->second;
+
+					wnd->webview.enableDebug(enable);
+				}
+			}
+		};
+
 	}
 
 	~SK_Window_Mngr() {
@@ -144,6 +164,7 @@ public:
 		wnd->skg = skg;
 		wnd->ipc->skg = skg;
 		wnd->webview.skg = skg;
+		wnd->webview.configDebugging();
 
 		wnd->initialize(wndIdx);
 
@@ -173,7 +194,7 @@ public:
 		for (auto it = list.begin(); it != list.end(); ++it) {
 			if (it->second) {
 				SK_Window* wnd = it->second;
-				wnd->update();
+				wnd->updateWebView();
 			}
 		}
 
@@ -230,16 +251,17 @@ public:
     void destroyAllWindows() {
         if (list.size() == 0) return;
         
+        
         for (std::unordered_map<std::string, SK_Window*>::iterator it = list.begin(); it != list.end(); ++it) {
             SK_Window* wnd = it->second;
             
-            #ifdef __OBJC__
-                delete wnd;
-            #endif
+            delete wnd;
             
             it->second = nullptr;
         }
-
+        
+        skg->mainWindow = nullptr;
+        
 		list.clear();
 	}
 private:

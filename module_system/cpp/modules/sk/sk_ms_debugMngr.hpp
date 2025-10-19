@@ -11,20 +11,31 @@ public:
     SK_Module_debugMngr(SK_Global* _skg) {
         skg = _skg;
     }
+    
+    ~SK_Module_debugMngr() {
+        skg = nullptr;
+    }
 
-    void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
-             if (operation == "showDevTools") showDevTools(payload, respondWith);
+    void handleOperation(const SK_String& operation, nlohmann::json& payload, SK_Communication_Response& respondWith) {
+             if (operation == "enable") enable(payload, respondWith);
+        else if (operation == "showDevTools") showDevTools(payload, respondWith);
     };
+
+    void enable(nlohmann::json& payload, SK_Communication_Response& respondWith) {
+        bool enable = false;
+        if (payload.contains("enable")) enable = payload["enable"];
+       
+        if (skg->enableDebug_Views) skg->enableDebug_Views(enable);
+
+        respondWith.JSON_OK();
+    }
+
 
     void showDevTools(const nlohmann::json& payload, SK_Communication_Response& respondWith) {
         SK_String target = payload["target"];
 
         if (target == "sb") {
-            #if defined(SK_OS_windows)
-                skg->showSoftBackendDevTools();
-            #elif defined(SK_OS_apple)
-                respondWith.error(404, "Not possible to remotely open dev tools on MacOS");
-            #endif
+            skg->showSoftBackendDevTools();
             return;
         }
 
@@ -39,6 +50,8 @@ public:
         
         respondWith.JSON_OK();
     };
+
+    
 };
 
 END_SK_NAMESPACE

@@ -1,5 +1,3 @@
-console.log('sk_global_js_core.js')
-
 //Fundamental core functions
 function getDirname(asArray) {
     var stack = (new Error()).stack
@@ -78,6 +76,8 @@ class SK_Global_Core {
         }
 
 
+        this.pluginMngr = new sk_dawPluginMngr()
+
         this.init()
     }
 
@@ -92,8 +92,6 @@ class SK_Global_Core {
         })
 
         this.initialized = true
-
-        console.log('SK Global Core successfully initialized. Accessable via sk_api')
     }
 
     fetch(path, data, onPreParse){
@@ -149,7 +147,7 @@ class SK_Global_Core {
 
         this.nativeActions = require('nativeActions')
         
-        var x = 0
+        //<window_interface>
     }
 
     async printProfiler() {
@@ -158,7 +156,6 @@ class SK_Global_Core {
     }
 
     waitForWndReady(){
-        console.log('-------- waitForWndReady')
         return new Promise(resolve => {
             var isBusy = false
             var timer = setInterval(async ()=>{
@@ -177,5 +174,6 @@ class SK_Global_Core {
         })
     }
 }
+
 
 window.sk_api = new SK_Global_Core({ id: Date.now().toString() })

@@ -30,9 +30,13 @@ public:
     std::unordered_map<std::string, SK_IPC_v2_FrontendCallback> listeners_once;
 
 
-    std::unordered_map<std::string, SK_IPC_v2_awaiter*> forwardAwaitList;
 
 
+    ~SK_IPC_v2() {
+        awaitList.clear();
+        listeners.clear();
+        listeners_once.clear();
+    }
 
     static nlohmann::json createResponseJSON(SK_Communication_Packet* packet, const SK_String& data) {
         nlohmann::json responseJSON;
@@ -136,8 +140,20 @@ public:
 
 
     void handleResponse(SK_String msg_id, SK_String type, SK_String sender, SK_String event_id, SK_Communication_Packet* packet) {
-        SK_IPC_v2_BackendCallback awaiter = awaitList[msg_id];
-        if (awaiter != NULL) awaiter(sender_id, packet);
+        auto it = awaitList.find(msg_id);
+        if (it == awaitList.end()) {
+            // unknown msg_id; optionally log
+            packet->response()->error(404, "no_request_awaiting_this_response");
+            return;
+        }
+
+        // Move out, then erase to avoid reentrancy growth
+        SK_IPC_v2_BackendCallback cb = std::move(it->second);
+        awaitList.erase(it);
+
+        if (cb) {
+            cb(sender, packet); // not sender_id
+        }
     }
 
     void handleMessage(SK_Communication_Packet* packet) {
@@ -166,7 +182,7 @@ public:
         #endif
     }
 
-    SK_String sendToFE(const SK_String& sender, const SK_String& target, const SK_String& event_id, nlohmann::json data, SK_String type, SK_IPC_v2_BackendCallback cb) {
+    SK_String sendToFE(const SK_String& sender, const SK_String& target, const SK_String& event_id, nlohmann::json data, SK_String type, bool responseless, SK_IPC_v2_BackendCallback cb) {
         SK_String _type = "request";
         if (type != "") _type = type;
 
@@ -184,9 +200,10 @@ public:
         req["target"] = target;
         req["event_id"] = event_id;
         req["data"] = data;
+        req["responseless"] = responseless;
 
 
-        if (_type == "request") {
+        if (_type == "request" && !responseless) {
             awaitList[req["msg_id"]] = cb;
         }
 
@@ -205,12 +222,12 @@ public:
     * @param event_id Name of the event
     * @param data Data to send
     * @param cb Callback of the response*/
-    void request(const SK_String& sender, const SK_String& target, SK_String event_id, nlohmann::json data, SK_IPC_v2_BackendCallback cb) {
+    void request(const SK_String& sender, const SK_String& target, SK_String event_id, nlohmann::json data, bool responseless, SK_IPC_v2_BackendCallback cb) {
         #ifdef __OBJC__
             //SKLogInfo(SK_String("sender: " + sender + "    target: " + target + "    event_id: " + event_id + "    data: " + data.dump(4)));
         #endif
         
-        sendToFE(sender, target, event_id, data, "request", cb);
+        sendToFE(sender, target, event_id, data, "request", responseless, cb);
     }
 
     void forwardPacket(SK_Communication_Packet* packet, SK_IPC_v2_BackendCallback cb) {
@@ -235,7 +252,7 @@ public:
     /** Sends a response-less message to the frontend. This function does NOT expect or wait for a response.
     * @param data Data to send*/
     void message(nlohmann::json data) {
-        sendToFE(sender_id, "", "SK_IPC_v2_Message", data, "message", NULL);
+        sendToFE(sender_id, "", "SK_IPC_v2_Message", data, "message", true, NULL);
     }
 
 private:

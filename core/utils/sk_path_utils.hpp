@@ -57,23 +57,31 @@ public:
 
 
 	void init() {
-		#ifdef SK_MODE_DEBUG
-			//In DEBUG mode the projectRoot will be set to the root folder of your project.
-			SK_String projectRoot = SK_String(SK_Path_Utils::pathBackwardsUntilNeighbour("skxx")).replaceAll("\\", "/");
-		#else
-			//In RELEASE mode the projectRoot will be set to the virtual file system called Binary Data File Systtem
-			//When running in RELEASE mode, a pre-script will bundle all the files in "superkraft" and "SK_Project" and SK will access those files from memory instead.
-			SK_String projectRoot = "sk_bdfs:";
-		#endif
+        #if defined(SK_BUNDLE_MODE_NONE)
+            //if we're not running in bundled mode, projectRoot will be set to the root folder of your project.
+            SK_String projectRoot = SK_String(SK_Path_Utils::pathBackwardsUntilNeighbour("skxx")).replaceAll("\\", "/");
+            SK_String skxx = projectRoot + "/skxx";
+            add("skxx", skxx);
+            add("global_js_core", skxx + "/web/global_js_core");
+            add("soft_backend", skxx + "/web/soft_backend");
+            add("module_system", skxx + "/module_system/web");
+            add("project", projectRoot + "/project");
+            add("config", paths["project"] + "/config.json");
+        #else
+            //but if we are running in bundled mode, projectRoot will be set to "/"".
+            SK_String projectRoot = "";
+            SK_String skxx = "";
+            add("skxx", skxx);
+            add("global_js_core", skxx + "sk:webcore/global_js_core");
+            add("soft_backend", skxx + "sk:webcore/soft_backend");
+            add("module_system", skxx + "sk:modsys");
+            add("project", projectRoot + "/");
+            add("config", paths["project"] + "config.json");
+        #endif
 
-		SK_String skxx = projectRoot + "/skxx";
+		
 
-		add("skxx", skxx);
-		add("global_js_core", skxx + "/web/global_js_core");
-		add("module_system", skxx + "/module_system/web");
-		add("soft_backend", skxx + "/web/soft_backend");
-		add("project", projectRoot + "/project");
-		add("config", paths["project"] + "/config.json");
+		
 		
 		//The paths below will be OS specific
 		add("home", getHomeFolder());
@@ -262,6 +270,7 @@ public:
 			return SK_String(_path);
 		#elif defined(SK_OS_apple)
 			//for apple
+            return "";
 		#endif
 	}
 

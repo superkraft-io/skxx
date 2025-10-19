@@ -1,7 +1,7 @@
 console.log('sk:debugMngr')
 
 class SK_Module_debugMngr extends SK_Module_Root {
-    showDevTools(id){
+    showDevTools(id = 'sb'){
         return this.async('showDevTools', {target: id})
     }
     

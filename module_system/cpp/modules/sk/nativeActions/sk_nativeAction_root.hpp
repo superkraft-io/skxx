@@ -4,7 +4,7 @@
 
 BEGIN_SK_NAMESPACE
 
-using SK_NativeAction_Root_CB = std::function<void(const nlohmann::json& payload, SK_Communication_Response& respondWith)>;
+using SK_NativeAction_Root_CB = std::function<void(nlohmann::json& payload, SK_Communication_Response& respondWith)>;
 
 class SK_NativeAction_Root {
 public:

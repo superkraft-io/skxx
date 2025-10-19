@@ -13,18 +13,26 @@ class SK_Window : public SK_Window_Root {
 public:
 
     #ifdef __OBJC__
-        NSWindow* wndHandle;
-        __strong SK_Window_MacOS_Delegate* wndDelegate;
+        __weak NSWindow* wndHandle = nil;
+        __weak NSView* contentView = nil;
     
-        NSView* backgroundPanel;
-        NSView* contentView;
+        __strong NSWindow* wndHandle_strong = nil;
+        __strong NSView* contentView_strong = nil;
     
-        NSVisualEffectView* vibrantView;
-        
+        __strong SK_Window_MacOS_Delegate* wndDelegate = nil;
+        __strong NSView* backgroundPanel = nil;
+        __strong NSVisualEffectView* vibrantView = nil;
+    
+        __strong id mouseDownToken = nil;
+        __weak NSEvent* lastMouseDownEvent = nil;
+    
+        NSRect savedUserFrame;
     #endif
     
-    bool isFullscreened;
-    bool isZooming;
+    bool ignoreUpdateByConfig = false;
+    bool isFullscreened = false;
+    bool isZooming = false;
+    bool blockResizing = false;
     
     SK_Window() {
         config.onChanged = [&](const std::string& key) {
@@ -37,39 +45,70 @@ public:
         });
     }
 
-    ~SK_Window() {
-        if (config.data["mainWindow"] == false){
-            #ifdef __OBJC__
-                if (wndHandle){
-                    [wndHandle close];
-                    wndHandle = nil;
-                }
-                
-                backgroundPanel = nil;
-                contentView = nil;
-                vibrantView = nil;
-            #endif
+    	
+
+    #ifdef __OBJC__
+    void objcTeardown() {
+        @autoreleasepool {            // 1) Stop monitors/observers FIRST
+            /*if (mouseDownToken) {
+                mouseDownToken = nil; //causes crash. since it's a __strong reference, ARC should handle it. (But will it handle it???)
+            }*/
             
-            int x = 0;
+            // 2) Detach delegate before closing to avoid callbacks into half-dead C++.
+            if (wndHandle) {
+                [wndHandle setDelegate:nil];
+            }
+            
+            
+            if (wndDelegate) {
+                wndDelegate.skWindow = nil;
+                wndDelegate = nil;	
+            }	
+            
+            // 3) Close window (may synchronously fire delegate/callbacks)
+            if (!isInMainWindow()) {
+                if (wndHandle) {
+                    //[wndHandle close];     // no delegate attached now
+                    //wndHandle = nil;    //<<< this will cause crash if uncommented. // optional: nil if you’re sure no one uses it later
+                }
+                backgroundPanel = nil;
+                vibrantView = nil;
+                contentView = nil;    // uncomment only if you own it; otherwise leave to close
+            }
         }
-        
-        #ifdef __OBJC__
-            wndDelegate.skWindow = nil;
-            wndDelegate = nil;
-        #endif
-        
-        delete ipc;
-        
-        if (onDestroyed != NULL) onDestroyed();
     }
+    
+    ~SK_Window(){
+        if (![NSThread isMainThread]) {
+            __block SK_Window* selfPtr = this;
+            dispatch_sync(dispatch_get_main_queue(), ^{ selfPtr->objcTeardown(); });
+        } else {
+            objcTeardown();
+        }
+    }
+    #endif
 
     void initialize(const unsigned int& _wndIdx) override {
         SK_Window_Root::initialize(_wndIdx);
         windowClassName += "_" + std::to_string(wndIdx);
     }
-
-    void create() {
+    
     #ifdef __OBJC__
+        void setDelegate() {
+            if (![NSThread isMainThread]) {
+              __block SK_Window* selfPtr = this;
+              dispatch_sync(dispatch_get_main_queue(), ^{ selfPtr->setDelegate(); });
+              return;
+            }
+
+            wndDelegate =		 [SK_Window_MacOS_Delegate new];   // retained by __strong ivar
+            wndDelegate.skWindow = this;                    // OK: assign to C++ pointer
+            [wndHandle setDelegate:wndDelegate];            // NSWindow does NOT retain; you do
+          }
+    #endif
+    
+    void create() {
+        #ifdef __OBJC__
             // Set the window frame
             NSRect frame = NSMakeRect(0, 0, int(config["width"]), int(config["height"]));
 
@@ -77,21 +116,23 @@ public:
             NSUInteger styleMask = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable;
         
             // Create the window
-            wndHandle = [[NSWindow alloc] initWithContentRect:frame
+            wndHandle_strong = [[NSWindow alloc] initWithContentRect:frame
                                                 styleMask:styleMask
                                                   backing:NSBackingStoreBuffered
                                                     defer:NO];
+        
+            wndHandle = wndHandle_strong;
 
             // Set the window title
             [wndHandle setTitle: config["title"]];
 
             // Create and set the delegate
-            wndDelegate = [[SK_Window_MacOS_Delegate alloc] init];
-            wndDelegate.skWindow = this;
-            [wndHandle setDelegate:wndDelegate];
+            setDelegate();
 
             // Create the content view
-            contentView = [[NSView alloc] initWithFrame:frame];
+            contentView_strong = [[NSView alloc] initWithFrame:frame];
+            contentView = contentView_strong;
+        
             [contentView setWantsLayer:YES];
             contentView.layer.masksToBounds = YES;
             [wndHandle setContentView:contentView];
@@ -128,7 +169,7 @@ public:
                 this->handleGestureEvent(event);
                 return event;
             }];
-        
+                
             updateWindowByConfig();
             
            
@@ -141,7 +182,7 @@ public:
     void createWebView() {
         webview.notifyReadyToShow = [this]() {
             isReady = true;
-            emitWndEvent(this, "ready-to-show", {});
+            emitWndEvent(this, "ready-to-show", {}, true);
         };
         
         #ifdef __OBJC__
@@ -152,23 +193,33 @@ public:
         #endif
     }
 
-    void update(bool manuallyResizing = false) {
-        /*NSRect frame = [window frame];
-        frame.size.width = config["width"];
-        frame.size.height = config["height"];
-        [window setFrame:frame display:YES];
-
-        if (webViewContainer) {
-            [webViewContainer setFrame:[window contentRectForFrameRect:frame]];
-        }*/
+    void updateWebView(bool manuallyResizing = false) {
+        #ifdef __OBJC__
+            NSRect frame = [contentView frame];
+            frame.origin.x = 0.0f;
+            frame.origin.y = 0.0f;
+            frame.size.width = config.data["width"];
+            frame.size.height = config.data["height"];
+        
+            [NSAnimationContext beginGrouping];
+            [[NSAnimationContext currentContext] setDuration:0];
+        
+            bool inMainThread =  skg->threadPool->thisFunctionRunningInMainThread();
+            SK_WebView* wv = &webview;
+            [webview.webview setFrame:frame];
+            [NSAnimationContext endGrouping];
+            
+            // 4. Force immediate update
+            [webview.webview setNeedsDisplay:YES];
+            [webview.webview displayIfNeeded];
+        #endif
     }
    
 
     void updateWindowByConfig() {
         #ifdef __OBJC__
-            if (!wndHandle) return;
-
-            
+            if (wndHandle == NULL || ignoreUpdateByConfig == true) return;
+        
         
             if (checkNeedsUpdateAndReset("title")) [wndHandle setTitle: config["title"]];
             
@@ -178,7 +229,7 @@ public:
             }
         
             if (checkNeedsUpdateAndReset("movable")) {
-                [wndHandle setMovable: config["movable"]];
+                [wndHandle setMovable: config.data["movable"]];
             }
         
             if (checkNeedsUpdateAndReset("resizable")) {
@@ -222,7 +273,10 @@ public:
                 [backgroundPanel.layer setBackgroundColor:backgroundColor];
             }
         
-            
+        
+        
+        
+        
             if (checkNeedsUpdateAndReset("focusable")) {
                 //incomplete
                 bool focusable = config["focusable"];
@@ -241,6 +295,7 @@ public:
                     [wndHandle setLevel:NSNormalWindowLevel];
                 }
             }
+        
         
             if (checkNeedsUpdateAndReset("frame")) {
                 bool hasFrame = config["frame"];
@@ -298,6 +353,8 @@ public:
                 }
             }
         
+        
+        
             if (checkNeedsUpdateAndReset("opacity")) {
                 [wndHandle setAlphaValue: config["opacity"]];
             }
@@ -305,26 +362,72 @@ public:
         
         
             if (checkNeedsUpdateAndReset("minWidth") || checkNeedsUpdateAndReset("minHeight")) {
-                [wndHandle setContentMinSize:NSMakeSize(config["minWidth"], config["minHeight"])];
+                int mW = config["minWidth"];
+                int mH = config["minHeight"];
+                if (mW != 0 || mH != 0){
+                    NSSize size = NSMakeSize(mW, mH);
+                    [wndHandle setContentMinSize:size];
+                }
             }
             
             if (checkNeedsUpdateAndReset("maxWidth") || checkNeedsUpdateAndReset("maxHeight")) {
                 int mW = config["maxWidth"];
                 int mH = config["maxHeight"];
-                NSSize size = NSMakeSize((mW == -1 ? CGFLOAT_MAX : mW), (mH == -1 ? CGFLOAT_MAX : mH));
-                [wndHandle setContentMaxSize:size];
+                if (mW != -1 || mH != -1){
+                    NSSize size = NSMakeSize((mW == -1 ? CGFLOAT_MAX : mW), (mH == -1 ? CGFLOAT_MAX : mH));
+                    [wndHandle setContentMaxSize:size];
+                }
             }
            
         
             if (checkNeedsUpdateAndReset("width") || checkNeedsUpdateAndReset("height")) {
-                int w = config.data["width"];
-                int h = config.data["height"];
+                //dispatch_async(dispatch_get_main_queue(), ^{
+                    int w = config.data["width"];
+                    int h = config.data["height"];
+                    
+                    NSRect frame = [wndHandle frame];
+                    frame.size.width = w;
+                    frame.size.height = h;
                 
-                NSRect frame = [wndHandle frame];
-                frame.size.width = w;
-                frame.size.height = h;
-                [wndHandle setFrame:frame display:YES animate:NO];
-                [wndHandle setContentSize:NSMakeSize(frame.size.width, frame.size.height)];
+                
+                    __weak NSWindow* _wndHandle = wndHandle;
+                    __weak NSView* _contentView = contentView;
+                
+                
+                    __weak NSView* _contentViewParent = [contentView superview];
+                    NSRect _contentViewParent_frame = [_contentViewParent frame];
+                
+    
+                    //In some cases the NSView which our webview is created added to is not the first layer of our NSWindow.
+                    //This is especially true for some DAW plugin windows.
+                    //This will cause our webview to be smaller than expected because our frame size does not account for any potential X or Y pos offsets.
+                    //To handle this, we callback to our project class (SK_Project) if it exists and handle the frame thre
+                
+                    bool bypass = false;
+                
+                    if (skg){
+                        if (skg->onBeforeWndResize){
+                            SK_Point size = skg->onBeforeWndResize(this);
+                            
+                            if (size.x == -2) bypass = true;
+                            
+                            if (size.x > -1) frame.size.width = size.x;
+                            if (size.y > -1) frame.size.height = size.y;
+                        }
+                    }
+                   
+                    if (!bypass){
+                        ignoreUpdateByConfig = true;
+                        if (!isInMainWindow()) [wndHandle setFrame:frame display:YES animate:NO];
+                        //[wndHandle setContentSize:frame.size];
+                        
+                        frame.origin.x = 0;
+                        frame.origin.y = 0;
+                        [contentView setFrame: frame];
+                        
+                        ignoreUpdateByConfig = false;
+                    }
+                //});
             }
         
         
@@ -361,7 +464,11 @@ public:
                 
                 if (needsReposition || needsResize) {
                     NSPoint origin = NSMakePoint(config.data["x"], config.data["y"]);
-                    [wndHandle setFrameOrigin:origin];
+                    if (!isInMainWindow()){
+                        ignoreUpdateByConfig = true;
+                        [wndHandle setFrameOrigin:origin];
+                        ignoreUpdateByConfig = false;
+                    }
                 }
 
                 if (checkNeedsUpdateAndReset("show")) {
@@ -379,7 +486,6 @@ public:
             if (checkNeedsUpdateAndReset("fullscreen")) {
                 setFullscreen(config["fullscreen"]);
             }
-         
         #endif
     }
 
@@ -388,142 +494,285 @@ public:
     
     #ifdef __OBJC__
     
-    void setStyle(NSUInteger style, bool activate) {
-        NSUInteger styleMask = [wndHandle styleMask];
-        
-        if (activate) styleMask |= style;
-        else styleMask &= ~style;
-        
-        [wndHandle setStyleMask:styleMask];
-    }
-    
-    bool hasStyle(NSUInteger flag) {
-        return [wndHandle styleMask] & flag;
-    }
-    
-    
-    bool isMaximized() {
-        NSRect windowFrame = [wndHandle frame];
-
-        NSScreen* screen = [wndHandle screen];
-        if (!screen) return false;
-        NSRect screenVisibleFrame = [screen visibleFrame];
-
-        return NSEqualRects(windowFrame, screenVisibleFrame);
-    }
-    
-    
-    
-    void setFullscreen(bool fullscreen) {
-        if (isFullscreened == fullscreen) return;
-        
-        
-        isFullscreened = !isFullscreened;
-        config.data["fullScreen"] = isFullscreened;
-        
-        if (config.data["fullscreenable"] ){
-            [wndHandle toggleFullScreen:nil];
-        } else {
-            [wndHandle zoom:nil];
-        }
-    }
-    
-    
-    void updateZoomButton(){
-        bool isMaximizable = config.data["maximizable"];
-        bool isFullscreenable = config.data["fullscreenable"];
-        
-        if (!isMaximizable && !isFullscreenable){
-            [[wndHandle standardWindowButton:NSWindowZoomButton] setEnabled: false];
-            return;
+        void setStyle(NSUInteger style, bool activate) {
+            NSUInteger originalStyleMask = [wndHandle styleMask];
+            
+            NSUInteger newMask;
+            
+            if (activate) {
+                newMask = originalStyleMask |= style;
+            } else {
+                newMask = originalStyleMask & ~style;
+            }
+            
+            [wndHandle setStyleMask:newMask];
         }
         
-        [[wndHandle standardWindowButton:NSWindowZoomButton] setEnabled: true];
-        
-        if (isFullscreenable){
-            [wndHandle setCollectionBehavior:[wndHandle collectionBehavior] | NSWindowCollectionBehaviorFullScreenPrimary];
-            [wndHandle setCollectionBehavior:[wndHandle collectionBehavior] & (~NSWindowCollectionBehaviorFullScreenAuxiliary)];
-        } else {
-            [wndHandle setCollectionBehavior:[wndHandle collectionBehavior] | NSWindowCollectionBehaviorFullScreenAuxiliary];
-            [wndHandle setCollectionBehavior:[wndHandle collectionBehavior] & (~NSWindowCollectionBehaviorFullScreenPrimary)];
-        }
-    }
-    
-    
-    
-    
-    
-    
-    void minimize(){
-        [wndHandle miniaturize:nil];
-    }
-    
-    void restore(){
-        [wndHandle deminiaturize:nil];
-    }
-    
-    bool isMinimized() const {
-        return [wndHandle isMiniaturized];
-    }
-    
-    
-    
-    
-    
-    void handleGestureEvent(NSEvent* event) {
-        switch (event.type) {
-            case NSEventTypeSwipe:
-                handleSwipeEvent(event);
-                break;
-            case NSEventTypeRotate:
-                handleRotateEvent(event);
-                break;
-            default:
-                //NSLog(@"Unhandled event type: %lu", (unsigned long)event.type);
-                break;
-        }
-    }
-
-    void handleSwipeEvent(NSEvent* event) {
-        CGFloat deltaX = event.deltaX;
-        CGFloat deltaY = event.deltaY;
-
-        
-        SK::SK_String direction = "none";
-        CGFloat delta = 0;
-        
-        if (deltaX > 0) {
-            direction = "left";
-            delta = deltaX;
-        } else if (deltaX < 0) {
-            direction = "right";
-            delta = deltaX;
-        }
-
-        if (deltaY > 0) {
-            direction = "down";
-            delta = deltaY;
-        } else if (deltaY < 0) {
-            direction = "up";
-            delta = deltaY;
+        bool hasStyle(NSUInteger flag) {
+            return [wndHandle styleMask] & flag;
         }
         
-        SK::SK_Window_Root::emitWndEvent(this, "swipe",{
-            {"direction", direction},
-            {"delta", delta}
-        });
-    }
-
-    void handleRotateEvent(NSEvent* event) {
-        CGFloat rotation = event.rotation;
         
-        SK::SK_Window_Root::emitWndEvent(this, "rotate-gesture",{
-            {"rotation", rotation}
-        });
-    }
+        bool isMaximized() {
+            NSRect windowFrame = [wndHandle frame];
 
+            NSScreen* screen = [wndHandle screen];
+            if (!screen) return false;
+            NSRect screenVisibleFrame = [screen visibleFrame];
+
+            return NSEqualRects(windowFrame, screenVisibleFrame);
+        }
+        
+        
+        
+        void setFullscreen(bool fullscreen) {
+            if (isFullscreened == fullscreen) return;
+            
+            
+            isFullscreened = !isFullscreened;
+            config.data["fullScreen"] = isFullscreened;
+            
+            if (config.data["fullscreenable"] ){
+                [wndHandle toggleFullScreen:nil];
+            } else {
+                [wndHandle zoom:nil];
+            }
+        }
+        
+        
+        void updateZoomButton(){
+            bool isMaximizable = config.data["maximizable"];
+            bool isFullscreenable = config.data["fullscreenable"];
+            
+            if (!isMaximizable && !isFullscreenable){
+                [[wndHandle standardWindowButton:NSWindowZoomButton] setEnabled: false];
+                return;
+            }
+            
+            [[wndHandle standardWindowButton:NSWindowZoomButton] setEnabled: true];
+            
+            if (isFullscreenable){
+                [wndHandle setCollectionBehavior:[wndHandle collectionBehavior] | NSWindowCollectionBehaviorFullScreenPrimary];
+                [wndHandle setCollectionBehavior:[wndHandle collectionBehavior] & (~NSWindowCollectionBehaviorFullScreenAuxiliary)];
+            } else {
+                [wndHandle setCollectionBehavior:[wndHandle collectionBehavior] | NSWindowCollectionBehaviorFullScreenAuxiliary];
+                [wndHandle setCollectionBehavior:[wndHandle collectionBehavior] & (~NSWindowCollectionBehaviorFullScreenPrimary)];
+            }
+        }
+        
+        
+        
+        
+        
+        void maximize(){
+            if (isMaximized()) return;
+            
+            SK_Window* wnd = this;
+            if (isInMainWindow()) wnd = skg->mainWindow;
+            
+            wnd->savedUserFrame = wndHandle.frame;
+            
+            wnd->isZooming = true;
+            
+            NSRect target = wndHandle.screen.visibleFrame;
+            [wndHandle setFrame:target display:YES animate:YES];
+            
+        }
     
+        void minimize(){
+            [wndHandle miniaturize:nil];
+        }
+        
+        void restore(){
+            if (wndHandle.isMiniaturized) [wndHandle deminiaturize:nil];
+            
+            if (isMaximized()){
+                SK_Window* wnd = this;
+                if (isInMainWindow()) wnd = skg->mainWindow;
+                
+                wnd->isZooming = true;
+                
+                [wndHandle setFrame:wnd->savedUserFrame display:YES animate:YES];
+            }
+            
+            [wndHandle makeKeyAndOrderFront:nil];
+        }
+        
+        bool isMinimized() const {
+            return [wndHandle isMiniaturized];
+        }
+        
+        
+        void handleGestureEvent(NSEvent* event) {
+            switch (event.type) {
+                case NSEventTypeSwipe:
+                    handleSwipeEvent(event);
+                    break;
+                case NSEventTypeRotate:
+                    handleRotateEvent(event);
+                    break;
+                default:
+                    //NSLog(@"Unhandled event type: %lu", (unsigned long)event.type);
+                    break;
+            }
+        }
+
+        void handleSwipeEvent(NSEvent* event) {
+            CGFloat deltaX = event.deltaX;
+            CGFloat deltaY = event.deltaY;
+
+            
+            SK::SK_String direction = "none";
+            CGFloat delta = 0;
+            
+            if (deltaX > 0) {
+                direction = "left";
+                delta = deltaX;
+            } else if (deltaX < 0) {
+                direction = "right";
+                delta = deltaX;
+            }
+
+            if (deltaY > 0) {
+                direction = "down";
+                delta = deltaY;
+            } else if (deltaY < 0) {
+                direction = "up";
+                delta = deltaY;
+            }
+            
+            SK::SK_Window_Root::emitWndEvent(this, "swipe",{
+                {"direction", direction},
+                {"delta", delta}
+            }, true);
+        }
+
+        void handleRotateEvent(NSEvent* event) {
+            CGFloat rotation = event.rotation;
+            
+            SK::SK_Window_Root::emitWndEvent(this, "rotate-gesture",{
+                {"rotation", rotation}
+            }, true);
+        }
+    
+        void finalizeCreation(){
+            setDelegate();
+            
+            #ifdef __OBJC__
+            mouseDownToken = [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskLeftMouseDown handler:^NSEvent* (NSEvent *e) {
+                // Create a strong reference inside the block to ensure the object
+                // is not deallocated while the handler is executing
+                
+                if (!wndHandle) return e;
+                if (e.windowNumber != wndHandle.windowNumber) return e;
+
+                // Use strongSelf to access members
+                lastMouseDownEvent = e;
+                
+                return e;
+            }];
+            #endif
+        }
+            
+        void beginMoveFromStoredMouseDown(NSEvent* event) {
+            if (event) {
+                [wndHandle performWindowDragWithEvent:event];
+                event = nil; // drop after use
+            }
+        }
+    
+        
     #endif
+    
+        void readInfo(const SK_String& attribute, SK_Communication_Response& respondWith) {
+            #ifdef __OBJC__
+            if (attribute == "isMaximized") {
+                respondWith.JSON({ {"value", isMaximized()} });
+            }
+            else if (attribute == "isFullscreen") {
+                respondWith.JSON({ {"value", isFullscreened} });
+            }
+            #endif
+        }
+    
+        void handleWindowAction(const nlohmann::json& payload) {
+            SK_String action = "";
+            if (payload.contains("action")) action = SK_String(payload["action"]);
+            
+            #ifdef __OBJC__
+                if (action == "beginMoveWindow") {
+                    SK_Window* wnd = this;
+                    
+                    if (isInMainWindow()) wnd = skg->mainWindow;
+                    
+                    if (wnd->lastMouseDownEvent) {
+                        //[wndHandle performWindowDragWithEvent: lastMouseDown];
+                        beginMoveFromStoredMouseDown(wnd->lastMouseDownEvent);
+                    }
+                }
+                else if (action == "close")
+                {
+                    // Closes (and releases) the window
+                    [wndHandle performClose:nil];
+                }
+                else if (action == "focus")
+                {
+                    // Bring app & window to front and make it key
+                    [NSApp activateIgnoringOtherApps:YES];
+                    if (wndHandle.isMiniaturized) [wndHandle deminiaturize:nil];
+                    [wndHandle makeKeyAndOrderFront:nil];
+                }
+                else if (action == "blur")
+                {
+                    // No direct "blur" on macOS. Best-effort: send window behind others
+                    // and resign key status.
+                    [wndHandle orderBack:nil];
+                    [wndHandle resignKeyWindow];
+                    // Optional: deactivate the app if you truly want to give up focus
+                    // [NSApp deactivate];
+                }
+                else if (action == "show")
+                {
+                    [wndHandle orderFront:nil];          // show without necessarily becoming key
+                    [wndHandle makeKeyAndOrderFront:nil];// or ensure key + front
+                }
+                else if (action == "hide")
+                {
+                    [wndHandle orderOut:nil]; // hides this window (app stays visible)
+                }
+                else if (action == "maximize")
+                {
+                    if (config.data.contains("fullscreenable") && config.data["fullscreenable"] == true){
+                        if (!isFullscreened) setFullscreen(true);
+                        return;
+                    }
+                    
+                    if (!isMaximized()) maximize();
+                }
+                else if (action == "unmaximize")
+                {
+                    if (config.data.contains("fullscreenable") && config.data["fullscreenable"] == true){
+                        if (isFullscreened) setFullscreen(false);
+                        return;
+                    }
+                    
+                    if (isMaximized()) restore();
+                }
+                else if (action == "minimize")
+                {
+                    minimize();
+                }
+                else if (action == "restore")
+                {
+                    if (config.data.contains("fullscreenable") && config.data["fullscreenable"] == true){
+                        if (isFullscreened) setFullscreen(false);
+                        return;
+                    }
+                    
+                    restore();
+                }
+            #endif
+        };
 private:
     bool needsWindowUpdate() {
         for (const auto& pair : config_updateTracker.items()) {

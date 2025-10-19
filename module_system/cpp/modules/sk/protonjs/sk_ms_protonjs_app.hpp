@@ -23,8 +23,13 @@ public:
     SK_Module_ProtonJS_App(SK_Global* _skg) {
         skg = _skg;
     }
+    
+    ~SK_Module_ProtonJS_App(){
+        wndMngr = nullptr;
+        skg = nullptr;
+    }
 
-    void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+    void handleOperation(const SK_String& operation, nlohmann::json& payload, SK_Communication_Response& respondWith) {
         
         SK_String target = payload["__moduleInstanceConfig"]["__target"];
         
@@ -59,10 +64,6 @@ public:
     }
     
     void haveAllWindowsClosed(const nlohmann::json& payload, SK_Communication_Response& respondWith) {
-        size_t total = wndMngr->list.size();
-        
-        
-        
         respondWith.JSON({{"allClosed", false}});
     }
 };

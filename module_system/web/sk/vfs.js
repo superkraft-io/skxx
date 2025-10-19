@@ -1,7 +1,8 @@
 
 class SK_Module_VFS extends SK_Module_Root {
-    constructor(opt) {
-        this.sk = opt.sk
+    constructor(modulePath) {
+        super(modulePath)
+        
         this.promises = new SK_Module_VFS_Promises(this)
 
         window.vfs = this

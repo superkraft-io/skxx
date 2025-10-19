@@ -1,4 +1,3 @@
-console.log('SK IPC')
 class SK_IPC {
     constructor(opt) {
         this.msg_id = 0
@@ -14,6 +13,14 @@ class SK_IPC {
         this.on('sk.sb.ipc', async res => {
             return await sk_api.ipc.handleRequest({ event_id: res.cmd, data: res }, true)
         })
+
+        try {
+            window.chrome.webview.addEventListener('message', (e) => {
+                sk_api.ipc.handleIncoming(e.data)
+            });
+        } catch(err) {
+            var x = 0
+        }
     }
 
     sendToBE(event_id, data = {}, type = "request", overridePacketInfo = {}, onMsgID_CB) {
@@ -58,6 +65,12 @@ class SK_IPC {
             }, timeout)
 
             var msg_id = this.sendToBE(event_id, data, "request", overridePacketInfo, msg_id => {
+                if (overridePacketInfo.responseless){
+                    clearTimeout(timeoutTimer)
+                    resolve()
+                    return
+                }
+
                 this.awaitList[msg_id] = {
                     resolve: resolve,
                     reject: reject,
@@ -149,7 +162,7 @@ class SK_IPC {
 
         var responseData = responseData_A || responseData_B
 
-        if (!isForwardedPacket) {
+        if (!isForwardedPacket && !res.responseless) {
             this.sendToBE(
                 resJSON.event_id,
                 responseData,

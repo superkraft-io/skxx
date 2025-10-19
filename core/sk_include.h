@@ -15,10 +15,6 @@
 
 #include "sk_json/sk_json_callback.hpp"
 
-//#include "../libs/general/yyjson/yyjson.h"
-//#include "../libs/general/glaze/glaze.hpp"
-//#include "sk_json/sk_json_glaze.hpp"
-
 #include "sk_profiler/sk_profiler.hpp"
 
 #include "utils/sk_point.hpp"
@@ -27,13 +23,23 @@
 #include "sk_web/sk_web_utils.hpp"
 #include "utils/sk_file.hpp"
 
+
+
 #include "sk_callbacks.hpp"
 
 #include "sk_threads/sk_thread_pool.hpp"
 
+#include "sk_timer/sk_timer.h"
+#include "utils/sk_displayUtils/sk_displayUtils.h"
+
 
 #include "../libs/general/curl/curl.h"
 #include "sk_web/sk_curl.hpp"
+
+
+#if defined(SK_BUNDLE_MODE_DEEP) || defined(SK_BUNDLE_MODE_SHALLOW)
+    #include "../../../sk_soft_backend_bundle/sk_soft_backend_bundle_library.h"
+#endif
 
 
 #include "sk_communication/sk_communication_response.hpp"
@@ -45,6 +51,8 @@ BEGIN_SK_NAMESPACE
 
 class SK_Global {
 public:
+    bool terminating = false;
+
     SK_String newUUID() {
         #if defined(SK_OS_windows)
             UUID uuid;
@@ -68,7 +76,12 @@ public:
 
             return ss.str();
         #endif
+        
+        return "";
     }
+
+    SK_TimerMngr* timerMngr;
+    SK_Timer* syncTimer;
 
     SK_Path_Utils pathUtils;
     void* machine;
@@ -77,11 +90,19 @@ public:
     
     long long ipc_msg_id = 0;
 
-	SK_String runningAs = SK_String("unknown");
+	SK_String runningAs = "unknown";
 
     void* project;
+    
+    
+    #if defined(SK_BUNDLE_MODE_DEEP) || defined(SK_BUNDLE_MODE_SHALLOW)
+        SK_SoftBackend_Bundle_Library* bundle_library;
+    #endif
 
+    
     void* sk = nullptr;
+    
+    SK_ForwardPacketToModule_CB forwardPacketToModule;
 
 
 	SK_Window_onWindowFocusChanged_Callback onWindowFocusChanged;
@@ -94,6 +115,7 @@ public:
 
 	SK_Communication_onRequest onCommunicationRequest;
 
+    SK_deleteCommPacketWithPID_CB deleteCommPacketWithPID;
     
     
     SK_onMainWindowHWNDAcquired onMainWindowHWNDAcquired;
@@ -129,8 +151,45 @@ public:
     SK_onPreConfigWnd onPreConfigWnd = NULL;
     SK_onPostConfigWnd onPostConfigWnd = NULL;
     SK_wndCreated onWndCreated = NULL;
-
+    SK_onBeforeWndResize_CB onBeforeWndResize = NULL;
+    
     SK_WebView_onGetUserDataPath onGetWebViewUserDataPath;
+    
+    SK_HandlePluginParamEvent_CB handlePluginParamEvent;
+    SK_GetPluginInstance_CB getPluginInstance;
+    SK_FindPluginParamByName_CB findPluginParamByName;
+    SK_FindPluginParamIdxByName_CB findPluginParamIdxByName;
+
+    SK_PopupCtxMenu_CB popupContextMenu;
+    
+    SK_InitSK_CB initSK;
+    SK_DestroySK_CB destroySK;
+    SK_OBJCPPSafeTicker_CB OBJCPPSafeTicker;
+    SK_OBJCPPSafeInitializer_CB OBJCPPSafeInitializerCB;
+
+    SK_tickSK_TimerMngr_CB tickSK_TimerMngr;
+    
+    SK_enableDebug_Views_CB enableDebug_Views;
+
+    ~SK_Global(){
+        delete threadPool;
+        threadPool = nullptr;
+        
+        appInitializer = nullptr;
+        mainWindow = nullptr;
+        sb_ipc = nullptr;
+        sk = nullptr;
+        project = nullptr;
+        
+        #if defined(SK_BUNDLE_MODE_DEEP) || defined(SK_BUNDLE_MODE_SHALLOW)
+            bundle_library = nullptr;
+        #endif
+        
+        machine = nullptr;
+
+        //delete syncTimer;
+        //delete timerMngr;
+    }
 };
 
 END_SK_NAMESPACE
@@ -144,7 +203,6 @@ END_SK_NAMESPACE
 
 #include "sk_app/sk_app_initializer.h"
 
-#include "../../sk_project_binarydata.hpp"
 
 
 #include "../module_system/cpp/modules/sk/vfs/sk_ms_vfs_file.hpp"

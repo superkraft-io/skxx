@@ -12,15 +12,24 @@ public:
 	SK_Module_System* modsys;
 	SK_Window_Mngr* wndMngr;
 
+    long long int packetIdx = 0;
+    std::vector<SK_Communication_Packet*> active_packets;
+
 	SK_Communication(SK_Global* _skg) {
         skg = _skg;
 
 
+        skg->deleteCommPacketWithPID = [&](const SK_String& pid) {
+            remove_all_by_pid(pid);
+        };
+
     #if defined(SK_OS_windows)
-		skg->onCommunicationRequest = [&](SK_Communication_Config* config, SK_Communication_handlePacket_Response_IPC_CB ipcResponseCallback, void* resHandler) {
+		skg->onCommunicationRequest = [&](const SK_Communication_Config& config, SK_Communication_handlePacket_Response_IPC_CB ipcResponseCallback, void* resHandler) {
     #elif defined(SK_OS_apple)
-		skg->onCommunicationRequest = [&](SK_Communication_Config* config, SK_Communication_handlePacket_Response_IPC_CB ipcResponseCallback, SK_Communication_AppleCB_CB resHandler) {
+		skg->onCommunicationRequest = [&](const SK_Communication_Config& config, SK_Communication_handlePacket_Response_IPC_CB ipcResponseCallback, SK_Communication_AppleCB_CB resHandler) {
     #endif
+            if (skg->terminating) return; //what's the point of handling any type of communication packet if the app is terminating? (there are actually good reasons but I don't care right now)
+
 			SK_Communication_Packet* packet;
 			
 			#if defined(SK_OS_windows)
@@ -32,13 +41,13 @@ public:
 			#endif
 
 
-			if (config->type == SK_Communication_Packet_Type::sk_comm_pt_ipc) {
-				packet = packetFromIPCMessage((*static_cast<nlohmann::json*>(config->objPtr)));
+			if (config.type == SK_Communication_Packet_Type::sk_comm_pt_ipc) {
+				packet = packetFromIPCMessage((*static_cast<nlohmann::json*>(config.objPtr)));
 			}
-			else if (config->type == SK_Communication_Packet_Type::sk_comm_pt_web) {
+			else if (config.type == SK_Communication_Packet_Type::sk_comm_pt_web) {
 				#if defined(SK_OS_windows)
-					webPayload = static_cast<ICoreWebView2WebResourceRequestedEventArgs*>(config->objPtr);
-					packet = packetFromWebRequest(webPayload, config->sender);
+					webPayload = static_cast<ICoreWebView2WebResourceRequestedEventArgs*>(config.objPtr);
+					packet = packetFromWebRequest(webPayload, config.sender);
 				#elif defined(SK_OS_apple)
                     packet = static_cast<SK_Communication_Packet*>(resHandler(nullptr));
 				#elif defined(SK_OS_linux) || defined(SK_OS_android)
@@ -47,17 +56,24 @@ public:
 			}
 
 			packet->response()->config = config;
-
+            
+            #if defined(SK_BUNDLE_MODE_NONE)
+                //...
+            #else
+                packet->response()->bundle_library = skg->bundle_library;
+            #endif
+            
             packet->response()->onHandleResponse = [packet, ipcResponseCallback, webPayload, resHandler](SK_Communication_Response* response) {
                 
+                
                 if (response->type == SK_Communication_Packet_Type::sk_comm_pt_ipc) {
-                    ipcResponseCallback(response->getForIPC());
+                    if (!response->responseless) ipcResponseCallback(response->getForIPC());
                 }
                 else if (response->type == SK_Communication_Packet_Type::sk_comm_pt_web) {
                     #if defined(SK_OS_windows)
                         webPayload->put_Response(response->getForWeb().get());
                     #elif defined(SK_OS_apple)
-                    resHandler(packet);
+                        resHandler(packet);
                     #elif defined(SK_OS_linux) || defined(SK_OS_android)
                         //for linux and android
                     #endif
@@ -70,6 +86,54 @@ public:
 			handlePacket(packet);
 		};
 	}
+
+
+    ~SK_Communication() {
+        if (active_packets.size() > 0) {
+            int x = 0;
+        }
+
+        for (std::size_t i = active_packets.size(); i-- > 0; ) {
+            auto*& pkt = active_packets[i];
+            delete pkt;      // safe even if pkt == nullptr
+            pkt = nullptr;   // keep slot nulled if you reuse the vector
+        }
+
+        active_packets.clear();
+    }
+
+    size_t remove_all_by_pid(const std::string& pid)
+    {
+        // If you need to delete the objects, do it in the predicate (side-effect).
+        auto it = std::remove_if(active_packets.begin(), active_packets.end(),
+            [&](SK_Communication_Packet* pkt) {
+                bool match = pkt && pkt->pid == pid;
+                // if (match) delete pkt; // <-- uncomment if vector OWNS them
+                return match;
+            });
+        size_t removed = static_cast<size_t>(active_packets.end() - it);
+        active_packets.erase(it, active_packets.end());
+        return removed;
+    }
+
+    SK_Communication_Packet* createPacket(SK_Communication_Packet_Type type) {
+        SK_String testStr = "Hello!";
+
+        packetIdx++;
+        SK_Communication_Packet* packet = new SK_Communication_Packet();
+        packet->pid = SK_String(packetIdx);
+        packet->type = type;
+
+        packet->onBeforeDestroy = [&](SK_Communication_Packet* sourcePacket) {
+            size_t removedCount = remove_all_by_pid(sourcePacket->pid);
+            size_t count = active_packets.size();
+        };
+
+
+        active_packets.push_back(packet);
+
+        return packet;
+    }
 
 	void handlePacket(SK_Communication_Packet* packet) {
 		SK_Window* view = wndMngr->findWindowByTag(packet->target);
@@ -91,22 +155,23 @@ public:
 				handleForwarding(packet);
 			}
 			else {
-				#if defined SK_MODE_DEBUG
-					SK_String filePath = skg->pathUtils.paths["soft_backend"] + SK_String(packet->info["path"]);
-					packet->response()->file(filePath);
-				#else
-
-				#endif
+                SK_String filePath = skg->pathUtils.paths["soft_backend"] + SK_String(packet->info["path"]);
+                
+                #if defined(SK_BUNDLE_MODE_NONE)
+                    packet->response()->file(filePath);
+                #else
+                    packet->response()->fileFromBundle(filePath);
+                #endif
 			}
 		}
 		else if (packet->target == "sk:modsys") {
-			#if defined SK_MODE_DEBUG
-				SK_String filePath = skg->pathUtils.paths["module_system"] + SK_String(packet->info["path"]);
-				packet->response()->file(filePath);
-			#else
-
-			#endif
-			
+            SK_String filePath = skg->pathUtils.paths["module_system"] + SK_String(packet->info["path"]);
+            
+            #if defined(SK_BUNDLE_MODE_NONE)
+                packet->response()->file(filePath);
+            #else
+                packet->response()->fileFromBundle(filePath);
+            #endif
 		}
 		else if (packet->target == "sk:modop") {
 			nlohmann::json payload;
@@ -142,12 +207,13 @@ public:
 				return;
 			}
 
-			#if defined SK_MODE_DEBUG
-				SK_String filePath = skg->pathUtils.paths["project"] + path;
-				packet->response()->file(filePath);
-			#else
-
-			#endif
+            SK_String filePath = skg->pathUtils.paths["project"] + path;
+            
+            #if defined(SK_BUNDLE_MODE_NONE)
+                packet->response()->file(filePath);
+            #else
+                packet->response()->fileFromBundle(filePath);
+            #endif
 		}
 		else if (packet->target == "sk:view") {
 			SK_String path = SK_String(packet->info["path"]);
@@ -162,17 +228,18 @@ public:
 			//packet->response()->JSON(SK_Profiler::serialize());
 		}
 		else {
-			#if defined SK_MODE_DEBUG
-				std::string filePath = skg->pathUtils.paths["project"] + SK_String(packet->info["path"]);
-				packet->response()->file(filePath);
-			#else
-
-			#endif
+            std::string filePath = skg->pathUtils.paths["project"] + SK_String(packet->info["path"]);
+            #if defined(SK_BUNDLE_MODE_NONE)
+                packet->response()->file(filePath);
+            #else
+                packet->response()->fileFromBundle(filePath);
+            #endif
 		}
 	};
 
 	SK_IPC_v2* getIPCForID(const SK_String& id) {
 		if (id == "sk:sb") {
+            if (!sb_ipc) return nullptr;
 			return sb_ipc;
 		}
 		else {
@@ -189,17 +256,14 @@ public:
 
 		SK_String eventID = packet->info["event_id"];
 
-        if (sender == nullptr) {
-            int x = 0;
-        }
-
 		if (sender->eventExists(eventID) != "") {
-			sender->handle_IPC_Msg(packet);	
+			sender->handle_IPC_Msg(packet);
 			return;
 		}
 		
 		if (packet->info["type"] == "response") {
 			sender->handle_IPC_Msg(packet);
+            delete packet;
 			return;
 		}
 		else {
@@ -207,7 +271,7 @@ public:
 		}
 
 
-		target->request(packet->sender, packet->target, "sk.sb.forwardedPacket", packet->asIPCMessage(), [packet, sender](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
+		target->request(packet->sender, packet->target, "sk.sb.forwardedPacket", packet->asIPCMessage(), false, [packet, sender](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
 			responsePacket->id = packet->id;
 			sender->sendResponse(responsePacket);
 
@@ -223,10 +287,12 @@ public:
 
 
     SK_Communication_Packet* packetFromIPCMessage(const nlohmann::json& payload) {
-        SK_Communication_Packet* packet = new SK_Communication_Packet();
+        SK_Communication_Packet* packet = createPacket(SK_Communication_Packet_Type::sk_comm_pt_ipc);
         packet->originalData = payload;
 
         packet->responseObj = new SK_Communication_Response_IPC();
+        
+        packet->response()->responseless = (payload.contains("responseless") && payload["responseless"] == true); 
 
         packet->response()->packageIPCResponse = [&, packet](const nlohmann::json& data) -> SK_String {
             nlohmann::json results{
@@ -240,7 +306,7 @@ public:
 
             SK_String dumpStr = results.dump();
             return dumpStr;
-            };
+        };
 
         SK_String msg_id = payload["msg_id"];
         SK_String sender = payload["sender"];
@@ -263,7 +329,9 @@ public:
             wil::com_ptr<ICoreWebView2WebResourceRequest> request;
             args->get_Request(&request);
 
-            SK_Communication_Packet* packet = new SK_Communication_Packet();
+
+            SK_Communication_Packet* packet = createPacket(SK_Communication_Packet_Type::sk_comm_pt_web);
+
             packet->type = SK_Communication_Packet_Type::sk_comm_pt_web;
 
             packet->id = "-1";
@@ -321,7 +389,7 @@ public:
     #elif defined(SK_OS_apple)
     #ifdef __OBJC__
         SK_Communication_Packet* packetFromWebRequest(NSURLRequest* request, const SK_String& sender) {
-            SK_Communication_Packet* packet = new SK_Communication_Packet();
+            SK_Communication_Packet* packet = createPacket(SK_Communication_Packet_Type::sk_comm_pt_web);
             packet->type = SK_Communication_Packet_Type::sk_comm_pt_web;
 
             packet->id = "-1";
@@ -352,7 +420,7 @@ public:
             if (packet->info["method"] == "POST") {
                 NSData* bodyData = request.HTTPBody;
                 if (bodyData) {
-                    NSString* bodyString = [[NSString alloc]initWithData:bodyData encoding : NSUTF8StringEncoding];
+                    NSString* __strong bodyString = [[NSString alloc]initWithData:bodyData encoding:NSUTF8StringEncoding];
                     packet->info["body"] = SK_String(bodyString);
                 }
             }

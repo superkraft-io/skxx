@@ -18,12 +18,15 @@ public:
         window = new SK_Module_ProtonJS_Window(_skg);
     }
 
-    /*void config(SK_Window_Mngr* wndMngr){
-        window.wndMngr = wndMngr;
-    }*/
+    ~SK_Module_ProtonJS(){
+        delete app;
+        delete window;
+        
+        skg = nullptr;
+    }
     
     
-    void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+    void handleOperation(const SK_String& operation, nlohmann::json& payload, SK_Communication_Response& respondWith) {
         
         SK_String target = payload["__moduleInstanceConfig"]["__target"];
         

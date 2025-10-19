@@ -1,5 +1,3 @@
-console.log('sk_nativeActions.js')
-
 class SK_Module_nativeActions extends SK_Module_Root {
     constructor(modulePath) {
         super(modulePath)

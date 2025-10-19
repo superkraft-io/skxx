@@ -1,5 +1,3 @@
-console.log('sk_debug_mode.js')
-
 /*
 window.sk_console = window.console
 

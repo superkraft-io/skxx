@@ -40,6 +40,11 @@ public:
         skg = _skg;
     }
 
+    ~SK_Machine() {
+        skg = nullptr;
+    }
+
+    
     void init() {
         SK_String _cpuModel = "N/A";
         int _cpuSpeed = -1;

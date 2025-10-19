@@ -18,25 +18,36 @@ public:
         skg = _skg;
     }
     
-    void handleOperation(const SK_String& operation, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
-        
+    ~SK_Module_ProtonJS_Window() {
+        wndMngr = nullptr;
+        skg = nullptr;
+    }
+    
+    void handleOperation(const SK_String& operation, nlohmann::json& payload, SK_Communication_Response& respondWith) {
         SK_String wndID = payload["__moduleInstanceConfig"]["__uuid"];
         SK_Window* wnd = wndMngr->findWindowByTag(wndID);
-        
+                
               if (operation == "construct") construct(wnd, payload, respondWith);
          else if (operation == "configure") configure(wnd, payload, respondWith);
+         else if (operation == "readInfo") readInfo(wnd, payload, respondWith);
          else if (operation == "loadURL") loadURL(wnd, payload, respondWith);
+         else if (operation == "windowAction") windowAction(wnd, payload, respondWith);
     };
 
     void construct(SK_Window* _wnd, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+        if (_wnd != nullptr){
+            respondWith.error();
+            return;
+        }
         
-        if (_wnd != nullptr) return;
+   
         
         SK_String wndID = payload["__moduleInstanceConfig"]["__uuid"];
 
         
         SK_Window* wnd = wndMngr->newWindow();
       
+        wnd->webview.parentWnd = wnd;
 
         wnd->tag = wndID;
         wnd->ipc->sender_id = wndID;
@@ -44,14 +55,16 @@ public:
         nlohmann::json constructorOpts = payload["constructorOpts"];
             
         if (skg->onPreConfigWnd) skg->onPreConfigWnd(wnd, constructorOpts);
-           
+        
+        //wnd->config.bypassCallback = true;
         wnd->configWithInfo(constructorOpts);
-            
+        //wnd->config.bypassCallback = false;
+        
         if (skg->onPostConfigWnd) skg->onPostConfigWnd(wnd);
-            
-        //newWnd->webview.navigate(SK_Base_URL + "/sk:view/" + wndID);
-
+        
+        
         if (wnd->config.data.contains("mainWindow") && wnd->config.data["mainWindow"] == true) {
+            skg->mainWindow->addSubView(wnd);
 
             #if defined(SK_OS_windows)
                 wnd->wndHandle = skg->mainWindow->wndHandle;
@@ -59,14 +72,25 @@ public:
                 #ifdef __OBJC__
                     wnd->wndHandle = skg->mainWindow->wndHandle;
                     wnd->contentView = skg->mainWindow->contentView;
+            
+                    #if defined(SK_APP_TYPE_au)
+                        //This code block causes issues in some DAW's, so we'll allow only fixed-size plugin windows for now
+                        //wnd->contentView.translatesAutoresizingMaskIntoConstraints = false;
+                        /*[NSLayoutConstraint activateConstraints:@[
+                            [wnd->contentView.leadingAnchor constraintEqualToAnchor:wnd->contentView.superview.leadingAnchor],
+                            [wnd->contentView.trailingAnchor constraintEqualToAnchor:wnd->contentView.superview.trailingAnchor],
+                            [wnd->contentView.topAnchor constraintEqualToAnchor:wnd->contentView.superview.topAnchor],
+                            [wnd->contentView.bottomAnchor constraintEqualToAnchor:wnd->contentView.superview.bottomAnchor]
+                        ]];*/
+                    #endif
                 #endif
             #endif
-                
+            
             wnd->windowClassName = "SK_Window_" + wndID;
-                
-            skg->setMainWindowSize(wnd->config["width"], wnd->config["height"]);
-
+        
             wnd->createWebView();
+            
+            skg->setMainWindowSize(wnd->config["width"], wnd->config["height"]);
         }
         else {
             wnd->create();
@@ -94,6 +118,11 @@ public:
 
         respondWith.JSON_OK();
     }
+    
+    void readInfo(SK_Window* wnd, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+        SK_String attribute = payload["attribute"];
+        wnd->readInfo(attribute, respondWith);
+    }
 
     void handleDetailedAttributeAssignment(SK_Window* wnd, const SK_String& attribute, const nlohmann::json& value) {
         
@@ -107,6 +136,11 @@ public:
     
     void loadURL(SK_Window* wnd, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
         wnd->webview.navigate(SK_Base_URL + SK_String(payload["url"]));
+        respondWith.JSON_OK();
+    }
+
+    void windowAction(SK_Window* wnd, const nlohmann::json& payload, SK_Communication_Response& respondWith) {
+        wnd->handleWindowAction(payload);
         respondWith.JSON_OK();
     }
 };
