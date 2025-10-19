@@ -15,7 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 using namespace SK;
 
-
+@class WKContextMenuElementInfo;
 
 @implementation SK_WebView_URLSchemeHandler
 - (void)webView:(WKWebView *)webView startURLSchemeTask:(id <WKURLSchemeTask>)urlSchemeTask {
@@ -114,6 +114,41 @@ using namespace SK;
 
 NS_ASSUME_NONNULL_END
 
+@implementation SK_WebView_MacOS
+
+- (BOOL)acceptsFirstResponder {
+    return YES;
+}
+
+- (void)willOpenMenu:(NSMenu *)menu withEvent:(NSEvent *)event {
+    SK_WebView* sk_webview_parent = static_cast<SK_WebView*>(self.sk_webview_parent);
+    
+    if (!sk_webview_parent->debugEnabled) [menu removeAllItems];
+}
+
+- (void)didCloseMenu:(NSMenu *)menu withEvent:(NSEvent *)event {
+    SK_WebView* sk_webview_parent = static_cast<SK_WebView*>(self.sk_webview_parent);
+    
+    if (!sk_webview_parent->debugEnabled) [super didCloseMenu:menu withEvent:event];
+}
+
+- (void)keyDown:(NSEvent *)event {
+    SK_WebView* sk_webview_parent = static_cast<SK_WebView*>(self.sk_webview_parent);
+    
+    UInt16 code = event.keyCode;
+    NSEventModifierFlags flags = event.modifierFlags & NSEventModifierFlagDeviceIndependentFlagsMask;
+
+    if (code == 111) {
+        sk_webview_parent->tryActivateDebug();
+    }
+    
+    [super keyDown:event];
+}
+
+@end
+
+
+
 BEGIN_SK_NAMESPACE
 
 SK_WebView::~SK_WebView(){
@@ -186,7 +221,8 @@ void SK_WebView::create(bool offsetWhenDebugging) {
                                  forMainFrameOnly:YES]];
     
     // Create the WKWebView
-    webview = [[WKWebView alloc] initWithFrame:frame configuration:config];
+    webview = [[SK_WebView_MacOS  alloc] initWithFrame:frame configuration:config];
+    webview.sk_webview_parent = this;
    
     
     webviewDelegate = [[SK_Webview_MacOS_Delegate alloc] init];
@@ -196,18 +232,6 @@ void SK_WebView::create(bool offsetWhenDebugging) {
     webview.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
     [webview setValue:@NO forKey:@"drawsBackground"];
     
-    // Optionally enable isInspectable for macOS 13.3+
-    if (@available(macOS 13.3, *)) {
-        webview.inspectable = YES;   // <- correct property name in Obj-C
-    }
-    
-    /*if (@available(macOS 13.3, *)) {
-        @try {
-            [webview setValue:@YES forKey:@"isInspectable"];
-        } @catch (NSException* exception) {
-            NSLog(@"Exception enabling isInspectable: %@", exception);
-        }
-    }*/
 
     // Disable magnification
     [webview setAllowsMagnification:NO];
@@ -312,11 +336,42 @@ void SK_WebView::evaluateScript(const SK_String& src, SK_WebView_EvaluationCompl
 
 void SK_WebView::sendMsgAsJSON_mainThread(void* _webview, const SK_String& src, SK_WebView_EvaluationComplete_Callback cb) {
     evaluateScript_mainThread(_webview, src, cb);
-};
+}
 
 void SK_WebView::sendMsgAsJSON(const SK_String& src, SK_WebView_EvaluationComplete_Callback cb) {
     evaluateScript(src, cb);
 }
 
+
+void SK_WebView::configDebugging() {
+    debugActivatorTimer = skg->timerMngr->add(10000);
+    debugActivatorTimer->setCallback([&]() {
+        debugKeyPressCount = 0;
+        enableDebug(false);
+        debugActivatorTimer->stop();
+    });
+    debugActivatorTimer->stop();
+};
+
+void SK_WebView::enableDebug(const bool& enable) {
+    debugEnabled = enable;
+    debugActivatorTimer->reset();
+    debugActivatorTimer->stop();
+    
+    if (@available(macOS 13.3, *)) {
+        webview.inspectable = (enable ? YES : NO);
+    }
+};
+
+void SK_WebView::tryActivateDebug() {
+    debugActivatorTimer->reset();
+    debugActivatorTimer->start();
+    debugKeyPressCount++;
+
+    if (debugKeyPressCount >= 10) {
+        debugKeyPressCount = 0;
+        enableDebug(!debugEnabled);
+    }
+};
 
 END_SK_NAMESPACE

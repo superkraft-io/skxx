@@ -35,11 +35,7 @@ public:
         SK_String target = payload["target"];
 
         if (target == "sb") {
-            #if defined(SK_OS_windows)
-                skg->showSoftBackendDevTools();
-            #elif defined(SK_OS_apple)
-                respondWith.error(404, "Not possible to remotely open dev tools on MacOS");
-            #endif
+            skg->showSoftBackendDevTools();
             return;
         }
 
