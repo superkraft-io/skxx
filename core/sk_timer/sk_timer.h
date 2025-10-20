@@ -21,6 +21,8 @@ class SK_Timer {
 public:
     using Callback = std::function<void()>;
 
+    SK_String id = "SK_Timer";
+
     explicit SK_Timer(double interval_ms = 0.0) : interval_ms_(interval_ms) {}
 
     void setInterval(double interval_ms) {

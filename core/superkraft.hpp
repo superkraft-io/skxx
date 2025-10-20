@@ -15,7 +15,7 @@ public:
 
 	SK_Communication* comm;
     
-    SK_Timer fpsWatcher;
+    SK_Timer* fpsWatcher;
 
     #if defined(SK_BUNDLE_MODE_DEEP) || defined(SK_BUNDLE_MODE_SHALLOW)
         SK_SoftBackend_Bundle_Library* bundle_library;
@@ -28,19 +28,22 @@ public:
 		skg->sk = this;
 
         skg->timerMngr = new SK_TimerMngr();
-        skg->syncTimer = skg->timerMngr->add(1);// 1000 / SK_DisplayUtils::getHighestFPSCurrent());
+        skg->syncTimer = skg->timerMngr->add(1000);
+        skg->syncTimer->id = "syncTimer";
         skg->syncTimer->start();
         
 
-        fpsWatcher.setInterval(200);
-        fpsWatcher.setCallback([this]() {
+        fpsWatcher = skg->timerMngr->add(1000);
+        fpsWatcher->id = "fpsWatcher";
+        fpsWatcher->setCallback([this]() {
             SK_DisplayUtils::tick();
         });
+        fpsWatcher->start();
 
         SK_DisplayUtils::beginMonitoringHighestFPS(
             [this](double oldHz, double newHz) {
                 double interval = 1000 / newHz;
-                //skg->syncTimer->setInterval(interval);
+                skg->syncTimer->setInterval(interval);
             },
             true,
             true,
