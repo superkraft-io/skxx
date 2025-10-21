@@ -46,7 +46,10 @@ class sk_dawPluginMngr {
         component.dawPluginParamInfo = this.parameterByID(dawPluginParamID)
 
         component.__dawPluginWriteParamValue = async val => {
-            await sk.nativeActions.handlePluginParamMouseEvent({dawPluginParamID: component.__dawPluginParamID, event: 'write', value: val})
+            var touchUpElapsed = Date.now() - component.dawPluginParamIsTouchingUpTime
+            var canWrite = component.dawPluginParamIsTouching || (touchUpElapsed < 50)
+            console.log('canWrite', canWrite, 'touchUpElapsed', touchUpElapsed)
+            if (canWrite) await sk.nativeActions.handlePluginParamMouseEvent({dawPluginParamID: component.__dawPluginParamID, event: 'write', value: val})
         }
 
         component.element.addEventListener('contextmenu', async _e => {
@@ -85,7 +88,7 @@ class sk_dawPluginMngr {
         var step = async _ts => {
             for (var id in this.components) {
                 var component = this.components[id]
-                if (!component.pluginParamIsTouching){
+                if (!component.dawPluginParamIsTouching){
                     component.value = this.parameterByID(id).value
                 }
             }

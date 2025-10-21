@@ -11,7 +11,6 @@
 
 #define WKJSE(key) error.userInfo[@#key]
 
-NS_ASSUME_NONNULL_BEGIN
 
 using namespace SK;
 
@@ -71,6 +70,7 @@ using namespace SK;
     }
 }
 
+
 @end
 
 
@@ -112,8 +112,6 @@ using namespace SK;
 
 @end
 
-NS_ASSUME_NONNULL_END
-
 @implementation SK_WebView_MacOS
 
 - (BOOL)acceptsFirstResponder {
@@ -134,16 +132,21 @@ NS_ASSUME_NONNULL_END
 
 - (void)keyDown:(NSEvent *)event {
     SK_WebView* sk_webview_parent = static_cast<SK_WebView*>(self.sk_webview_parent);
-    
-    UInt16 code = event.keyCode;
-    NSEventModifierFlags flags = event.modifierFlags & NSEventModifierFlagDeviceIndependentFlagsMask;
 
-    if (code == 111) {
+    UInt16 code = event.keyCode; // F12 == 111
+    NSEventModifierFlags flags =
+        (event.modifierFlags & NSEventModifierFlagDeviceIndependentFlagsMask);
+
+    const NSEventModifierFlags want = (NSEventModifierFlagCommand | NSEventModifierFlagShift);
+
+    if (code == 111 && (flags & want) == want) {
         sk_webview_parent->tryActivateDebug();
+        return; // handled
     }
-    
+
     [super keyDown:event];
 }
+
 
 @end
 
@@ -199,6 +202,8 @@ void SK_WebView::create(bool offsetWhenDebugging) {
     [preferences setValue:@YES forKey:@"DOMPasteAllowed"];
     [preferences setValue:@YES forKey:@"javaScriptCanAccessClipboard"];
 
+    preferences.javaScriptEnabled = YES;
+    
     config.preferences = preferences;
     
     // Create an instance of the Objective-C message handler
