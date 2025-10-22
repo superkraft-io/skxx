@@ -1,10 +1,10 @@
 #pragma once
 
 
-#include "../skxx_iplug2_demo/skxx/core/sk_include.h"
-#include "../skxx_iplug2_demo/skxx/core/utils/sk_string.h"
-#include "../skxx_iplug2_demo/skxx/core/sk_communication/sk_communication_response.hpp"
-#include "../skxx_iplug2_demo/skxx/module_system/cpp/modules/sk/nativeActions/sk_nativeAction_root.hpp"
+#include "../skxx_daw_plugin_lib/skxx/core/sk_include.h"
+#include "../skxx_daw_plugin_lib/skxx/core/utils/sk_string.h"
+#include "../skxx_daw_plugin_lib/skxx/core/sk_communication/sk_communication_response.hpp"
+#include "../skxx_daw_plugin_lib/skxx/module_system/cpp/modules/sk/nativeActions/sk_nativeAction_root.hpp"
 
 //<includes>
 

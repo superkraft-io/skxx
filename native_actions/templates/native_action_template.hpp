@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../skxx_iplug2_demo/skxx/core/sk_common.hpp"
+#include "../../skxx_daw_plugin_lib/skxx/core/sk_common.hpp"
 
 class SK_NativeAction_test : public SK::SK_NativeAction_Root {
 public:
