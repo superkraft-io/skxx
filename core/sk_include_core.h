@@ -37,7 +37,7 @@
 #include "../libs/general/debugbreak.h"
 #include "sk_var.hpp"
 
-#include "../../sk_target_build_defs.h"
+#include "../../../.sk/sk_target_build_defs.h"
 
 #include "../frameworks/iPlug2/sk_project_includes.hpp"
 

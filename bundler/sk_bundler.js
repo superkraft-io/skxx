@@ -1,6 +1,3 @@
-//!!!!!    TODO: Also bundle all modsys web files, not just the soft backend files.    !!!!
-
-
 global.sk = {
     file: 'sk_bundler.js',
     path: __dirname
@@ -41,16 +38,16 @@ global.web_core = {
     soft_backend: web_core_root + '/soft_backend/'
 }
 
-global.soft_backend_root =  path.resolve(__dirname, '../../project').split('\\').join('/');
+global.soft_backend_root =  path.resolve(__dirname, '../../../soft_backend').split('\\').join('/');
 
-global.bundleRoot = path.resolve(__dirname, '../../sk_soft_backend_bundle/').split('\\').join('/');
+global.bundleRoot = path.resolve(__dirname, '../../../.sk/sk_soft_backend_bundle/').split('\\').join('/');
 
-global.bundleDeepRoot = path.resolve(__dirname, '../../sk_soft_backend_bundle/deep/').split('\\').join('/');
-global.deepGroupsRoot = path.resolve(__dirname, '../../sk_soft_backend_bundle/deep/groups/').split('\\').join('/');
+global.bundleDeepRoot = path.resolve(__dirname, '../../../.sk/sk_soft_backend_bundle/deep/').split('\\').join('/');
+global.deepGroupsRoot = path.resolve(__dirname, '../../../.sk/sk_soft_backend_bundle/deep/groups/').split('\\').join('/');
 
-global.bundleShallowRoot = path.resolve(__dirname, '../../sk_soft_backend_bundle/shallow/').split('\\').join('/');
-global.shallowGroupsRoot = path.resolve(__dirname, '../../sk_soft_backend_bundle/shallow/groups/').split('\\').join('/');
-global.shallowGroupsDataRoot = path.resolve(__dirname, '../../sk_soft_backend_bundle/shallow/groups/data/').split('\\').join('/');
+global.bundleShallowRoot = path.resolve(__dirname, '../../../.sk/sk_soft_backend_bundle/shallow/').split('\\').join('/');
+global.shallowGroupsRoot = path.resolve(__dirname, '../../../.sk/sk_soft_backend_bundle/shallow/groups/').split('\\').join('/');
+global.shallowGroupsDataRoot = path.resolve(__dirname, '../../../.sk/sk_soft_backend_bundle/shallow/groups/data/').split('\\').join('/');
 
 
 var run = async ()=>{
@@ -147,7 +144,7 @@ var run = async ()=>{
         .replace('<!file_entries!>', groupRes.entriesDefs + '\n')
         .replace('<!folder_entries!>', foldersRes.join(',\n') + '\n')
 
-    var libraryPath = path.resolve(__dirname, '../../sk_soft_backend_bundle/sk_soft_backend_bundle_library.h')
+    var libraryPath = path.resolve(__dirname, '../../../.sk/sk_soft_backend_bundle/sk_soft_backend_bundle_library.h')
     fs.writeFileSync(libraryPath, libraryTemplate)
 
     console.log(`Finalizing...`)

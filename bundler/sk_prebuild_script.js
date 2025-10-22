@@ -23,7 +23,7 @@ var start = async function(){
 
     var bundle_mode = args.config.split('-')[(args.ide === 'xcode' ? 2 : 1)].split('_')[0]
     var root_path = path.resolve(__dirname)
-    var output_path = path.resolve(root_path + '../../../sk_target_build_defs.h')
+    var output_path = path.resolve(root_path + '../../../../.sk/sk_target_build_defs.h')
 
     if (!accepted_modes.includes(bundle_mode)){
         utils.reportError({msg: `[SK++ Pre-Build Script] Invalid bundle mode. Requested "${bundle_mode}". Only accepts "none", "shallow" and "deep"`})

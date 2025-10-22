@@ -51,7 +51,7 @@ public:
 
         SK_Path_Utils* pathUtils = &skg->pathUtils;
 
-        //If the path is not absolute, then make the SK_Project folder the root folder
+        //If the path is not absolute, then make the soft_backend folder the root folder
         if (path.substring(0, 1) == "/" || !SK_File::isPathAbsolute(path)) {
             if (operation != "mkdir") {
                 SK_String targetPrefix = path.substring(0, path.indexOf("/"));
@@ -59,7 +59,7 @@ public:
                     fullPath = pathUtils->paths["module_system"] + path.replace("sk:modsys", "");
                 }
                 else {
-                    fullPath = pathUtils->paths["project"] + path;
+                    fullPath = pathUtils->paths["soft_backend"] + path;
                 }
             }
         }

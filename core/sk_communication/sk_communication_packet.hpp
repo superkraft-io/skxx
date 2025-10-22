@@ -63,7 +63,7 @@ public:
         SK_String pathOnly = url.replace(SK_Base_URL, "");
         
         //extract target
-        SK_String targetRoute = "sk:project";
+        SK_String targetRoute = "sk:soft_backend";
         SK_String targetPrefix = "/sk:";
         if (pathOnly.substring(0, targetPrefix.length()) == targetPrefix){
             size_t targetEndIdx = pathOnly.replace(targetPrefix, "").indexOf("/") + targetPrefix.length();

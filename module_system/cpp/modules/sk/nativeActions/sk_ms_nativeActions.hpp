@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../../../../core/sk_common.hpp"
-#include "../../../../../../sk_app_nativeActions/sk_app_nativeActions.hpp"
+#include "../../../../../../.sk/sk_project_nativeActions.hpp"
 
 #include "core/sk_ms_cNA_handlePluginParamMouseEvent.hpp"
 

@@ -59,24 +59,24 @@ public:
 	void init() {
         #if defined(SK_BUNDLE_MODE_NONE)
             //if we're not running in bundled mode, projectRoot will be set to the root folder of your project.
-            SK_String projectRoot = SK_String(SK_Path_Utils::pathBackwardsUntilNeighbour("skxx")).replaceAll("\\", "/");
-            SK_String skxx = projectRoot + "/skxx";
+            SK_String projectRoot = SK_String(SK_Path_Utils::pathBackwardsUntilNeighbour("soft_backend")).replaceAll("\\", "/");
+            SK_String skxx = SK_String(SK_Path_Utils::pathBackwardsUntilNeighbour("skxx")).replaceAll("\\", "/") + "/skxx";
             add("skxx", skxx);
             add("global_js_core", skxx + "/web/global_js_core");
-            add("soft_backend", skxx + "/web/soft_backend");
+            add("sb", skxx + "/web/soft_backend");
             add("module_system", skxx + "/module_system/web");
-            add("project", projectRoot + "/project");
-            add("config", paths["project"] + "/config.json");
+            add("soft_backend", projectRoot + "/soft_backend");
+            add("config", paths["soft_backend"] + "/config.json");
         #else
             //but if we are running in bundled mode, projectRoot will be set to "/"".
             SK_String projectRoot = "";
             SK_String skxx = "";
             add("skxx", skxx);
             add("global_js_core", skxx + "sk:webcore/global_js_core");
-            add("soft_backend", skxx + "sk:webcore/soft_backend");
+            add("sb", skxx + "sk:webcore/soft_backend");
             add("module_system", skxx + "sk:modsys");
-            add("project", projectRoot + "/");
-            add("config", paths["project"] + "config.json");
+            add("soft_backend", projectRoot + "/");
+            add("config", paths["soft_backend"] + "config.json");
         #endif
 
 		

@@ -155,7 +155,7 @@ public:
 				handleForwarding(packet);
 			}
 			else {
-                SK_String filePath = skg->pathUtils.paths["soft_backend"] + SK_String(packet->info["path"]);
+                SK_String filePath = skg->pathUtils.paths["sb"] + SK_String(packet->info["path"]);
                 
                 #if defined(SK_BUNDLE_MODE_NONE)
                     packet->response()->file(filePath);
@@ -194,7 +194,7 @@ public:
 				(*packet->response())
 			);
 		}
-		else if (packet->target == "sk:project") {
+		else if (packet->target == "sk:sb") {
 			SK_String path = SK_String(packet->info["path"]);
 
 			if (path.substring(0, 7) == "/sk_vfs") {
@@ -207,7 +207,7 @@ public:
 				return;
 			}
 
-            SK_String filePath = skg->pathUtils.paths["project"] + path;
+            SK_String filePath = skg->pathUtils.paths["soft_backend"] + path;
             
             #if defined(SK_BUNDLE_MODE_NONE)
                 packet->response()->file(filePath);
@@ -228,7 +228,7 @@ public:
 			//packet->response()->JSON(SK_Profiler::serialize());
 		}
 		else {
-            std::string filePath = skg->pathUtils.paths["project"] + SK_String(packet->info["path"]);
+            std::string filePath = skg->pathUtils.paths["soft_backend"] + SK_String(packet->info["path"]);
             #if defined(SK_BUNDLE_MODE_NONE)
                 packet->response()->file(filePath);
             #else
@@ -401,7 +401,7 @@ public:
             if (url.indexOf("sk://sk.view.") > -1) {
                 if (path.length() == 1) {
                     SK_String viewID = url.replace("sk://sk.view.", "").replace("/", "");
-                    url = SK_Base_URL + "/sk_vfs/sk_project/views/" + viewID + "/frontend/view.html";
+                    url = SK_Base_URL + "/sk_vfs/sk_soft_backend/views/" + viewID + "/frontend/view.html";
                 }
             }
 
