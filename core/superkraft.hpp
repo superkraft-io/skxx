@@ -88,8 +88,6 @@ public:
         
 		skg->sk_config = nlohmann::json::parse(configFile.data);
 
-
-
 		comm->modsys = modsys;
 		comm->wndMngr = wndMngr;
 	}

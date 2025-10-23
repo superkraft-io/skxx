@@ -2,7 +2,7 @@
 
 #include "../../skxx/core/sk_common.hpp"
 #include "../../skxx/core/superkraft.hpp"
-#include "sk_plugin_contextMenu.hpp"
+#include "sk_framework_iplug2_plugin_contextMenu.hpp"
 
 #include "IPlugWebUI_SK.h"
 
@@ -16,7 +16,7 @@
 
 using namespace iplug;
 
-class SK_Project {
+class SK_Framework_iPlug2_Project {
 public:
     std::unique_ptr<iplug::Timer> uiTimer_;
     SK_Global* skg;
@@ -26,16 +26,16 @@ public:
     
     IPlugAPIBase* instance;
 
-    SK_Plugin_ContextMenu* plugCtxMenu;
+    SK_Framework_iPlug2_Plugin_ContextMenu* plugCtxMenu;
 
     std::vector<float> paramValues;
     
 
     SK_Window* parameterListener = NULL;
     
-    SK_Project(SK_Global* _skg) {
+    SK_Framework_iPlug2_Project(SK_Global* _skg) {
         skg = _skg;
-        plugCtxMenu = new SK_Plugin_ContextMenu(skg);
+        plugCtxMenu = new SK_Framework_iPlug2_Plugin_ContextMenu(skg);
     }
 
     void init(IPlugAPIBase* _instance = nullptr){

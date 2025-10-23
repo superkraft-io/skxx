@@ -38,7 +38,7 @@
 
 
 #if defined(SK_BUNDLE_MODE_DEEP) || defined(SK_BUNDLE_MODE_SHALLOW)
-    #include "../../../sk_soft_backend_bundle/sk_soft_backend_bundle_library.h"
+    #include "../../../../.sk/bundle/sk_soft_backend_bundle_library.h"
 #endif
 
 
@@ -92,7 +92,7 @@ public:
 
 	SK_String runningAs = "unknown";
 
-    void* project;
+    void* framework_base;
     
     
     #if defined(SK_BUNDLE_MODE_DEEP) || defined(SK_BUNDLE_MODE_SHALLOW)
@@ -179,7 +179,7 @@ public:
         mainWindow = nullptr;
         sb_ipc = nullptr;
         sk = nullptr;
-        project = nullptr;
+        framework_base = nullptr;
         
         #if defined(SK_BUNDLE_MODE_DEEP) || defined(SK_BUNDLE_MODE_SHALLOW)
             bundle_library = nullptr;

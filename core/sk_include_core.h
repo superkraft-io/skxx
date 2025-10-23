@@ -39,7 +39,7 @@
 
 #include "../../../.sk/sk_target_build_defs.h"
 
-#include "../frameworks/iPlug2/sk_project_includes.hpp"
+#include "../frameworks/iPlug2/sk_framework_iplug2_includes.hpp"
 
 #include "json.hpp"
 

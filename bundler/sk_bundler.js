@@ -40,14 +40,14 @@ global.web_core = {
 
 global.soft_backend_root =  path.resolve(__dirname, '../../../soft_backend').split('\\').join('/');
 
-global.bundleRoot = path.resolve(__dirname, '../../../.sk/sk_soft_backend_bundle/').split('\\').join('/');
+global.bundleRoot = path.resolve(__dirname, '../../../.sk/bundle/').split('\\').join('/');
 
-global.bundleDeepRoot = path.resolve(__dirname, '../../../.sk/sk_soft_backend_bundle/deep/').split('\\').join('/');
-global.deepGroupsRoot = path.resolve(__dirname, '../../../.sk/sk_soft_backend_bundle/deep/groups/').split('\\').join('/');
+global.bundleDeepRoot = path.resolve(__dirname, '../../../.sk/bundle/deep/').split('\\').join('/');
+global.deepGroupsRoot = path.resolve(__dirname, '../../../.sk/bundle/deep/groups/').split('\\').join('/');
 
-global.bundleShallowRoot = path.resolve(__dirname, '../../../.sk/sk_soft_backend_bundle/shallow/').split('\\').join('/');
-global.shallowGroupsRoot = path.resolve(__dirname, '../../../.sk/sk_soft_backend_bundle/shallow/groups/').split('\\').join('/');
-global.shallowGroupsDataRoot = path.resolve(__dirname, '../../../.sk/sk_soft_backend_bundle/shallow/groups/data/').split('\\').join('/');
+global.bundleShallowRoot = path.resolve(__dirname, '../../../.sk/bundle/shallow/').split('\\').join('/');
+global.shallowGroupsRoot = path.resolve(__dirname, '../../../.sk/bundle/shallow/groups/').split('\\').join('/');
+global.shallowGroupsDataRoot = path.resolve(__dirname, '../../../.sk/bundle/shallow/groups/data/').split('\\').join('/');
 
 
 var run = async ()=>{
@@ -100,7 +100,9 @@ var run = async ()=>{
     fs.mkdirSync(shallowGroupsRoot, { recursive: true })
     fs.mkdirSync(shallowGroupsDataRoot, { recursive: true })
 
-    fs.copyFileSync(__dirname + '/templates/sk_soft_backend_bundle_group_root_template.h', path.resolve(__dirname, '../../sk_soft_backend_bundle/sk_soft_backend_bundle_group_root.h'))
+    var src = path.resolve(__dirname + '/templates/sk_soft_backend_bundle_group_root_template.h')
+    var dst = path.resolve(__dirname, '../../../.sk/bundle/bundle_group_root.h')
+    fs.copyFileSync(src, dst)
 
 
     console.log(` - Listing files...`)
@@ -144,7 +146,7 @@ var run = async ()=>{
         .replace('<!file_entries!>', groupRes.entriesDefs + '\n')
         .replace('<!folder_entries!>', foldersRes.join(',\n') + '\n')
 
-    var libraryPath = path.resolve(__dirname, '../../../.sk/sk_soft_backend_bundle/sk_soft_backend_bundle_library.h')
+    var libraryPath = path.resolve(__dirname, '../../../.sk/bundle/sk_soft_backend_bundle_library.h')
     fs.writeFileSync(libraryPath, libraryTemplate)
 
     console.log(`Finalizing...`)
@@ -152,7 +154,7 @@ var run = async ()=>{
     for (var i = 0; i < filesToPermit.length; i++) {
         var file = filesToPermit[i];
         try {
-            fs.chmodSync(file, 777)
+            fs.chmodSync(file, 0o666)
             fs.chownSync(file, process.getuid(), process.getgid());
         } catch(err) {
             console.warn(` - Warning: Could not set permissions for file ${file}. ${err.message}`)

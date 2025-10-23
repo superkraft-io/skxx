@@ -1,8 +1,8 @@
 #pragma once
 
-#ifndef __INTELLISENSE__ // Disable for Intellisense
 
-#include "../../sk_soft_backend_bundle_group_root.h"
+
+#include "../../bundle_group_root.h"
 
 #if defined(SK_BUNDLE_MODE_SHALLOW)
     #include <filesystem>
@@ -61,11 +61,9 @@ public:
                 return true;
             }
 
-            return false;
+            throw std::runtime_error("[SK++] Failed to load file for shallow bundle group <!id!>\n");
         }
     #endif
 };
 
 END_SK_NAMESPACE
-
-#endif // __INTELLISENSE__

@@ -39,7 +39,7 @@ var start = async function(){
     } else {
         lines.push('#define SK_ROUTE_FS_TO_BDFS 1')
         if (bundle_mode === 'shallow'){
-            var shallow_data_path = path.resolve(root_path + '/../../sk_soft_backend_bundle/shallow/groups/data/')
+            var shallow_data_path = path.resolve(root_path + '/../../../.sk/bundle/shallow/groups/data/')
             lines.push(`static std::string SK_BUNDLER_SHALLOW_DATA_PATH("${shallow_data_path.split('\\').join('/')}");`)
         }
         else if (bundle_mode === 'deep'){
