@@ -22,7 +22,7 @@ public:
 	unsigned int wndIdx;
     SK_String windowClassName = "SK_Window";
 	SK_String tag;
-	SK_IPC_v2* ipc = new SK_IPC_v2();
+	SK_IPC* ipc = new SK_IPC();
 
 	SK_JSON_Callback config {
 		{"mainWindow", false},
@@ -144,7 +144,7 @@ public:
         }
         
         if (skg->sb_ipc) {
-            SK_IPC_v2* sb_ipc = static_cast<SK_IPC_v2*>(skg->sb_ipc);
+            SK_IPC* sb_ipc = static_cast<SK_IPC*>(skg->sb_ipc);
             
             SK_String wndTag = tag;
             if (firstSubView) wndTag = firstSubView->tag;

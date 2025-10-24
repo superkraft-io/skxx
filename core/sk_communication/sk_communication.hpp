@@ -8,7 +8,7 @@ class SK_Communication {
 public:
     SK_Global* skg;
 
-	SK_IPC_v2* sb_ipc;
+	SK_IPC* sb_ipc;
 	SK_Module_System* modsys;
 	SK_Window_Mngr* wndMngr;
 
@@ -147,7 +147,7 @@ public:
             packet->response()->JSON({{"response", "OK"}});
         }
         else if (packet->target == "sk:viewIPC") {
-            SK_IPC_v2* sender = getIPCForID(packet->sender);
+            SK_IPC* sender = getIPCForID(packet->sender);
             if (sender) sender->handle_IPC_Msg(packet);
         }
 		else if (packet->target == "sk:sb") {
@@ -237,7 +237,7 @@ public:
 		}
 	};
 
-	SK_IPC_v2* getIPCForID(const SK_String& id) {
+	SK_IPC* getIPCForID(const SK_String& id) {
 		if (id == "sk:sb") {
             if (!sb_ipc) return nullptr;
 			return sb_ipc;
@@ -251,8 +251,8 @@ public:
 
         
 	void handleForwarding(SK_Communication_Packet* packet) {
-		SK_IPC_v2* sender = getIPCForID(packet->sender);
-		SK_IPC_v2* target = getIPCForID(packet->target);
+		SK_IPC* sender = getIPCForID(packet->sender);
+		SK_IPC* target = getIPCForID(packet->target);
 
 		SK_String eventID = packet->info["event_id"];
 

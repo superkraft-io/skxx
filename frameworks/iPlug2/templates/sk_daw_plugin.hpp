@@ -1,7 +1,7 @@
 #pragma once
 
-#include "./skxx_daw_plugin_lib/skxx/core/sk_common.hpp"
-#include "./skxx_daw_plugin_lib/iPlug2_SK/Examples/IPlugWebUI_SK/IPlugWebUI_SK.h"
+#include "./rezonant/skxx/core/sk_common.hpp"
+#include "./rezonant/iPlug2_SK/Examples/IPlugWebUI_SK/IPlugWebUI_SK.h"
 
 using namespace iplug;
 

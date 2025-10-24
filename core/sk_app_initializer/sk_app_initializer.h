@@ -24,7 +24,7 @@ public:
     bool isInitialized;
     bool shouldTerminate;
     
-    using SK_Get_SK_SB_IPC = std::function<SK_IPC_v2*()>;
+    using SK_Get_SK_SB_IPC = std::function<SK_IPC*()>;
     SK_Get_SK_SB_IPC get_SK_SB_IPC_CB;
 
 
@@ -38,7 +38,7 @@ public:
             {"data", data}
         };
 
-        SK_IPC_v2* sb_ipc = get_SK_SB_IPC_CB();
+        SK_IPC* sb_ipc = get_SK_SB_IPC_CB();
         if (sb_ipc == nullptr) return;
 
         int x = 0;

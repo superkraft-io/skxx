@@ -493,7 +493,7 @@ public:
     void onSoftBackend_isReady(){
         if (onSoftBackend_isReady_executed) return;
 
-        SK_IPC_v2* ipc = static_cast<SK_IPC_v2*>(skg->sb_ipc);
+        SK_IPC* ipc = static_cast<SK_IPC*>(skg->sb_ipc);
 
         SK_Global* _skg = skg;
         ipc->on("sk_app_is_ready", [&, _skg](nlohmann::json data, SK_Communication_Packet* packet) {

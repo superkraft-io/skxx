@@ -15,8 +15,6 @@
 
 #include "sk_json/sk_json_callback.hpp"
 
-#include "sk_profiler/sk_profiler.hpp"
-
 #include "utils/sk_point.hpp"
 
 
@@ -196,12 +194,12 @@ END_SK_NAMESPACE
 
 #include "utils/sk_machine.hpp"
 
-#include "sk_ipc/sk_ipc_v2.hpp"
+#include "sk_ipc/sk_ipc.hpp"
 
 #include "sk_webview/sk_webview.h"
 #include "sk_window_mngr/sk_window_mngr.h"
 
-#include "sk_app/sk_app_initializer.h"
+#include "sk_app_initializer/sk_app_initializer.h"
 
 
 

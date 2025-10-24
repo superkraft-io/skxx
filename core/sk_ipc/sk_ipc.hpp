@@ -5,34 +5,34 @@
 
 BEGIN_SK_NAMESPACE
 
-using SK_IPC_v2_forwardCallback = std::function<void(SK_Communication_Packet* packet)>;
+using SK_IPC_forwardCallback = std::function<void(SK_Communication_Packet* packet)>;
 
-using SK_IPC_v2_FrontendCallback = std::function<void(nlohmann::json data, SK_Communication_Packet* packet)>;
-using SK_IPC_v2_BackendCallback = std::function<void(const SK_String& target, SK_Communication_Packet* packet)>;
+using SK_IPC_FrontendCallback = std::function<void(nlohmann::json data, SK_Communication_Packet* packet)>;
+using SK_IPC_BackendCallback = std::function<void(const SK_String& target, SK_Communication_Packet* packet)>;
 
-class SK_IPC_v2_awaiter {
+class SK_IPC_awaiter {
 public:
     SK_String id;
-    SK_IPC_v2_forwardCallback cb;
+    SK_IPC_forwardCallback cb;
 };
 
-class SK_IPC_v2 {
+class SK_IPC {
 public:
     SK_Global* skg;
 
     SK_String sender_id = "sk:sb";
 
 
-    SK_IPC_v2_BackendCallback onMessage;
+    SK_IPC_BackendCallback onMessage;
     
-    std::unordered_map<std::string, SK_IPC_v2_BackendCallback> awaitList;
-    std::unordered_map<std::string, SK_IPC_v2_FrontendCallback> listeners;
-    std::unordered_map<std::string, SK_IPC_v2_FrontendCallback> listeners_once;
+    std::unordered_map<std::string, SK_IPC_BackendCallback> awaitList;
+    std::unordered_map<std::string, SK_IPC_FrontendCallback> listeners;
+    std::unordered_map<std::string, SK_IPC_FrontendCallback> listeners_once;
 
 
 
 
-    ~SK_IPC_v2() {
+    ~SK_IPC() {
         awaitList.clear();
         listeners.clear();
         listeners_once.clear();
@@ -72,8 +72,8 @@ public:
     * @param event_id Name of the event
     * @return "always" for a standard event, "once" for a one-time event, "" (empty string) if the event does not exist*/
     SK_String eventExists(const SK_String& event_id){
-        SK_IPC_v2_FrontendCallback listener;
-        SK_IPC_v2_FrontendCallback listener_once;
+        SK_IPC_FrontendCallback listener;
+        SK_IPC_FrontendCallback listener_once;
 
         if (!listeners.empty()) listener = listeners[event_id];
         if (!listeners_once.empty()) listener_once = listeners_once[event_id];
@@ -88,7 +88,7 @@ public:
     * @param event_id Name of the event
     * @param callback Callback with the event data
     * @return A string representing the event message ID*/
-    void on(const SK_String& event_id, SK_IPC_v2_FrontendCallback callback) {
+    void on(const SK_String& event_id, SK_IPC_FrontendCallback callback) {
         if (eventExists(event_id) != "") return;
 
         listeners[event_id] = callback;
@@ -108,7 +108,7 @@ public:
     /** Adds a one-time event that is fired when the frontend requests a response with the specified event ID. A one-time event is automatically removed once it has been fired.
     * @param event_id Name of the event
     * @param callback Callback with the event data*/
-    void once(const SK_String& event_id, SK_IPC_v2_FrontendCallback callback) {
+    void once(const SK_String& event_id, SK_IPC_FrontendCallback callback) {
         if (eventExists(event_id) != "") return;
 
         listeners_once[event_id] = callback;
@@ -148,7 +148,7 @@ public:
         }
 
         // Move out, then erase to avoid reentrancy growth
-        SK_IPC_v2_BackendCallback cb = std::move(it->second);
+        SK_IPC_BackendCallback cb = std::move(it->second);
         awaitList.erase(it);
 
         if (cb) {
@@ -182,7 +182,7 @@ public:
         #endif
     }
 
-    SK_String sendToFE(const SK_String& sender, const SK_String& target, const SK_String& event_id, nlohmann::json data, SK_String type, bool responseless, SK_IPC_v2_BackendCallback cb) {
+    SK_String sendToFE(const SK_String& sender, const SK_String& target, const SK_String& event_id, nlohmann::json data, SK_String type, bool responseless, SK_IPC_BackendCallback cb) {
         SK_String _type = "request";
         if (type != "") _type = type;
 
@@ -222,7 +222,7 @@ public:
     * @param event_id Name of the event
     * @param data Data to send
     * @param cb Callback of the response*/
-    void request(const SK_String& sender, const SK_String& target, SK_String event_id, nlohmann::json data, bool responseless, SK_IPC_v2_BackendCallback cb) {
+    void request(const SK_String& sender, const SK_String& target, SK_String event_id, nlohmann::json data, bool responseless, SK_IPC_BackendCallback cb) {
         #ifdef __OBJC__
             //SKLogInfo(SK_String("sender: " + sender + "    target: " + target + "    event_id: " + event_id + "    data: " + data.dump(4)));
         #endif
@@ -230,7 +230,7 @@ public:
         sendToFE(sender, target, event_id, data, "request", responseless, cb);
     }
 
-    void forwardPacket(SK_Communication_Packet* packet, SK_IPC_v2_BackendCallback cb) {
+    void forwardPacket(SK_Communication_Packet* packet, SK_IPC_BackendCallback cb) {
         nlohmann::json req;
 
         req["msg_id"] = packet->id;
@@ -252,7 +252,7 @@ public:
     /** Sends a response-less message to the frontend. This function does NOT expect or wait for a response.
     * @param data Data to send*/
     void message(nlohmann::json data) {
-        sendToFE(sender_id, "", "SK_IPC_v2_Message", data, "message", true, NULL);
+        sendToFE(sender_id, "", "SK_IPC_Message", data, "message", true, NULL);
     }
 
 private:
