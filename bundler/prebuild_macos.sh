@@ -1,12 +1,34 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+
+find_rezonant() {
+  local start="${1:-$PWD}"
+  local dir
+
+  dir="$(cd -P "$start" 2>/dev/null && pwd)" || return 1
+  while :; do
+    if [ -d "$dir/rezonant" ]; then
+      printf '%s\n' "$dir/rezonant"
+      return 0
+    fi
+    [ "$dir" = "/" ] && return 2
+    dir="$(dirname "$dir")"
+  done
+}
+
+REZONANT_DIR="$(find_rezonant "${SRCROOT:-$PWD}")" || {
+  echo "[prebuild] ERROR: 'rezonant' folder not found (start=${SRCROOT:-$PWD})"
+  exit 3
+}
+
+
 # Inputs
 SCHEME="${1:-}"
 
 # Config
 IDE="xcode"
-PREBUILD_JS="${SRCROOT}/../../../../skxx/bundler/sk_prebuild_script.js"
+PREBUILD_JS="${REZONANT_DIR}/skxx/bundler/sk_prebuild_script.js"
 INSPECT_PORT="${SK_NODE_INSPECT_PORT:-9229}"
 
 # Context

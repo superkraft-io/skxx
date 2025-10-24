@@ -10,7 +10,7 @@
     #include "IPlugSWELL.h"
 #endif
 
-#if __has_include("./iPlug2_SK/IPlug/IPlugConstants.h")
+#if __has_include("IPlugConstants.h")
     #include "config.h"
     #undef SK_FRAMEWORK_Superkraft
     #define SK_FRAMEWORK "iPlug2"
