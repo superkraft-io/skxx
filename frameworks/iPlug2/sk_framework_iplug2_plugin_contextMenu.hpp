@@ -11,13 +11,12 @@
 #include "IPlugPlatform.h"
 
 #if defined(SK_APP_TYPE_vst)
-    #include "IPlugVST3.h"
-
-    #include "istringresult.h"
-    #include "ipersistent.h"
-    #include "funknown.h"
-    #include "vsttypes.h"
-    #include "ivstcontextmenu.h"
+    #include "../../../../iPlug2_SK/IPlug/VST3/IPlugVST3.h"
+    #include "../../../../iPlug2_SK/Dependencies/IPlug/VST3_SDK/pluginterfaces/base/istringresult.h"
+    #include "../../../../iPlug2_SK/Dependencies/IPlug/VST3_SDK/pluginterfaces/base/ipersistent.h"
+    #include "../../../../iPlug2_SK/Dependencies/IPlug/VST3_SDK/pluginterfaces/base/funknown.h"
+    #include "../../../../iPlug2_SK/Dependencies/IPlug/VST3_SDK/pluginterfaces/vst/vsttypes.h"
+    #include "../../../../iPlug2_SK/Dependencies/IPlug/VST3_SDK/pluginterfaces/vst/ivstcontextmenu.h"
 #elif defined(SK_APP_TYPE_au)
     #include <AudioUnit/AudioUnit.h>
 #endif
