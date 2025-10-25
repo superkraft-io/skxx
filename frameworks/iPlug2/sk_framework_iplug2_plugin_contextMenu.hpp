@@ -2,11 +2,6 @@
 
 #include "../../core/sk_common.hpp"
 
-#if __has_include("IPlugWebUI_SK.h")
-    #include "IPlugWebUI_SK.h"
-#else
-    #include "SK_DAW_Plugin_Project.h"
-#endif
 
 #include "IPlugPlatform.h"
 

@@ -4,11 +4,9 @@
 #include "../../skxx/core/superkraft.hpp"
 #include "sk_framework_iplug2_plugin_contextMenu.hpp"
 
-#if __has_include("IPlugWebUI_SK.h")
-    #include "IPlugWebUI_SK.h"
-#else
-    #include "SK_DAW_Plugin_Project.h"
-#endif
+
+#include "../../iPlug2_SK/Examples/IPlugWebUI_SK/IPlugWebUI_SK.h"
+
 
 #include "IPlugPlatform.h"
 #include "IPlugParameter.h"

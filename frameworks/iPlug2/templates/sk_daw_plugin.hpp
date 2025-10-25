@@ -21,9 +21,9 @@ enum EParams {
 };
 
 
-class SK_DAW_Plugin : public SK_DAW_Plugin_Project {
+class SK_DAW_Plugin : public <plugin_class_name> {
 public:
-    SK_DAW_Plugin(const InstanceInfo& info) : SK_DAW_Plugin_Project(info , kNumParams, presetCount) {
+    SK_DAW_Plugin(const InstanceInfo& info) : <plugin_class_name>(info , kNumParams, presetCount) {
         //Configure parameters
         GetParam(kGain)->InitGain("Gain", -70., -70, 0.);
         GetParam(kBoolean)->InitBool("Boolean", false);
