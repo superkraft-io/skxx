@@ -33,14 +33,12 @@ public:
         
         SK_String target = payload["__moduleInstanceConfig"]["__target"];
         
-             if (operation == "quit") quit(payload, respondWith);
+            if (operation == "quit") quit(payload, respondWith);
        else if (operation == "getSystemLocale") getSystemLocale(payload, respondWith);
        else if (operation == "haveAllWindowsClosed") haveAllWindowsClosed(payload, respondWith);
     };
 
     void quit(const nlohmann::json& payload, SK_Communication_Response& respondWith) {
-        
-
         respondWith.JSON_OK();
     }
 

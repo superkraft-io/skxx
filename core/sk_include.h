@@ -222,6 +222,7 @@ END_SK_NAMESPACE
 #include "../module_system/cpp/modules/sk/protonjs/sk_ms_protonjs_native_image.hpp"
 #include "../module_system/cpp/modules/sk/protonjs/sk_ms_protonjs_app.hpp"
 #include "../module_system/cpp/modules/sk/protonjs/sk_ms_protonjs_window.hpp"
+#include "../module_system/cpp/modules/sk/protonjs/sk_ms_protonjs_shell.hpp"
 #include "../module_system/cpp/modules/sk/protonjs/sk_ms_protonjs.hpp"
 
 #include "../module_system/sk_module_system.hpp"

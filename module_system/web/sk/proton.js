@@ -1421,9 +1421,56 @@ class ProtonJS_App extends SK_Module_Root {
     }
 }
 
+
+
+class ProtonJS_Shell extends SK_Module_Root {
+    constructor(opt = {}) {
+        super('proton')
+
+        this.eventID = 0
+        this.events = {}
+
+
+        this.__moduleInstanceConfig.__target = 'shell'
+    }
+
+    showItemInFolder(fullPath){
+        this.this.asyncResponseless('showItemInFolder', {fullPath: fullPath})
+    }
+    
+    openPath(path){
+        return this.async('openPath', {path: path})
+    }
+    
+    openExternal(url, options){
+        return this.async('openExternal', {url: url, options: options})
+    }
+    
+    trashItem(path){
+        return this.async('trashItem', {path: path})
+    }
+    
+    beep(){
+        this.this.asyncResponseless('beep')
+    }
+    
+    writeShortcutLink(shortcutPath, operation = 'create', options = {}){
+        var res = this.sync('writeShortcutLink', { shortcutPath: shortcutPath, operation: operation, options })
+        return res.status
+    }
+    
+    readShortcutLink(shortcutPath){
+        var res = this.sync('readShortcutLink', { shortcutPath: shortcutPath })
+        return res
+    }
+}
+
+
 sk_api.__protonjs.app = new ProtonJS_App()
+sk_api.__protonjs.shell = new ProtonJS_Shell()
 
 module.exports = {
     BrowserWindow: BrowserWindow,
-    app: sk_api.__protonjs.app
+    app: sk_api.__protonjs.app,
+    shell: sk_api.__protonjs.shell,
 }
