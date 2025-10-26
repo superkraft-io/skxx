@@ -434,7 +434,7 @@ public:
 
         
         #if defined(SK_OS_windows)
-            for (int i = 0; i < instance->NParams() - 1; i++) {
+            for (int i = 0; i < instance->NParams(); i++) {
                 IParam* param = instance->GetParam(i);
                 float value = param->Value();
                 if (paramValues[i] != value) {
@@ -476,7 +476,7 @@ public:
             #ifdef __OBJC__
                 if (!instance) return;
         
-                for (int i = 0; i < instance->NParams() - 1; i++) {
+                for (int i = 0; i < instance->NParams(); i++) {
                     IParam* param = instance->GetParam(i);
                     float value = param->Value();
                     if (paramValues[i] != value) {

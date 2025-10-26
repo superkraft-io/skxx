@@ -2,10 +2,6 @@
 
 #include "IPlugParameter.h"
 
-//#define SK_ROUTE_FS_TO_BDFS 1
-//#define SK_BUNDLE_MODE_SHALLOW 1
-//static std::string SK_BUNDLER_SHALLOW_DATA_PATH("/Users/splitterai/Desktop/repos/superkraft-io/skxx_iplug2_demo/sk_soft_backend_bundle/shallow/groups/data");
-
 #if defined(SK_OS_apple)
     #include "IPlugSWELL.h"
 #endif

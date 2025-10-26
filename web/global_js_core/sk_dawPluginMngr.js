@@ -48,7 +48,6 @@ class sk_dawPluginMngr {
         component.__dawPluginWriteParamValue = async val => {
             var touchUpElapsed = Date.now() - component.dawPluginParamIsTouchingUpTime
             var canWrite = component.dawPluginParamIsTouching || (touchUpElapsed < 50)
-            console.log('canWrite', canWrite, 'touchUpElapsed', touchUpElapsed)
             if (canWrite) await sk.nativeActions.handlePluginParamMouseEvent({dawPluginParamID: component.__dawPluginParamID, event: 'write', value: val})
         }
 
