@@ -2,6 +2,8 @@ console.log('sk_dawPluginMngr')
 
 class sk_dawPluginMngr {
     constructor() {
+        this.firstTimeRun = true
+
         this.components = {}
 
         this.parameters = '<sk_plugin_parameters>'
@@ -29,7 +31,7 @@ class sk_dawPluginMngr {
     }
 
     parameterByID(id){
-        return this.parameters[this.parametersIdxByID[id]]
+        return {...this.parameters[this.parametersIdxByID[id]], ...{component: this.components[id]}}
     }
 
     updateParameter(idx, value){
@@ -87,11 +89,12 @@ class sk_dawPluginMngr {
         var step = async _ts => {
             for (var id in this.components) {
                 var component = this.components[id]
-                if (!component.dawPluginParamIsTouching){
+                if (!component.dawPluginParamIsTouching || this.firstTimeRun){
                     component.value = this.parameterByID(id).value
                 }
             }
 
+            delete this.firstTimeRun
             window.requestAnimationFrame(step)
         }
 
