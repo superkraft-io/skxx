@@ -6,7 +6,6 @@
 #include "utils/sk_string.h"
 #include "utils/sk_number.hpp"
 #include "utils/sk_path_utils.hpp"
-#include "utils/sk_array.hpp"
 #include "utils/sk_datetime.hpp"
 #include "utils/sk_str_utils.hpp"
 #include "utils/sk_color.hpp"

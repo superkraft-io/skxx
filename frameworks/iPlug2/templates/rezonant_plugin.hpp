@@ -21,9 +21,9 @@ enum EParams {
 };
 
 
-class SK_DAW_Plugin : public <plugin_class_name> {
+class Rezonant_Plugin : public <plugin_class_name> {
 public:
-    SK_DAW_Plugin(const InstanceInfo& info) : <plugin_class_name>(info , kNumParams, presetCount) {
+    Rezonant_Plugin(const InstanceInfo& info) : <plugin_class_name>(info , kNumParams, presetCount) {
         //Configure parameters
         GetParam(kGain)->InitGain("Gain", -70., -70, 0.);
         GetParam(kBoolean)->InitBool("Boolean", false);
@@ -43,6 +43,15 @@ public:
         MakePreset("One", -70.);
         MakePreset("Two", -30.);
         MakePreset("Three", 0.);
+
+
+        //-------------------
+        onPluginInitialized = [&]() {
+            //This callback is called when SK++ is fully initialized.
+            //You can now access all core SK++ features freely.
+            SK_Global* _skg = skg;
+            Superkraft* sk = getSK();
+        };
     }
 
     void ProcessBlock(sample** inputs, sample** outputs, int nFrames) {
