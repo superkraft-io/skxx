@@ -447,31 +447,7 @@ public:
 
 
             UINT bufferSize = static_cast<UINT>(paramValues.size() * sizeof(float));
-            wil::com_ptr<ICoreWebView2SharedBuffer> sharedBuffer;
-            HRESULT hr = parameterListener->webview.environment12->CreateSharedBuffer(bufferSize, &sharedBuffer);
-            if (FAILED(hr)) {
-                return;
-            }
-
-            BYTE* bufferData = nullptr;
-            hr = sharedBuffer->get_Buffer(&bufferData);
-            if (FAILED(hr)) {
-                return;
-            }
-
-            memcpy(bufferData, paramValues.data(), bufferSize);
-
-
-
-            std::wstring additionalData = L"{\"id\":\"pluginParamUpdate\"}";
-            hr = parameterListener->webview.webview17->PostSharedBufferToScript(
-                sharedBuffer.get(),
-                COREWEBVIEW2_SHARED_BUFFER_ACCESS_READ_ONLY,
-                additionalData.c_str()
-            );
-            if (FAILED(hr)) {
-                return;
-            }
+            parameterListener->webview.sendSharedBuffer(bufferSize, paramValues.data(), { {"id", "pluginParamUpdate"} });
         #elif defined(SK_OS_macos)
             #ifdef __OBJC__
                 if (!instance) return;

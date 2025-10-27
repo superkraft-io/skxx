@@ -166,7 +166,7 @@ public:
     SK_OBJCPPSafeInitializer_CB OBJCPPSafeInitializerCB;
 
     SK_tickSK_TimerMngr_CB tickSK_TimerMngr;
-    
+
     SK_enableDebug_Views_CB enableDebug_Views;
 
     ~SK_Global(){

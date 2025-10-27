@@ -24,6 +24,14 @@ class sk_dawPluginMngr {
                     }
                     chrome.webview.releaseBuffer(arrayBuffer);
                 }
+                else {
+                    if (this.onData) this.onData({
+                        ...metadata,
+                        ...{
+                            data: event.getBuffer()
+                        }
+                    })
+                }
             })
         } catch (err) { }
 

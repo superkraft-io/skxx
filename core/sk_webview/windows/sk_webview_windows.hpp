@@ -511,6 +511,36 @@ public:
             enableDebug(!debugEnabled);
         }
     };
+
+    void sendSharedBufferOnMainThread(size_t size, void* data, const nlohmann::json& metadata = {}) {
+        UINT bufferSize = static_cast<UINT>(size);
+        wil::com_ptr<ICoreWebView2SharedBuffer> sharedBuffer;
+        HRESULT hr = environment12->CreateSharedBuffer(bufferSize, &sharedBuffer);
+
+        BYTE* bufferData = nullptr;
+        hr = sharedBuffer->get_Buffer(&bufferData);
+
+        memcpy(bufferData, data, bufferSize);
+
+        std::wstring additionalData = SK_String(metadata.dump()).toWString();
+
+        hr = webview17->PostSharedBufferToScript(
+            sharedBuffer.get(),
+            COREWEBVIEW2_SHARED_BUFFER_ACCESS_READ_ONLY,
+            additionalData.c_str()
+        );
+    }
+
+    void sendSharedBuffer(size_t size, void* data, const nlohmann::json& metadata = {}) {
+        if (skg->threadPool->thisFunctionRunningInMainThread()) {
+            sendSharedBufferOnMainThread(size, data, metadata);
+            return;
+        }
+
+        skg->threadPool->queueOnMainThread([this, size, data, metadata]() {
+            sendSharedBufferOnMainThread(size, data, metadata);
+        });
+    }
 };
 
 END_SK_NAMESPACE
