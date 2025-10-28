@@ -490,7 +490,7 @@ public:
     //Debugugging stuff (available in release mode as well)
     void configDebugging() {
         debugActivatorTimer = skg->timerMngr->add(10000);
-        debugActivatorTimer->setCallback([&]() {
+        debugActivatorTimer->on([&]() {
             debugKeyPressCount = 0;
             enableDebug(false);
             debugActivatorTimer->stop();

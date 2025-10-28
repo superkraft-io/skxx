@@ -78,7 +78,7 @@ public:
     }
 
     SK_TimerMngr* timerMngr;
-    SK_Timer* syncTimer;
+    SK_Timer* displaySyncedTimer;
 
     SK_Path_Utils pathUtils;
     void* machine;

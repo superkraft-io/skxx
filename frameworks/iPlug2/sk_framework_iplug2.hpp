@@ -413,7 +413,7 @@ public:
         
 
 
-        skg->syncTimer->setCallback([this]() {
+        skg->displaySyncedTimer->on([this]() {
             #if defined(SK_OS_windows)
                 updateParamValues();
             #elif defined(SK_OS_apple)

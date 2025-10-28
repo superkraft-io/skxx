@@ -28,14 +28,14 @@ public:
 		skg->sk = this;
 
         skg->timerMngr = new SK_TimerMngr();
-        skg->syncTimer = skg->timerMngr->add(1000);
-        skg->syncTimer->id = "syncTimer";
-        skg->syncTimer->start();
+        skg->displaySyncedTimer = skg->timerMngr->add(1000);
+        skg->displaySyncedTimer->id = "displaySyncedTimer";
+        skg->displaySyncedTimer->start();
         
 
         fpsWatcher = skg->timerMngr->add(1000);
         fpsWatcher->id = "fpsWatcher";
-        fpsWatcher->setCallback([this]() {
+        fpsWatcher->on([this]() {
             SK_DisplayUtils::tick();
         });
         fpsWatcher->start();
@@ -43,7 +43,7 @@ public:
         SK_DisplayUtils::beginMonitoringHighestFPS(
             [this](double oldHz, double newHz) {
                 double interval = 1000 / newHz;
-                skg->syncTimer->setInterval(interval);
+                skg->displaySyncedTimer->setInterval(interval);
             },
             true,
             true,

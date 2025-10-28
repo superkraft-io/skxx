@@ -23,6 +23,9 @@ enum EParams {
 
 class Rezonant_Plugin : public <plugin_class_name> {
 public:
+    //VU is in percent
+    float vuLevels[2]{ 0, 0 };
+
     Rezonant_Plugin(const InstanceInfo& info) : <plugin_class_name>(info , kNumParams, presetCount) {
         //Configure parameters
         GetParam(kGain)->InitGain("Gain", -70., -70, 0.);
@@ -45,12 +48,33 @@ public:
         MakePreset("Three", 0.);
 
 
-        //-------------------
+        //--------------------------//
         onPluginInitialized = [&]() {
             //This callback is called when SK++ is fully initialized.
             //You can now access all core SK++ features freely.
-            SK_Global* _skg = skg;
-            Superkraft* sk = getSK();
+            
+            
+            //Lets hook into the SK++ synced timer so that we can 
+            skg->displaySyncedTimer->on([&]() {
+                //We send any relevant UI data from here, such as VU meter values, spectrogram data, etc...
+
+                //First we handle the data in a float array
+                vuLevels[0] += 2.;
+                vuLevels[1] += 1.;
+
+                if (vuLevels[0] > 100) vuLevels[0] = 0;
+                if (vuLevels[1] > 100) vuLevels[1] = 0;
+
+                //Then we send the data to the appropriate view, in this case "first_view"
+                SK_Window_Root* wnd = skg->findWindowByTag("first_view");
+                if (!wnd->webview.isReady) return;
+
+                //Finally we send the data to the view
+                wnd->webview.sendSharedBuffer(sizeof(float) * 2, &myData, {
+                    {"id", "vuData"}
+                });
+            })
+
         };
     }
 

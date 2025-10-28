@@ -39,7 +39,7 @@ public:
             return;
         }
 
-        SK_Window* wnd = skg->onFindWindowByTag(target);
+        SK_Window* wnd = skg->findWindowByTag(target);
 
         if (wnd == nullptr) {
             respondWith.error(404, "ENOENT");

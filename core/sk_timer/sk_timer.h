@@ -20,6 +20,7 @@ BEGIN_SK_NAMESPACE
 class SK_Timer {
 public:
     using Callback = std::function<void()>;
+    using CallbackId = uint64_t; // Unique ID for each registered callback
 
     SK_String id = "SK_Timer";
 
@@ -30,7 +31,20 @@ public:
     }
     double interval() const noexcept { return interval_ms_; }
 
-    void setCallback(Callback cb) { cb_ = std::move(cb); }
+
+    // on(): Registers a callback and returns a unique ID for removal.
+    CallbackId on(Callback cb) {
+        // Simple, non-thread-safe unique ID generation
+        CallbackId new_id = next_callback_id_++;
+        callbacks_[new_id] = std::move(cb);
+        return new_id;
+    }
+
+    // off(): Unregisters the callback with the given ID.
+    void off(CallbackId id) {
+        callbacks_.erase(id);
+    }
+    
 
     // Start: enable without resetting phase.
     void start() noexcept { enabled_ = true; }
@@ -38,7 +52,7 @@ public:
     // Stop: disable and reset phase so next start waits a full interval.
     void stop() noexcept { enabled_ = false; accum_ms_ = 0.0; }
 
-    bool isRunning() const noexcept { return enabled_; }  // <-- renamed
+    bool isRunning() const noexcept { return enabled_; }
 
     void reset() noexcept { accum_ms_ = 0.0; }
 
@@ -49,7 +63,13 @@ public:
         if (accum_ms_ + kEps >= interval_ms_) {
             accum_ms_ -= interval_ms_;
             if (accum_ms_ < 0.0) accum_ms_ = 0.0;
-            if (cb_) cb_();
+
+            // --- Updated Callback Execution ---
+            // Iterate and execute ALL registered callbacks
+            for (auto const& [id, cb] : callbacks_) {
+                cb();
+            }
+            // ----------------------------------
         }
     }
 
@@ -58,7 +78,11 @@ private:
     double interval_ms_ = 0.0;
     double accum_ms_ = 0.0;
     bool   enabled_ = true;
-    Callback cb_;
+
+    // --- New private members ---
+    std::map<CallbackId, Callback> callbacks_; // Store multiple callbacks
+    CallbackId next_callback_id_ = 1; // Counter for unique IDs
+    CallbackId single_cb_id_ = 0; // To maintain compatibility with setCallback
 };
 
 class SK_TimerMngr {

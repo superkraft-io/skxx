@@ -92,7 +92,7 @@ public:
 			return findWindowByClassName(windowClassName);
 		};
 
-        skg->onFindWindowByTag = [&](const SK_String& windowTag) {
+        skg->findWindowByTag = [&](const SK_String& windowTag) {
 			return findWindowByTag(windowTag);
 		};
 
