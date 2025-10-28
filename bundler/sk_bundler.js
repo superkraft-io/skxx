@@ -157,7 +157,7 @@ var run = async ()=>{
             fs.chmodSync(file, 0o666)
             fs.chownSync(file, process.getuid(), process.getgid());
         } catch(err) {
-            console.warn(` - Warning: Could not set permissions for file ${file}. ${err.message}`)
+            if (utils.getOS() !== 'win') console.warn(` - Warning: Could not set permissions for file ${file}. ${err.message}`)
         }
     }
     //ensuring all files have been written before exiting
