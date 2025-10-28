@@ -44,6 +44,7 @@ public:
     SK_WebView_Simple_Callback notifyReadyToShow;
 
     SK_WebView_isReady_CB get_isReady = nullptr;
+    bool isReady = false;
 
     SK_WebView_onGetUserDataPath onGetUserDataPath;
 
@@ -394,6 +395,8 @@ public:
                             navigate(currentURL);
 
                             notifyReadyToShow();
+
+                            isReady = true;
 
                             return S_OK;
                         }).Get());
