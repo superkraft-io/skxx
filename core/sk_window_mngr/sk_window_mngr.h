@@ -88,7 +88,7 @@ public:
 			if (focused) updateAllWindows(); //This will fix the ussue
 		};
 
-        skg->onFindWindowByClassName = [&](const SK_String& windowClassName) {
+        skg->findWindowByClassName = [&](const SK_String& windowClassName) {
 			return findWindowByClassName(windowClassName);
 		};
 

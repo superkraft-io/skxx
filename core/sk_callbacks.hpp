@@ -11,7 +11,7 @@ class SK_Communication_Response;
 
 using SK_Window_onWindowFocusChanged_Callback = std::function<void(SK_Window* wnd, const bool& focused)>;
 
-using SK_WindowMngr_onFindWindowByString = std::function<SK_Window* (const SK_String& string)>;
+using SK_WindowMngr_findWindowByString = std::function<SK_Window* (const SK_String& string)>;
 
 #if defined(SK_OS_windows)
     using SK_WindowMngr_getWebview2HWNDForWindow = std::function<HWND(const SK_String& windowClassName)>;

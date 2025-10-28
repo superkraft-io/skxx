@@ -54,27 +54,26 @@ public:
             //You can now access all core SK++ features freely.
             
             
-            //Lets hook into the SK++ synced timer so that we can 
+            //Lets hook into the SK++ synced timer so that we can update our visuals in sync with the monitor
             skg->displaySyncedTimer->on([&]() {
                 //We send any relevant UI data from here, such as VU meter values, spectrogram data, etc...
 
                 //First we handle the data in a float array
-                vuLevels[0] += 2.;
-                vuLevels[1] += 1.;
+                vuLevels[0] += .5;
+                vuLevels[1] += .25;
 
                 if (vuLevels[0] > 100) vuLevels[0] = 0;
                 if (vuLevels[1] > 100) vuLevels[1] = 0;
 
                 //Then we send the data to the appropriate view, in this case "first_view"
                 SK_Window_Root* wnd = skg->findWindowByTag("first_view");
+                if (!wnd) return;
+
                 if (!wnd->webview.isReady) return;
 
                 //Finally we send the data to the view
-                wnd->webview.sendSharedBuffer(sizeof(float) * 2, &myData, {
-                    {"id", "vuData"}
-                });
-            })
-
+                wnd->webview.sendSharedBuffer(sizeof(float) * 2, &vuLevels, { {"id", "vuData"} });
+            });
         };
     }
 

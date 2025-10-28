@@ -104,8 +104,8 @@ public:
 
 	SK_Window_onWindowFocusChanged_Callback onWindowFocusChanged;
 
-	SK_WindowMngr_onFindWindowByString onFindWindowByClassName;
-	SK_WindowMngr_onFindWindowByString onFindWindowByTag;
+	SK_WindowMngr_findWindowByString findWindowByClassName;
+	SK_WindowMngr_findWindowByString findWindowByTag;
 	
     SK_WebView_SendMsgToFrontend_CB sendMsgToWebview;
 	SK_WebView_OnReady onWebViewReady;
