@@ -398,7 +398,7 @@ void SK_WebView::addBufferToQueue(size_t size, void* data, const nlohmann::json&
         throw std::runtime_error("[SK++    sk_webview_macos.mm -> addBufferToQueue()] Invalid metadata type. Must be object. Is not object.");
     }
     
-    tryStartingSharedBufferTimer();
+    tryStartingSharedBuffersTimer();
     
     skg->threadPool->queueOnMainThread([this, size, data, metadata]() {
         sharedBuffersIdx++;
@@ -437,19 +437,19 @@ void SK_WebView::sendSharedBuffer(size_t size, void* data, const nlohmann::json&
     sendSharedBufferOnMainThread(size, data, metadata);
 }
 
-void SK_WebView::tryStartingSharedBufferTimer(){
-    if (sharedBufferTimer){
-        if (!sharedBufferTimer->isRunning()) {
-            sharedBufferTimer->start();
+void SK_WebView::tryStartingSharedBuffersTimer(){
+    if (sharedBuffersTimer){
+        if (!sharedBuffersTimer->isRunning()) {
+            sharedBuffersTimer->start();
         }
         return;
     }
     
-    sharedBufferTimer = skg->timerMngr->add(1);
+    sharedBuffersTimer = skg->timerMngr->add(1);
     
-    sharedBufferTimer->on([this](){
+    sharedBuffersTimer->on([this](){
         if (sharedBuffersQueue.size() == 0){
-            sharedBufferTimer->stop();
+            sharedBuffersTimer->stop();
             return;
         }
         
@@ -463,7 +463,7 @@ void SK_WebView::tryStartingSharedBufferTimer(){
         }
     });
     
-    sharedBufferTimer->start();
+    sharedBuffersTimer->start();
 }
 
 

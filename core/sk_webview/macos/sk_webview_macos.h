@@ -88,7 +88,7 @@ public:
     SK_Communication_Response_Web* _Nullable readyStateWebResponse = nullptr;
     size_t sharedBuffersIdx = 0;
     std::unordered_map<size_t, SK_WebView_SharedBuffer*> sharedBuffersQueue;
-    SK_Timer* sharedBufferTimer = nullptr;
+    SK_Timer* sharedBuffersTimer = nullptr;
     
     ~SK_WebView();
     
@@ -105,7 +105,7 @@ public:
     SK_WebView_SharedBuffer* getBufferAndRemove(size_t uuid);
     void sendSharedBufferOnMainThread(size_t size, void* _Nonnull data, const nlohmann::json& metadata);
     void sendSharedBuffer(size_t size, void* _Nonnull data, const nlohmann::json& metadata);
-    void tryStartingSharedBufferTimer();
+    void tryStartingSharedBuffersTimer();
     
     void configDebugging();
     void enableDebug(const bool& enable);
