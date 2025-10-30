@@ -45,6 +45,7 @@ public:
 
     SK_WebView_isReady_CB get_isReady = nullptr;
     bool isReady = false;
+    bool sharedBuffersCanBeShared = false;
 
     SK_WebView_onGetUserDataPath onGetUserDataPath;
 
@@ -397,6 +398,7 @@ public:
                             notifyReadyToShow();
 
                             isReady = true;
+                            sharedBuffersCanBeShared = true;
 
                             return S_OK;
                         }).Get());
@@ -516,6 +518,8 @@ public:
     };
 
     void sendSharedBufferOnMainThread(size_t size, void* data, const nlohmann::json& metadata = {}) {
+        if (!sharedBuffersCanBeShared) return;
+
         UINT bufferSize = static_cast<UINT>(size);
         wil::com_ptr<ICoreWebView2SharedBuffer> sharedBuffer;
         HRESULT hr = environment12->CreateSharedBuffer(bufferSize, &sharedBuffer);

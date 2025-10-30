@@ -29,7 +29,7 @@ class sk_dawPluginMngr {
                     chrome.webview.releaseBuffer(arrayBuffer);
                 }
                 else {
-                    notifySharedBufferReceived(metadata, event.getBuffer())
+                    this.notifySharedBufferReceived(metadata, event.getBuffer())
                 }
             })
         } catch (err) { }
