@@ -33,6 +33,24 @@
 
 BEGIN_SK_NAMESPACE
 
+class SK_WebView_SharedBuffer {
+public:
+    size_t uuid;
+    bool busy = false;
+    nlohmann::json metadata;
+    SK_Communication_Response_Web* buffer = nullptr;
+    
+    SK_WebView_SharedBuffer(size_t idx){
+        buffer = new SK_Communication_Response_Web(SK_Base_URL + "/__sk_sharedBuffer?id=" + std::to_string(idx));
+        buffer->headers["Content-Type"] = "application/octet-stream";
+        buffer->setAsOK();
+    }
+    
+    ~SK_WebView_SharedBuffer(){
+        delete buffer;
+    }
+};
+
 class SK_WebView {
 public:
     using SK_WebView_EvaluationComplete_Callback = std::function<void(const SK_String& result)>;
@@ -64,6 +82,14 @@ public:
     
     SK_WebView_Simple_Callback notifyReadyToShow;
     
+    bool isReady = false;
+    bool sharedBuffersCanBeShared = false;
+    
+    SK_Communication_Response_Web* _Nullable readyStateWebResponse = nullptr;
+    size_t sharedBuffersIdx = 0;
+    std::unordered_map<size_t, SK_WebView_SharedBuffer*> sharedBuffersQueue;
+    SK_Timer* sharedBufferTimer = nullptr;
+    
     ~SK_WebView();
     
     void create(bool offsetWhenDebugging);
@@ -74,6 +100,12 @@ public:
     void evaluateScript(const SK_String& src, SK_WebView_EvaluationComplete_Callback cb);
     void sendMsgAsJSON_mainThread(void* _Nonnull _webview, const SK_String& src, SK_WebView_EvaluationComplete_Callback cb);
     void sendMsgAsJSON(const SK_String& src, SK_WebView_EvaluationComplete_Callback cb);
+    
+    void addBufferToQueue(size_t size, void* data, const nlohmann::json& metadata);
+    SK_WebView_SharedBuffer* getBufferAndRemove(size_t uuid);
+    void sendSharedBufferOnMainThread(size_t size, void* _Nonnull data, const nlohmann::json& metadata);
+    void sendSharedBuffer(size_t size, void* _Nonnull data, const nlohmann::json& metadata);
+    void tryStartingSharedBufferTimer();
     
     void configDebugging();
     void enableDebug(const bool& enable);

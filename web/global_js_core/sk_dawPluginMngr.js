@@ -1,9 +1,13 @@
 console.log('sk_dawPluginMngr')
 
 class sk_dawPluginMngr {
-    constructor() {
+    constructor(parent) {
+        this.parent = parent
+
         this.firstTimeRun = true
 
+        this.__sharedBufferQueue = {}
+        
         this.components = {}
 
         this.parameters = '<sk_plugin_parameters>'
@@ -25,19 +29,75 @@ class sk_dawPluginMngr {
                     chrome.webview.releaseBuffer(arrayBuffer);
                 }
                 else {
-                    if (this.onData){
-                        this.onData({
-                            ...metadata,
-                            ...{
-                                data: event.getBuffer()
-                            }
-                        })
-                    }
+                    notifySharedBufferReceived(metadata, event.getBuffer())
                 }
             })
         } catch (err) { }
 
+        if (this.parent.staticInfo.os === 'macos') this.sendSharedBufferReadyState()
+
         this.startReadMonitor()
+
+        this.amount = 0
+        this.lowest = 0
+        this.highest = 0
+
+        setInterval(() => {
+            this.lowest = 0
+            this.highest = 0
+            this.amount = 0
+        }, 5000)
+    }
+
+    logTime(time){
+        this.amount++
+
+        if (time < this.lowest || this.lowest === 0) this.lowest = time
+        if (time > this.highest) this.highest = time
+
+        console.log(`Lowest: ${this.lowest} ms, Highest: ${this.highest} ms, Amount: ${this.amount}, Last: ${time} ms`)
+    }
+
+    sendSharedBufferReadyState(){
+        fetch(sk_api.baseURL + '/__sk_sharedBuffer?setReadyState=true', { method: 'GET' })
+        .then(response => {
+            if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+            return response.arrayBuffer()
+        })
+        .then(data => {
+            console.lod('Shared buffer ready state set');
+        })
+        .catch(error => {
+            console.error('Failed setting sharedBuffer ready state');
+        });
+    }
+
+    async fetchQueuedBuffer(uuid, metadata){ //Used in MacOS only
+
+        this.__sharedBufferQueue[uuid] = metadata
+
+        fetch(sk_api.baseURL + '/__sk_sharedBuffer?get=true&uuid=' + uuid, { method: 'GET' })
+        .then(response => {
+            if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+            return response.arrayBuffer()
+        })
+        .then(data => {
+            var _metadata = this.__sharedBufferQueue[uuid]
+            delete this.__sharedBufferQueue[uuid] 
+            this.notifySharedBufferReceived(_metadata, data)
+        })
+        .catch(error => {
+            console.error('Failed getting sharedBuffer');
+        });
+    }
+
+    notifySharedBufferReceived(metadata, data){
+        if (this.onData){
+            this.onData({
+                ...metadata,
+                ...{ data: data }
+            })
+        }
     }
 
     parameterByID(id){

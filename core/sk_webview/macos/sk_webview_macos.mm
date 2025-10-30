@@ -22,6 +22,42 @@ using namespace SK;
     SK_String path = urlSchemeTask.request.URL.path;
     
     
+    NSURLComponents *urlComponents = [NSURLComponents componentsWithURL:urlSchemeTask.request.URL resolvingAgainstBaseURL:NO];
+    NSMutableDictionary<NSString *, NSString *> *dictionary = [NSMutableDictionary dictionary];
+    for (NSURLQueryItem *item in urlComponents.queryItems) {
+        dictionary[item.name] = item.value;
+    }
+    
+    
+    
+    if (url.indexOf("__sk_sharedBuffer") > -1){
+        SK_WebView* webview = static_cast<SK_WebView*>(self.webView);
+        if ([dictionary[@"setReadyState"] isEqualToString:@"true"]){
+            webview->sharedBuffersCanBeShared = true;
+            SK_Communicaton_Response_Apple res = webview->readyStateWebResponse->getWebResponse();
+            [urlSchemeTask didReceiveResponse:res.response];
+            [urlSchemeTask didReceiveData:res.data];
+            [urlSchemeTask didFinish];
+            return;
+        }
+        
+        
+        NSString *stringValue = dictionary[@"uuid"];
+        NSInteger intValue = [stringValue integerValue];
+        size_t uuid = (size_t)intValue;
+        SK_WebView_SharedBuffer* sharedBuffer = webview->getBufferAndRemove(uuid);
+        
+        
+        SK_Communicaton_Response_Apple res = sharedBuffer->buffer->getWebResponse();
+        [urlSchemeTask didReceiveResponse:res.response];
+        [urlSchemeTask didReceiveData:res.data];
+        [urlSchemeTask didFinish];
+        
+        delete sharedBuffer;
+        
+        return;
+    }
+    
     SK_Communication_Config config{self.tag, SK_Communication_Packet_Type::sk_comm_pt_web, (__bridge void *)urlSchemeTask.request};
     if (!self.skg) return;
     
@@ -156,6 +192,7 @@ BEGIN_SK_NAMESPACE
 
 SK_WebView::~SK_WebView(){
     if (!webview) return;
+        
     
     [webview.configuration.userContentController removeScriptMessageHandlerForName:@"SK_IPC_Handler"];
     [webview.configuration.userContentController removeAllUserScripts];
@@ -178,6 +215,10 @@ SK_WebView::~SK_WebView(){
 }
 
 void SK_WebView::create(bool offsetWhenDebugging) {
+    readyStateWebResponse = new SK_Communication_Response_Web(SK_Base_URL + "/__sk_sharedBuffer?setReadyState=true");
+    readyStateWebResponse->headers["Content-Type"] = "text/text";
+    readyStateWebResponse->setAsOK();
+    
     NSRect frame = parentWndHandle.contentView.frame;
     
     #if defined(SK_MODE_DEBUG)
@@ -264,6 +305,8 @@ void SK_WebView::create(bool offsetWhenDebugging) {
     navigate(currentURL);
     
     notifyReadyToShow();
+    
+    isReady = true;
 }
 
 
@@ -348,9 +391,85 @@ void SK_WebView::sendMsgAsJSON(const SK_String& src, SK_WebView_EvaluationComple
 }
 
 
+void SK_WebView::addBufferToQueue(size_t size, void* data, const nlohmann::json& metadata = {}){
+    if (!sharedBuffersCanBeShared) return;
+    
+    if (!metadata.is_object()){
+        throw std::runtime_error("[SK++    sk_webview_macos.mm -> addBufferToQueue()] Invalid metadata type. Must be object. Is not object.");
+    }
+    
+    tryStartingSharedBufferTimer();
+    
+    skg->threadPool->queueOnMainThread([this, size, data, metadata]() {
+        sharedBuffersIdx++;
+        
+        sharedBuffersQueue[sharedBuffersIdx] = new SK_WebView_SharedBuffer(sharedBuffersIdx);
+        sharedBuffersQueue[sharedBuffersIdx]->uuid = sharedBuffersIdx;
+        sharedBuffersQueue[sharedBuffersIdx]->metadata = metadata;
+        sharedBuffersQueue[sharedBuffersIdx]->buffer->data.assign(reinterpret_cast<char*>(data), reinterpret_cast<char*>(data) + size);
+    });
+}
+
+SK_WebView_SharedBuffer* SK_WebView::getBufferAndRemove(size_t uuid){
+    auto it = sharedBuffersQueue.find(uuid);
+    if (it == sharedBuffersQueue.end()) {
+        return nullptr;
+    }
+
+    auto node_handle = sharedBuffersQueue.extract(it);
+    
+    SK_WebView_SharedBuffer* buffer_ptr = node_handle.mapped();
+   
+    if (!node_handle) {
+        return nullptr;
+    }
+    
+    if (sharedBuffersIdx > 1000000) sharedBuffersIdx = 0;
+    
+    return buffer_ptr;
+}
+
+void SK_WebView::sendSharedBufferOnMainThread(size_t size, void* data, const nlohmann::json& metadata = {}) {
+    addBufferToQueue(size, data, metadata);
+}
+
+void SK_WebView::sendSharedBuffer(size_t size, void* data, const nlohmann::json& metadata = {}) {
+    sendSharedBufferOnMainThread(size, data, metadata);
+}
+
+void SK_WebView::tryStartingSharedBufferTimer(){
+    if (sharedBufferTimer){
+        if (!sharedBufferTimer->isRunning()) {
+            sharedBufferTimer->start();
+        }
+        return;
+    }
+    
+    sharedBufferTimer = skg->timerMngr->add(1);
+    
+    sharedBufferTimer->on([this](){
+        if (sharedBuffersQueue.size() == 0){
+            sharedBufferTimer->stop();
+            return;
+        }
+        
+        for (const auto& pair : sharedBuffersQueue) {
+            if (!pair.second->busy) {
+                pair.second->busy = true;
+                SK_String src = "sk_api.pluginMngr.fetchQueuedBuffer(" + std::to_string(pair.second->uuid) + "," + pair.second->metadata.dump() + ")";
+                
+                evaluateScript(src, NULL);
+            }
+        }
+    });
+    
+    sharedBufferTimer->start();
+}
+
+
 void SK_WebView::configDebugging() {
     debugActivatorTimer = skg->timerMngr->add(10000);
-    debugActivatorTimer->setCallback([&]() {
+    debugActivatorTimer->on([&]() {
         debugKeyPressCount = 0;
         enableDebug(false);
         debugActivatorTimer->stop();

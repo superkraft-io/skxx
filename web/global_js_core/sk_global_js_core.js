@@ -76,7 +76,7 @@ class SK_Global_Core {
         }
 
 
-        this.pluginMngr = new sk_dawPluginMngr()
+        this.pluginMngr = new sk_dawPluginMngr(this)
 
         this.init()
     }

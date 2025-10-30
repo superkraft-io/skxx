@@ -58,6 +58,19 @@ public:
             skg->displaySyncedTimer->on([&]() {
                 //We send any relevant UI data from here, such as VU meter values, spectrogram data, etc...
 
+                /* IMPORTANT TO UNDERSTAND
+                We never send more data than what the UI needs.
+                
+                For example, if the UI only has a stereo VU meter, we only send 2 float values (left and right).
+                If the UI has a spectrogram that needs 512 frequency bins, we only send 512 float values.
+                This is to minimize CPU and memory usage.
+                
+                At most, we'd send the amount of floats that fit the screen, e.g the width of the view in pixels.
+                So if your screen has a 1024 pixel width spectrogram, you'd send 1024 float values per frame.
+                
+                Sending more data than needed would be wasteful and inefficient.
+                */
+
                 //First we handle the data in a float array
                 vuLevels[0] += .5;
                 vuLevels[1] += .25;
@@ -68,8 +81,7 @@ public:
                 //Then we send the data to the appropriate view, in this case "first_view"
                 SK_Window_Root* wnd = skg->findWindowByTag("first_view");
                 if (!wnd) return;
-
-                if (!wnd->webview.isReady) return;
+                if (!wnd->webview.sharedBuffersCanBeShared) return;
 
                 //Finally we send the data to the view
                 wnd->webview.sendSharedBuffer(sizeof(float) * 2, &vuLevels, { {"id", "vuData"} });
