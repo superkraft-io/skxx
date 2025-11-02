@@ -7,6 +7,12 @@ BEGIN_SK_NAMESPACE
 
 class SK_DateTime {
 public:
+
+    static long long nowMS() {
+        return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    }
+
+
     #if defined(SK_OS_windows)
         static SK_String formatFileTime(FILETIME ft) {
             SYSTEMTIME st;

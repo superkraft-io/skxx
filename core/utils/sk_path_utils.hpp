@@ -269,8 +269,116 @@ public:
 
 			return SK_String(_path);
 		#elif defined(SK_OS_apple)
-			//for apple
-            return "";
+			NSSearchPathDirectory directory = (NSSearchPathDirectory)0;
+			NSSearchPathDomainMask domainMask = NSUserDomainMask;
+
+			if (_id == "APPDATA" || _id == "PROFILE") {
+				directory = NSApplicationSupportDirectory;
+			}
+			else if (_id == "MYDOCUMENTS") {
+				directory = NSDocumentDirectory;
+			}
+			else if (_id == "DESKTOP" || _id == "DESKTOPDIRECTORY") {
+				directory = NSDesktopDirectory;
+			}
+			else if (_id == "MYMUSIC") {
+				directory = NSMusicDirectory;
+			}
+			else if (_id == "MYPICTURES") {
+				directory = NSPicturesDirectory;
+			}
+			else if (_id == "MYVIDEO") {
+				directory = NSMoviesDirectory;
+			}
+			else if (_id == "PROGRAM_FILES" || _id == "PROGRAM_FILESX86") {
+				// Equivalent to /Applications
+				directory = NSApplicationDirectory;
+				domainMask = NSSystemDomainMask;
+			}
+			else if (_id == "COMMON_APPDATA") {
+				directory = NSApplicationSupportDirectory;
+				domainMask = NSSystemDomainMask;
+			}
+			else if (_id == "FONTS") {
+				directory = NSFontDirectory;
+			}
+			else if (_id == "COMMON_DOCUMENTS") {
+				directory = NSSharedPublicDirectory;
+			}
+			else if (_id == "HOME") {
+				return SK_String(getenv("HOME"));
+			}
+
+			// Use NSSearchPathForDirectoriesInDomains to get the path
+			NSArray* paths = NSSearchPathForDirectoriesInDomains(directory, domainMask, YES);
+			if ([paths count] > 0) {
+				NSString* path = [paths objectAtIndex : 0];
+				// Assuming SK_String has a constructor that takes a const char* or equivalent
+				// And that you are compiling Objective-C/C++
+				return SK_String([path fileSystemRepresentation]);
+			}
+
+			return "";
+		#elif defined(SK_OS_linux)
+			// For Linux/Unix (SK_OS_linux)
+
+			if (_id == "APPDATA" || _id == "PROFILE") {
+				// User-specific application data: $XDG_CONFIG_HOME or ~/.config
+				const char* xdg_config = getenv("XDG_CONFIG_HOME");
+				if (xdg_config && xdg_config[0] != '\0') {
+					return SK_String(xdg_config);
+				}
+				// Fallback to ~/.config
+				return SK_String(getenv("HOME")) + "/.config";
+
+			}
+			else if (_id == "MYDOCUMENTS") {
+				// XDG User Directory: Documents
+				return SK_String(getenv("HOME")) + "/Documents";
+
+			}
+			else if (_id == "DESKTOP" || _id == "DESKTOPDIRECTORY") {
+				// XDG User Directory: Desktop
+				return SK_String(getenv("HOME")) + "/Desktop";
+
+			}
+			else if (_id == "MYMUSIC") {
+				// XDG User Directory: Music
+				return SK_String(getenv("HOME")) + "/Music";
+
+			}
+			else if (_id == "MYPICTURES") {
+				// XDG User Directory: Pictures
+				return SK_String(getenv("HOME")) + "/Pictures";
+
+			}
+			else if (_id == "MYVIDEO") {
+				// XDG User Directory: Videos
+				return SK_String(getenv("HOME")) + "/Videos";
+
+			}
+			else if (_id == "PROGRAM_FILES" || _id == "PROGRAM_FILESX86") {
+				// System-wide applications/libraries
+				return SK_String("/usr/bin"); // or /usr/local/bin
+
+			}
+			else if (_id == "COMMON_APPDATA") {
+				// System-wide, non-user-specific configuration: $XDG_CONFIG_DIRS or /etc/xdg
+				const char* xdg_config_dirs = getenv("XDG_CONFIG_DIRS");
+				if (xdg_config_dirs && xdg_config_dirs[0] != '\0') {
+					// Returns a colon-separated list; using the first path is common
+					std::string first_dir = xdg_config_dirs;
+					size_t pos = first_dir.find(':');
+					return SK_String(first_dir.substr(0, pos));
+				}
+				// Fallback
+				return SK_String("/etc/xdg");
+			}
+			else if (_id == "HOME" || _id == "~" || _id == "~/") {
+				return getenv("HOME");
+			}
+
+			return "";
 		#endif
 	}
 
