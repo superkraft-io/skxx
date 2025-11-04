@@ -92,4 +92,6 @@ using SK_tickSK_TimerMngr_CB = std::function<void()>;
 
 using SK_enableDebug_Views_CB = std::function<void(const bool& enable)>;
 
+using SK_GetNativeAction_CB = std::function<void*(const SK_String& nativeActionName)>;
+
 END_SK_NAMESPACE

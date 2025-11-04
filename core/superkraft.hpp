@@ -90,6 +90,10 @@ public:
 
 		comm->modsys = modsys;
 		comm->wndMngr = wndMngr;
+
+        skg->getNativeAction = [this](const SK_String& actionName) -> void* {
+            return modsys->nativeActions->appActions->actions[actionName];
+        };
 	}
 
 	~Superkraft() {
