@@ -1,8 +1,16 @@
 #pragma once
 
-#include "../sk_include_core.h"
+#include <regex>
+#include <string>
+#include <sstream>
 
-#if defined(SK_OS_apple)
+
+#include "../sk_var.hpp"
+#include "../../libs/general/json.hpp"
+
+#if defined(SK_OS_windows)
+    #include <windows.h>
+#else defined(SK_OS_apple)
     #ifdef __OBJC__
         #import <Foundation/Foundation.h>
     #endif
