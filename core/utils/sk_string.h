@@ -345,6 +345,13 @@ public:
         return data.c_str();
     }
 
+    char* charP() {
+        char* output = new char[data.size() + 1];
+        std::copy(data.begin(), data.end(), output);
+        output[data.size()] = '\0';
+        return output;
+    }
+
     // Method to get the raw string
     const std::string& raw() const {
         return data;
