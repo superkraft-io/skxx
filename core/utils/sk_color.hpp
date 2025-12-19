@@ -286,9 +286,6 @@ public:
     }
 
     std::optional<SK_Color> parseNamedColor(const SK_String& color) {
-
-        auto skcAddr = &SK_Colors::list;
-
         auto it = SK_Colors::list.find(color);
         if (it != SK_Colors::list.end()) {
             return it->second;

@@ -41,8 +41,6 @@ public:
         SK_IPC* sb_ipc = get_SK_SB_IPC_CB();
         if (sb_ipc == nullptr) return;
 
-        int x = 0;
-
         sb_ipc->request("sk:viewIPC", "sk:sb", "sk:appEvent", payload, false, [this, cb](const SK_String& _sender, SK_Communication_Packet* responsePacket) {
             if (cb != NULL) {
                 cb(responsePacket->data);
@@ -164,12 +162,12 @@ public:
             }
 
             static void applicationDidFinishLaunching(id self, SEL _cmd, NSNotification *notification) {
-                SK_App_Initializer* skai = (__bridge SK_App_Initializer*)self;
+                //SK_App_Initializer* skai = (__bridge SK_App_Initializer*)self;
                 //emitAppEvent("ready", {});
             }
 
             static bool applicationShouldTerminateAfterLastWindowClosed(id self, SEL _cmd, NSNotification *notification) {
-                SK_App_Initializer* skai = (__bridge SK_App_Initializer*)self;
+                //SK_App_Initializer* skai = (__bridge SK_App_Initializer*)self;
         
                 /*
                 if (!shouldTerminate){

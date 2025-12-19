@@ -867,7 +867,7 @@ public:
 
             // Get system boot time
             if (sysctlbyname("kern.boottime", &boottime, &size, NULL, 0) != 0) {
-                int x = 0;
+                //int x = 0;
             } else {
                 
                 auto boot_ms = boottime.tv_sec * 1000 + boottime.tv_usec / 1000;

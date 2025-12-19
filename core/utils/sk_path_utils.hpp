@@ -4,9 +4,32 @@
 #include "../sk_var.hpp"
 #include "sk_string.h"
 
+#if defined(SK_OS_windows)
+    //...
+#else
+    #include <sys/utsname.h>
+    #include <unistd.h>
+    #include <sys/sysctl.h>
+    #include <sys/types.h>
+    #include <mach/mach.h>
+    #include <pwd.h>
+    #include <cstdlib>
+    #include <sys/stat.h>
+
+    #if defined (SK_OS_apple)
+        #ifdef __OBJC__
+            #import <Foundation/Foundation.h>
+            #import <AppKit/AppKit.h>
+        #endif
+    #elif defined (SK_OS_linux) || defined (SK_OS_android)
+        // Linux specific includes
+    #endif
+#endif
+
+
 BEGIN_SK_NAMESPACE
 
-static class SK_Path_Utils {
+class SK_Path_Utils {
 public:
 	std::map<std::string, std::string> paths;
 
@@ -43,7 +66,6 @@ public:
                 }
             } catch (const std::exception& e) {
                 std::cerr << "Error accessing directory: " << e.what() << ". If you're on MacOS using Xcode, it may be due to sandboxin in your Xcode project settings. Remove sandboxing.\n";
-                int x = 0;
             }
 		}
 
@@ -269,56 +291,56 @@ public:
 
 			return SK_String(_path);
 		#elif defined(SK_OS_apple)
-			NSSearchPathDirectory directory = (NSSearchPathDirectory)0;
-			NSSearchPathDomainMask domainMask = NSUserDomainMask;
+            #ifdef __OBJC__
+                NSSearchPathDirectory directory = (NSSearchPathDirectory)0;
+                NSSearchPathDomainMask domainMask = NSUserDomainMask;
 
-			if (_id == "APPDATA" || _id == "PROFILE") {
-				directory = NSApplicationSupportDirectory;
-			}
-			else if (_id == "MYDOCUMENTS") {
-				directory = NSDocumentDirectory;
-			}
-			else if (_id == "DESKTOP" || _id == "DESKTOPDIRECTORY") {
-				directory = NSDesktopDirectory;
-			}
-			else if (_id == "MYMUSIC") {
-				directory = NSMusicDirectory;
-			}
-			else if (_id == "MYPICTURES") {
-				directory = NSPicturesDirectory;
-			}
-			else if (_id == "MYVIDEO") {
-				directory = NSMoviesDirectory;
-			}
-			else if (_id == "PROGRAM_FILES" || _id == "PROGRAM_FILESX86") {
-				// Equivalent to /Applications
-				directory = NSApplicationDirectory;
-				domainMask = NSSystemDomainMask;
-			}
-			else if (_id == "COMMON_APPDATA") {
-				directory = NSApplicationSupportDirectory;
-				domainMask = NSSystemDomainMask;
-			}
-			else if (_id == "FONTS") {
-				directory = NSFontDirectory;
-			}
-			else if (_id == "COMMON_DOCUMENTS") {
-				directory = NSSharedPublicDirectory;
-			}
-			else if (_id == "HOME") {
-				return SK_String(getenv("HOME"));
-			}
+                if (_id == "APPDATA" || _id == "PROFILE") {
+                    directory = NSApplicationSupportDirectory;
+                }
+                else if (_id == "MYDOCUMENTS") {
+                    directory = NSDocumentDirectory;
+                }
+                else if (_id == "DESKTOP" || _id == "DESKTOPDIRECTORY") {
+                    directory = NSDesktopDirectory;
+                }
+                else if (_id == "MYMUSIC") {
+                    directory = NSMusicDirectory;
+                }
+                else if (_id == "MYPICTURES") {
+                    directory = NSPicturesDirectory;
+                }
+                else if (_id == "MYVIDEO") {
+                    directory = NSMoviesDirectory;
+                }
+                else if (_id == "PROGRAM_FILES" || _id == "PROGRAM_FILESX86") {
+                    // Equivalent to /Applications
+                    directory = NSApplicationDirectory;
+                    domainMask = NSSystemDomainMask;
+                }
+                else if (_id == "COMMON_APPDATA") {
+                    directory = NSApplicationSupportDirectory;
+                    domainMask = NSSystemDomainMask;
+                }
+                else if (_id == "FONTS") {
+                    //directory = NSAllFontsDirectory;
+                }
+                else if (_id == "COMMON_DOCUMENTS") {
+                    directory = NSSharedPublicDirectory;
+                }
+                else if (_id == "HOME") {
+                    return SK_String(getenv("HOME"));
+                }
 
-			// Use NSSearchPathForDirectoriesInDomains to get the path
-			NSArray* paths = NSSearchPathForDirectoriesInDomains(directory, domainMask, YES);
-			if ([paths count] > 0) {
-				NSString* path = [paths objectAtIndex : 0];
-				// Assuming SK_String has a constructor that takes a const char* or equivalent
-				// And that you are compiling Objective-C/C++
-				return SK_String([path fileSystemRepresentation]);
-			}
-
-			return "";
+                // Use NSSearchPathForDirectoriesInDomains to get the path
+                NSArray* paths = NSSearchPathForDirectoriesInDomains(directory, domainMask, YES);
+                if ([paths count] > 0) {
+                    NSString* path = [paths objectAtIndex : 0];
+                    // Assuming SK_String has a constructor that takes a const char* or equivalent
+                    // And that you are compiling Objective-C/C++
+                    return SK_String([path fileSystemRepresentation]);
+                }
+            #endif
 		#elif defined(SK_OS_linux)
 			// For Linux/Unix (SK_OS_linux)
 
@@ -377,9 +399,9 @@ public:
 			else if (_id == "HOME" || _id == "~" || _id == "~/") {
 				return getenv("HOME");
 			}
-
-			return "";
 		#endif
+        
+        return "";
 	}
 
 };

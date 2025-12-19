@@ -201,8 +201,6 @@ public:
 	}
 
     ~SK_Communication_Response_IPC() {
-        int x = 0;
-
         nlohmann::json().swap(data);
         data = nlohmann::json();
         data.clear();

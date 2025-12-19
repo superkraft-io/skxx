@@ -204,8 +204,6 @@ public:
             [NSAnimationContext beginGrouping];
             [[NSAnimationContext currentContext] setDuration:0];
         
-            bool inMainThread =  skg->threadPool->thisFunctionRunningInMainThread();
-            SK_WebView* wv = &webview;
             [webview.webview setFrame:frame];
             [NSAnimationContext endGrouping];
             

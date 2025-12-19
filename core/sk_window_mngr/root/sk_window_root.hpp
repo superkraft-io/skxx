@@ -96,11 +96,7 @@ public:
 		config.combineWith(_info);
         
 		config_updateTracker.update(_info);
-		for (auto& [key, value] : config_updateTracker.items()) {
-            if (key == "resizable"){
-                int x = 0;
-            }
-            
+		for (auto& [key, value] : config_updateTracker.items()) {            
             config_updateTracker[key] = true;
 		}
 	}
@@ -118,8 +114,6 @@ public:
 	}
 
 	bool checkNeedsUpdateAndReset(const SK_String& attribute) {
-        void* addr = &config_updateTracker;
-        
 		bool needsUpdate = config_updateTracker[attribute];
 		config_updateTracker[attribute] = false;
 		return needsUpdate;

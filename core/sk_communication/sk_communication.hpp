@@ -89,10 +89,6 @@ public:
 
 
     ~SK_Communication() {
-        if (active_packets.size() > 0) {
-            int x = 0;
-        }
-
         for (std::size_t i = active_packets.size(); i-- > 0; ) {
             auto*& pkt = active_packets[i];
             delete pkt;      // safe even if pkt == nullptr
@@ -125,8 +121,7 @@ public:
         packet->type = type;
 
         packet->onBeforeDestroy = [&](SK_Communication_Packet* sourcePacket) {
-            size_t removedCount = remove_all_by_pid(sourcePacket->pid);
-            size_t count = active_packets.size();
+            remove_all_by_pid(sourcePacket->pid);
         };
 
 

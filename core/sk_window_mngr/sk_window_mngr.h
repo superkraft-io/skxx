@@ -66,7 +66,7 @@ public:
 	std::unordered_map<std::string, SK_Window*> list;
     
     SK_Window_Mngr(){
-        int x = 0;
+        
     }
     
 	SK_Window* findWindowByClassName(const SK_String& windowClassName) {

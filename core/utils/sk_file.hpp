@@ -337,7 +337,7 @@ public:
 				//std::cout << "File size: " << fileStat.st_size << " bytes" << std::endl;
 
 				// Print file permissions
-				char* permissions;
+				//char* permissions;
 				/*permissions << ((fileStat.st_mode & S_IRUSR) ? "r" : "-")
 							  << ((fileStat.st_mode & S_IWUSR) ? "w" : "-")
 							  << ((fileStat.st_mode & S_IXUSR) ? "x" : "-")

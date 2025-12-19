@@ -177,7 +177,7 @@ public:
 
         skg->onMainWindowHWNDAcquired = [&](void* handle, bool isView = false) {
            
-            SK_Window* wnd = static_cast<Superkraft*>(skg->sk)->wndMngr->newWindow([&](SK_Window* wnd) {
+            static_cast<Superkraft*>(skg->sk)->wndMngr->newWindow([&](SK_Window* wnd) {
                 skg->mainWindow = wnd;
                 
                 wnd->config.data["width"] = instance->GetEditorWidth();
@@ -430,10 +430,9 @@ public:
     void updateParamValues() {
         if (parameterListener == NULL) return;
         
-        bool anyParamHasChanged = false;
-
-        
         #if defined(SK_OS_windows)
+            bool anyParamHasChanged = false;
+        
             for (int i = 0; i < instance->NParams(); i++) {
                 IParam* param = instance->GetParam(i);
                 float value = param->Value();

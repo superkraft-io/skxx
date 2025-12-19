@@ -29,7 +29,7 @@ public:
                     currentThread = &threads[i]; // Capture pointer to this thread
                 }
                 catch (int err) {
-                    int x = 0;
+                    //int x = 0;
                 };
 
                 while (true) {
