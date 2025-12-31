@@ -8,6 +8,7 @@ class SK_Module_System {
 public:
 	SK_Global* skg;
 
+	SK_Module_process* process;
 	SK_Module_os* os;
 	SK_Module_application* application;
 	SK_Module_fs* fs;
@@ -23,6 +24,7 @@ public:
 		skg = _skg;
 
 
+		process = new SK_Module_process(skg);
         os = new SK_Module_os(skg);
 		application = new SK_Module_application(skg);
 
@@ -51,13 +53,15 @@ public:
         delete fs;
         
         delete application;
-        delete os;
+		delete os;
+		delete process;
         
         skg = nullptr;
 	}
 
 	void performOperation(const SK_String& module, const SK_String& operation, nlohmann::json& payload, SK_Communication_Response& respondWith) {
-		     if (module == "os") os->handleOperation(operation, payload, respondWith);
+		     if (module == "process") process->handleOperation(operation, payload, respondWith);
+		else if (module == "os") os->handleOperation(operation, payload, respondWith);
 		else if (module == "application") application->handleOperation(operation, payload, respondWith);
 		else if (module == "fs") fs->handleOperation(operation, payload, respondWith);
 		else if (module == "bdfs") bdfs->handleOperation(operation, payload, respondWith);

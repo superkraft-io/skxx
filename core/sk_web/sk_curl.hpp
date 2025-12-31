@@ -18,7 +18,6 @@ public:
             
     nlohmann::json call(const nlohmann::json& opt) {
        // Initialize the curl library
-       curl_global_init(CURL_GLOBAL_DEFAULT);
 
        // Create a curl handle
        CURL* handle = curl_easy_init();
@@ -35,11 +34,10 @@ public:
 
 
            headers = curl_slist_append(headers, "charset: utf-8");
-           SK_String mimeTypeStr;
+           SK_String mimeType = "text/html";
 
-           if (opt.contains("mimeType")) mimeTypeStr = SK_String(opt["mimeType"]);
+           if (opt.contains("mimeType")) mimeType = SK_String(opt["mimeType"]);
 
-           SK_String mimeType = SK_Web_MIME_utils::GetInstance().fromFileExt("foo." + mimeTypeStr);
            SK_String hStr = "Accept: " + mimeType;
            headers = curl_slist_append(headers, hStr.c_str());
            hStr = "Content-Type: " + mimeType;
@@ -59,17 +57,24 @@ public:
 
            // Set the request method to POST
            SK_String type = opt["type"];
-           curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, type.c_str());
+           if (type == "POST") {
+               curl_easy_setopt(handle, CURLOPT_POST, 1L);
+           }
+           else {
+               curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, type.c_str());
+           }
 
            // Set the request body
            SK_String body;
            if (opt.contains("body") && !opt["body"].is_null() && opt["body"].size() > 0) {
                body = SK_String(opt["body"]);
            }
-           else body = "{}";
+           else {
+               body = "{}";
+           }
+
            curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, (long)strlen(body.c_str()));
-           curl_easy_setopt(handle, CURLOPT_POSTFIELDS, body.c_str());
-           //curl_easy_setopt(handle, CURLOPT_POST, 1);
+           curl_easy_setopt(handle, CURLOPT_COPYPOSTFIELDS, body.c_str());
 
            // Set redirect count
            long redirects = 5;
@@ -91,7 +96,6 @@ public:
 
            // Clean up
            curl_easy_cleanup(handle);
-           curl_global_cleanup();
 
            // Check the result
            if (result != CURLE_OK) {
@@ -117,6 +121,11 @@ class SK_CURL {
 public:
 
     SK_CURL() {
+        curl_global_init(CURL_GLOBAL_DEFAULT);
+    };
+
+    ~SK_CURL() {
+        curl_global_cleanup();
     };
 
     nlohmann::json createRequest(const nlohmann::json&  opt) {//const String& url, String data, String& type = "GET", String mimeType);

@@ -21,7 +21,7 @@ class SK_Module_web extends SK_Module_Root {
                 if (again) return
                 again = false
                 progressRes = await this.async('sk.web', 'getProgress', { id: cbRes.progressCallbackID })
-                onProgress(progressRes)
+                onProgress(progressRes) 
                 again = true
             })
         }
@@ -60,7 +60,19 @@ class SK_Module_web extends SK_Module_Root {
 
         clearInterval(callbackTimer)
 
-        return res
+        
+        if (defPayload.mimeType && defPayload.mimeType.toLowerCase().indexOf('json') > -1){
+            try {
+                var resJson = JSON.parse(res.data)
+                res.data = resJson
+            } catch(err) {
+                res.error
+            }
+        }
+        
+        if (res.err) throw res.err
+
+        return res.data
     }
 
     get(opt, onProgress){

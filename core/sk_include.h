@@ -206,6 +206,7 @@ END_SK_NAMESPACE
 
 #include "../module_system/cpp/modules/sk/vfs/sk_ms_vfs_file.hpp"
 
+#include "../module_system/cpp/modules/nodejs/sk_ms_nodejs_process.hpp"
 #include "../module_system/cpp/modules/nodejs/sk_ms_nodejs_os.hpp"
 #include "../module_system/cpp/modules/sk/sk_ms_application.hpp"
 #include "../module_system/cpp/modules/sk/vfs/sk_ms_vfs.hpp"

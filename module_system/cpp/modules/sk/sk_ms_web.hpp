@@ -49,7 +49,9 @@ public:
         }
 
         nlohmann::json body;
-        if (!payload["body"].is_null()) body = payload["body"];
+        if (!payload["body"].is_null()) {
+            body = payload["body"];
+        }
 
         SK_String mimeType = payload["mimeType"];
 

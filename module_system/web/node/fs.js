@@ -54,6 +54,8 @@ class SK_Module_fs extends SK_Module_Root {
     }
 
     rmSync(path, options = {}){
+        var _this = this
+
         var defOpts = {
             force: false,
             maxRetries: 0,
@@ -67,10 +69,10 @@ class SK_Module_fs extends SK_Module_Root {
         function removeDirectoryRecursive(directoryPath) {
             if (cancel) return
 
-            const files = __fs.readdirSync(directoryPath);
+            const files = _this.readdirSync(directoryPath);
 
             if (files.length === 0) {
-                __fs.unlinkSync(directoryPath)
+                _this.unlinkSync(directoryPath)
                 return
             }
 
@@ -80,14 +82,14 @@ class SK_Module_fs extends SK_Module_Root {
                 filePath = filePath.split('\\').join('/')
                 filePath = filePath.split('//').join('/')
 
-                if (__fs.statSync(filePath).isDirectory()) {
+                if (_this.statSync(filePath).isDirectory()) {
                     removeDirectoryRecursive(filePath)
                     if (cancel) return
                 } else {
                     var fileFailed = true
                     for (var attempt = 0; attempt <= defOpts.maxRetries; attempt++) {
                         try {
-                            __fs.unlinkSync(filePath)
+                            this.unlinkSync(filePath)
                             fileFailed = false
                         } catch (err) {
                         }
@@ -109,8 +111,8 @@ class SK_Module_fs extends SK_Module_Root {
         }
 
 
-        if (__fs.statSync(path).isDirectory()) removeDirectoryRecursive(path)
-        else __fs.unlinkSync(path)
+        if (this.statSync(path).isDirectory()) removeDirectoryRecursive(path)
+        else this.unlinkSync(path)
     }
 
     mkdirSync(path, options) {
@@ -189,7 +191,7 @@ class SK_Module_fs extends SK_Module_Root {
             rm(path, options) {
                 return new Promise(async (resolve, reject) => {
                     try {
-                        var res = __fs.rm(path, options)
+                        var res = this.rm(path, options)
                         if (res.error) return reject(res.err)
                         resolve()
                     } catch (err) {
@@ -201,7 +203,7 @@ class SK_Module_fs extends SK_Module_Root {
             mkdir(path, options) {
                 return new Promise(async (resolve, reject) => {
                     try {
-                        var res = __fs.mkdir(path, options)
+                        var res = this.mkdir(path, options)
                         if (res.error) return reject(res.err)
                         resolve()
                     } catch (err) {

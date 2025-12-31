@@ -92,8 +92,9 @@ public:
         if (SK_File::exists(path)) SK_File::unlink(path);
 
         SK_File file;
+        file.data = data;
 
-        bool writeStatus = SK_File::append(path, data);
+        bool writeStatus = file.saveToDisk(path);
 
         if (writeStatus) {
             respondWith.JSON_OK();

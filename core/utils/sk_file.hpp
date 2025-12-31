@@ -79,8 +79,30 @@ public:
 
 
 	bool saveToDisk(const SK_String& path) {
-		//Save to disk
-        return false;
+		// Ensure the directory exists before trying to save
+		std::filesystem::path p(path.data);
+		if (p.has_parent_path() && !std::filesystem::exists(p.parent_path())) {
+			try {
+				std::filesystem::create_directories(p.parent_path());
+			}
+			catch (...) {
+				error = "Could not create directory structure";
+				return false;
+			}
+		}
+
+		// Use binary mode to ensure data integrity (no line-ending conversions)
+		std::ofstream outFile(path.data, std::ios::out | std::ios::binary);
+
+		if (outFile.is_open()) {
+			// 'data' is inherited from SK_String (which seems to be the base)
+			outFile.write(data.data(), data.size());
+			outFile.close();
+			return true;
+		}
+
+		error = "Failed to open file for writing";
+		return false;
 	}
 
 	bool saveToVFS(const SK_String& path) {
