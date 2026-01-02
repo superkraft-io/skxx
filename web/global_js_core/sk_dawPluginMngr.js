@@ -171,8 +171,11 @@ class sk_dawPluginMngr {
         window.requestAnimationFrame(step)
     }
 
-    async resetPreviousParam(){
+    async resetPreviousParam(fromComponent){
         if (!this.currentTouchedParam) return
+        
+        clearInterval(this.mouseDownTimer)
+
         delete this.currentTouchedParam.dawPluginParamMouseDownRes
         await sk.nativeActions.handlePluginParamMouseEvent({
             dawPluginParamID: this.currentTouchedParam.__dawPluginParamID,
