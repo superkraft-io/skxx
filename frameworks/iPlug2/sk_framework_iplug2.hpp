@@ -446,7 +446,7 @@ public:
 
 
             UINT bufferSize = static_cast<UINT>(paramValues.size() * sizeof(float));
-            parameterListener->webview.sendSharedBuffer(bufferSize, paramValues.data(), { {"id", "pluginParamUpdate"} });
+            parameterListener->webview.sendSharedBuffer(bufferSize, paramValues.data(), { {"id", "dawPluginParamUpdate"} });
         #elif defined(SK_OS_macos)
             #ifdef __OBJC__
                 if (!instance) return;
@@ -456,7 +456,7 @@ public:
                     float value = param->Value();
                     if (paramValues[i] != value) {
                         paramValues[i] = value;
-                        parameterListener->webview.evaluateScript("window.sk_api.pluginMngr.updateParameter(" + SK_String(i) + "," + SK_String(value) + ")", NULL);
+                        parameterListener->webview.evaluateScript("window.sk_api.dawPluginMngr.updateParameter(" + SK_String(i) + "," + SK_String(value) + ")", NULL);
                     }
                 }
             #endif

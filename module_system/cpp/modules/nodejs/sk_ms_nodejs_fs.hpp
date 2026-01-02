@@ -36,16 +36,15 @@ public:
             return;
         }
         
-        //!!! IMPORTANT !!!! If in RELEASE mode, we route the operation to the BDFS module
-        #if defined(SK_ROUTE_FS_TO_BDFS)// || defined(SK_BUNDLE_MODE_DEEP) || defined(SK_BUNDLE_MODE_SHALLOW)
-            skg->forwardPacketToModule("bdfs", operation, payload, respondWith);
-            return;
-        #endif
-        
-        
-        
+       
 
-        
+        bool bypassBDFS = false;
+
+        if (path.indexOf("ph_fs/") > -1) {
+            bypassBDFS = true;
+            path = path.replace("ph_fs/", "");
+        }
+
 
         SK_String fullPath = path;
 
@@ -64,7 +63,15 @@ public:
             }
         }
 
-       
+        if (!bypassBDFS){
+            if (!SK_File::isPathAbsolute(path)) {
+                //!!! IMPORTANT !!!! If in RELEASE mode, we route the operation to the BDFS module
+                #if defined(SK_ROUTE_FS_TO_BDFS)// || defined(SK_BUNDLE_MODE_DEEP) || defined(SK_BUNDLE_MODE_SHALLOW)
+                    skg->forwardPacketToModule("bdfs", operation, payload, respondWith);
+                    return;
+                #endif
+            }
+        }
         
              if (operation == "access"   ) access(fullPath, respondWith);
         else if (operation == "stat"     ) stat(fullPath, respondWith);

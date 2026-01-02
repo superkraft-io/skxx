@@ -461,7 +461,7 @@ public:
 
 
 
-            std::wstring additionalData = L"{\"id\":\"pluginParamUpdate\"}";
+            std::wstring additionalData = L"{\"id\":\"dawPluginParamUpdate\"}";
             hr = parameterListener->webview.webview17->PostSharedBufferToScript(
                 sharedBuffer.get(),
                 COREWEBVIEW2_SHARED_BUFFER_ACCESS_READ_ONLY,
@@ -479,7 +479,7 @@ public:
                     float value = param->Value();
                     if (paramValues[i] != value) {
                         paramValues[i] = value;
-                        parameterListener->webview.evaluateScript("window.sk_api.pluginMngr.updateParameter(" + SK_String(i) + "," + SK_String(value) + ")", NULL);
+                        parameterListener->webview.evaluateScript("window.sk_api.dawPluginMngr.updateParameter(" + SK_String(i) + "," + SK_String(value) + ")", NULL);
                     }
                 }
             #endif

@@ -19,7 +19,7 @@ class sk_dawPluginMngr {
         try {
             window.chrome.webview.addEventListener('sharedbufferreceived', (event) => {
                 const metadata = event.additionalData;
-                if (metadata?.id === 'pluginParamUpdate') {
+                if (metadata?.id === 'dawPluginParamUpdate') {
                     const arrayBuffer = event.getBuffer();
                     const floatArray = new Float32Array(arrayBuffer);
                     for (var i = 0; i < this.parameters.length; i++){
@@ -169,5 +169,14 @@ class sk_dawPluginMngr {
         }
 
         window.requestAnimationFrame(step)
+    }
+
+    async resetPreviousParam(){
+        if (!this.currentTouchedParam) return
+        delete this.currentTouchedParam.dawPluginParamMouseDownRes
+        await sk.nativeActions.handlePluginParamMouseEvent({
+            dawPluginParamID: this.currentTouchedParam.__dawPluginParamID,
+            event: 'mouseup'
+        })
     }
 }
