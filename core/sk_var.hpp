@@ -17,11 +17,12 @@
 #elif defined(__APPLE__)
 	#include <TargetConditionals.h>
     #define SK_OS_apple
+
 	#if TARGET_OS_IPHONE
-	#define SK_OS "ios"
+        #define SK_OS "ios"
 		#define SK_OS_ios
 	#else
-	#define SK_OS "macos"
+        #define SK_OS "macos"
 		#define SK_OS_macos
 	#endif
 #elif defined(__linux__)
