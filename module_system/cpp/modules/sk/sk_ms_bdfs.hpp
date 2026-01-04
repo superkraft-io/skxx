@@ -11,6 +11,15 @@ public:
 
     SK_Module_bdfs(SK_Global* _skg) {
         skg = _skg;
+        
+        skg->bdfsEntryExistsByPath = [&](const SK_String& path){
+            #if defined(SK_BUNDLE_MODE_DEEP) || defined(SK_BUNDLE_MODE_SHALLOW)
+                SK_SoftBackend_Bundle_Entry_Info* entry = skg->bundle_library->findByPath(path);
+                if (entry) return true;
+            #endif
+            
+            return false;
+        };
     }
     
     ~SK_Module_bdfs(){

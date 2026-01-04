@@ -94,4 +94,6 @@ using SK_enableDebug_Views_CB = std::function<void(const bool& enable)>;
 
 using SK_GetNativeAction_CB = std::function<void*(const SK_String& nativeActionName)>;
 
+using SK_BDFSEntryExistsByPath_CB = std::function<bool(const SK_String& path)>;
+
 END_SK_NAMESPACE

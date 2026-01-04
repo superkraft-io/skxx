@@ -169,6 +169,8 @@ public:
     SK_enableDebug_Views_CB enableDebug_Views;
 
     SK_GetNativeAction_CB getNativeAction;
+    
+    SK_BDFSEntryExistsByPath_CB bdfsEntryExistsByPath;
 
     ~SK_Global(){
         delete threadPool;
