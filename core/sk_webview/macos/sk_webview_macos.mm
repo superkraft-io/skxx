@@ -32,6 +32,9 @@ using namespace SK;
     
     if (url.indexOf("__sk_sharedBuffer") > -1){
         SK_WebView* webview = static_cast<SK_WebView*>(self.webView);
+        
+        if (!webview) return;
+        
         if ([dictionary[@"setReadyState"] isEqualToString:@"true"]){
             webview->sharedBuffersCanBeShared = true;
             SK_Communicaton_Response_Apple res = webview->readyStateWebResponse->getWebResponse();
@@ -456,7 +459,7 @@ void SK_WebView::tryStartingSharedBuffersTimer(){
         for (const auto& pair : sharedBuffersQueue) {
             if (!pair.second->busy) {
                 pair.second->busy = true;
-                SK_String src = "sk_api.pluginMngr.fetchQueuedBuffer(" + std::to_string(pair.second->uuid) + "," + pair.second->metadata.dump() + ")";
+                SK_String src = "sk_api.dawPluginMngr.fetchQueuedBuffer(" + std::to_string(pair.second->uuid) + "," + pair.second->metadata.dump() + ")";
                 
                 evaluateScript(src, NULL);
             }
