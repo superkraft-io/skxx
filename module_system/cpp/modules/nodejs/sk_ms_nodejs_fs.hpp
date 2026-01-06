@@ -38,11 +38,14 @@ public:
         
        
 
+        SK_String fullPath = path;
+        
+        
         bool bypassBDFS = false;
 
         if (path.indexOf("ph_fs/") > -1) {
             bypassBDFS = true;
-            path = path.replace("ph_fs/", "");
+            fullPath = path.replace("ph_fs", "");
         }
 
         
@@ -54,24 +57,29 @@ public:
                     return;
                 }
             #endif
-        }
+        
+            SK_Path_Utils* pathUtils = &skg->pathUtils;
 
-        SK_String fullPath = path;
-
-        SK_Path_Utils* pathUtils = &skg->pathUtils;
-
-        //If the path is not absolute, then make the soft_backend folder the root folder
-        if (path.substring(0, 1) == "/" || !SK_File::isPathAbsolute(path)) {
-            if (operation != "mkdir") {
-                SK_String targetPrefix = path.substring(0, path.indexOf("/"));
-                if (targetPrefix == "sk:modsys") {
-                    fullPath = pathUtils->paths["module_system"] + path.replace("sk:modsys", "");
-                }
-                else {
-                    fullPath = pathUtils->paths["soft_backend"] + path;
+            //If the path is not absolute, then make the soft_backend folder the root folder
+            bool startsWithForwardSlash = (path.substring(0, 1) == "/" ? true : false);
+            bool isAbsolutePath = SK_File::isPathAbsolute(path);
+            
+            if (startsWithForwardSlash || !isAbsolutePath) {
+                if (operation != "mkdir") {
+                    SK_String targetPrefix = path.substring(0, path.indexOf("/"));
+                    if (targetPrefix == "sk:modsys") {
+                        fullPath = pathUtils->paths["module_system"] + path.replace("sk:modsys", "");
+                    }
+                    else {
+                        fullPath = pathUtils->paths["soft_backend"] + path;
+                    }
                 }
             }
         }
+
+        
+
+        
 
     
         

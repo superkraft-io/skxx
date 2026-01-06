@@ -1,7 +1,5 @@
 #pragma once
 
-//#include "sk_webview_macos_v2.h"
-
 #include "../../sk_common.hpp"
 #include "../../superkraft.hpp"
 
