@@ -50,6 +50,15 @@ global.shallowGroupsRoot = path.resolve(__dirname, '../../../.sk/bundle/shallow/
 global.shallowGroupsDataRoot = path.resolve(__dirname, '../../../.sk/bundle/shallow/groups/data/').split('\\').join('/');
 
 
+
+var modTemplate = (templatePath, dstPath, onReplaceCB)=>{
+    var template = fs.readFileSync(templatePath).toString()
+    template = onReplaceCB(template)
+    fs.writeFileSync(dstPath, template)
+}
+
+
+
 var run = async ()=>{
     /****  First check if any of the files are locked an notify developer ***********/
 
@@ -138,16 +147,62 @@ var run = async ()=>{
 
     console.log(` - Writing groups...`)
 
-    var libraryTemplatePath =  __dirname + '/templates/sk_soft_backend_bundle_library_template.h'
-    var libraryTemplate = fs.readFileSync(libraryTemplatePath).toString()
-        .replace('<!deep_group_includes!>', groupRes.includesDef.deep)
-        .replace('<!shallow_group_includes!>', groupRes.includesDef.shallow)
-        .replace('<!groups!>', groupRes.groupsDefs + '\n')
-        .replace('<!file_entries!>', groupRes.entriesDefs + '\n')
-        .replace('<!folder_entries!>', foldersRes.join(',\n') + '\n')
+    modTemplate(
+        __dirname + '/templates/sk_soft_backend_bundle_groups_template.h',
+        path.resolve(__dirname, '../../../.sk/bundle/sk_soft_backend_bundle_groups.h'),
+        data => {
+            return data
+                .replace('<!groups!>', groupRes.groupsDefs + '\n')
+        }
+    )
 
-    var libraryPath = path.resolve(__dirname, '../../../.sk/bundle/sk_soft_backend_bundle_library.h')
-    fs.writeFileSync(libraryPath, libraryTemplate)
+    modTemplate(
+        __dirname + '/templates/sk_soft_backend_bundle_entry_template.h',
+        path.resolve(__dirname, '../../../.sk/bundle/sk_soft_backend_bundle_entry.h'),
+        data => {
+            return data
+        }
+    )
+
+    modTemplate(
+        __dirname + '/templates/sk_soft_backend_bundle_entries_template.h',
+        path.resolve(__dirname, '../../../.sk/bundle/sk_soft_backend_bundle_entries_files.h'),
+        data => {
+            return data
+                .split('<!type!>').join('Files')
+                .replace('<!entries!>', groupRes.entriesDefs + '\n')
+        }
+    )
+
+    modTemplate(
+        __dirname + '/templates/sk_soft_backend_bundle_entries_template.h',
+        path.resolve(__dirname, '../../../.sk/bundle/sk_soft_backend_bundle_entries_folders.h'),
+        data => {
+            return data
+                .split('<!type!>').join('Folders')
+                .replace('<!entries!>', foldersRes.join(',\n') + '\n')
+        }
+    )
+
+    modTemplate(
+        __dirname + '/templates/sk_soft_backend_bundle_include_template.h',
+        path.resolve(__dirname, '../../../.sk/bundle/sk_soft_backend_bundle_include.h'),
+        data => {
+            return data
+                .replace('<!deep_group_includes!>', groupRes.includesDef.deep)
+                .replace('<!shallow_group_includes!>', groupRes.includesDef.shallow)
+        }
+    )
+
+    modTemplate(
+        __dirname + '/templates/sk_soft_backend_bundle_library_template.h',
+        path.resolve(__dirname, '../../../.sk/bundle/sk_soft_backend_bundle_library.h'),
+        data => {
+            return data
+                .replace('<!shallow_group_includes!>', groupRes.includesDef.shallow)
+        }
+    )
+    
 
     console.log(`Finalizing...`)
     var filesToPermit = await utils.listFilesRecursive(bundleRoot, { followSymlinks: false })

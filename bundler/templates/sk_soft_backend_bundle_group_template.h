@@ -1,8 +1,8 @@
 #pragma once
 
-#ifndef __INTELLISENSE__ // Disable for Intellisense
-
 #include "../../bundle_group_root.h"
+
+#ifndef __INTELLISENSE__ // Disable for Intellisense
 
 BEGIN_SK_NAMESPACE
 
