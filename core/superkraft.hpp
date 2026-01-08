@@ -53,6 +53,16 @@ public:
         #if defined(SK_BUNDLE_MODE_DEEP) || defined(SK_BUNDLE_MODE_SHALLOW)
             bundle_library = new SK_SoftBackend_Bundle_Library();
             skg->bundle_library = bundle_library;
+
+            #if defined(SK_BUNDLE_MODE_SHALLOW)
+                SK_Timer* bundleFlushTimer = skg->timerMngr->add(5000);
+                bundleFlushTimer->on([this]() {
+                    if (bundle_library) {
+                        bundle_library->flushCache();
+                    }
+                });
+                bundleFlushTimer->start();
+            #endif
         #endif
         
 		machine = new SK_Machine(skg);
@@ -79,7 +89,9 @@ public:
 		SK_File configFile;
         
         #if defined(SK_ROUTE_FS_TO_BDFS)
-            configFile.data = bundle_library->findByPath("/config.json")->dataAs_SKString().data;
+            SK_SoftBackend_Bundle_Entry_Info* configEntry = bundle_library->findByPath("/config.json");
+            SK_String configAsStr = configEntry->dataAs_SKString();
+            configFile.data = configAsStr.data;
         #else
             if (!configFile.loadFromDisk(skg->pathUtils.paths["config"])) {
                 throw std::runtime_error("[SK++] No config file found!");

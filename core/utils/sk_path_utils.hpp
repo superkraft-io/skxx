@@ -4,8 +4,10 @@
 #include "../sk_var.hpp"
 #include "sk_string.h"
 
+#include <string>
+
 #if defined(SK_OS_windows)
-    //...
+    #include <windows.h>
 #else
     #include <sys/utsname.h>
     #include <unistd.h>
@@ -17,12 +19,16 @@
     #include <sys/stat.h>
 
     #if defined (SK_OS_apple)
+		#include <mach-o/dyld.h>
+		#include <limits.h>
         #ifdef __OBJC__
             #import <Foundation/Foundation.h>
             #import <AppKit/AppKit.h>
         #endif
     #elif defined (SK_OS_linux) || defined (SK_OS_android)
-        // Linux specific includes
+		#include <unistd.h>
+		#include <limits.h>
+		#include <dlfcn.h>
     #endif
 #endif
 
@@ -44,8 +50,8 @@ public:
         }
     }
     
-	std::string pathBackwardsUntilNeighbour(const std::string& neighbourName){
-		std::filesystem::path currentPath(getAbsoluteFilePath());
+	std::string pathBackwardsUntilNeighbour(const std::string& neighbourName, const SK_String& startPath = "") {
+		std::filesystem::path currentPath((startPath != "" ? startPath.data : getAbsoluteFilePath()));
 
 		bool stop = false;
 		while (!stop) {
@@ -65,7 +71,7 @@ public:
                     }
                 }
             } catch (const std::exception& e) {
-                std::cerr << "Error accessing directory: " << e.what() << ". If you're on MacOS using Xcode, it may be due to sandboxin in your Xcode project settings. Remove sandboxing.\n";
+                std::cerr << "Error accessing directory: " << e.what() << ". If you're on MacOS using Xcode, it may be due to sandboxing in your Xcode project settings. Remove sandboxing.\n";
             }
 		}
 
@@ -404,6 +410,47 @@ public:
         return "";
 	}
 
+
+	static SK_String getCurrentProcessPath() {
+		std::string path;
+
+		#if defined(SK_OS_windows)
+			// Get module handle of this function (plugin DLL)
+			char buffer[MAX_PATH];
+			HMODULE hModule = nullptr;
+			// Use address of a static/free function
+			if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+				GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+				reinterpret_cast<LPCSTR>(&getCurrentProcessPath),
+				&hModule))
+			{
+				if (GetModuleFileNameA(hModule, buffer, MAX_PATH) != 0) {
+					path = buffer;
+				}
+			}
+		#elif defined(SK_OS_apple)
+			char buffer[PATH_MAX];
+			uint32_t size = sizeof(buffer);
+			if (_NSGetExecutablePath(buffer, &size) == 0) {
+				path = buffer;
+			}
+
+		#elif defined(SK_OS_linux)
+			char buffer[PATH_MAX];
+			ssize_t count = readlink("/proc/self/exe", buffer, PATH_MAX);
+			if (count != -1) {
+				path.assign(buffer, count);
+			}
+		#endif
+
+		// Strip filename to get directory
+		size_t pos = path.find_last_of("/\\");
+		if (pos != std::string::npos) {
+			path = path.substr(0, pos);
+		}
+
+		return path;
+	}
 };
 
 

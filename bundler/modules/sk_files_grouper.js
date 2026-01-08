@@ -80,7 +80,6 @@ class FileGroup {
         dataEntryTemplate_shallow = dataEntryTemplate_shallow
             .split('<!id!>').join(this.id)
             .split('<!data_size!>').join(this.buffer.length)
-            .replace('<!data!>', '')
 
         if (sk.bundle_mode === 'shallow') fs.writeFileSync(shallowGroupsDataRoot + '/' + this.id + '.bin', this.buffer)
 
