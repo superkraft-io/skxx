@@ -44,7 +44,7 @@ public:
 
         if (path.indexOf("ph_fs/") > -1) {
             bypassBDFS = true;
-            fullPath = path.replace("ph_fs", "");
+            fullPath = path.replace("ph_fs/", "");
         }
 
         
