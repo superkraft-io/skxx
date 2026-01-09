@@ -70,9 +70,16 @@ class FileGroup {
     saveHeader() {
         var dataEntryTemplatePath =  __dirname + '/../templates/sk_soft_backend_bundle_group_template.h'
         var dataEntryTemplate_deep = fs.readFileSync(dataEntryTemplatePath).toString()
+
+        var dataEntrySourceTemplatePath =  __dirname + '/../templates/sk_soft_backend_bundle_group_cpp_template.cpp'
+        var dataEntrySourceTemplate_deep = fs.readFileSync(dataEntrySourceTemplatePath).toString()
+
         var dataEntryTemplate_shallow = fs.readFileSync(dataEntryTemplatePath).toString()
 
         dataEntryTemplate_deep = dataEntryTemplate_deep
+            .split('<!id!>').join(this.id)
+
+        dataEntrySourceTemplate_deep = dataEntrySourceTemplate_deep
             .split('<!id!>').join(this.id)
             .split('<!data_size!>').join(this.buffer.length)
             .replace('<!data!>', this.buffer.join(','))
@@ -93,7 +100,7 @@ class FileGroup {
             sizes.push(file.size)
         }
         
-        dataEntryTemplate_deep = dataEntryTemplate_deep
+        dataEntrySourceTemplate_deep = dataEntrySourceTemplate_deep
             .replace('<!offsets_arr_size!>', this.files.length).replace('<!offsets!>', offsets.join(','))
             .replace('<!sizes_arr_size!>', this.files.length).replace('<!sizes!>', sizes.join(','))
         
@@ -101,7 +108,11 @@ class FileGroup {
             .replace('<!offsets_arr_size!>', this.files.length).replace('<!offsets!>', offsets.join(','))
             .replace('<!sizes_arr_size!>', this.files.length).replace('<!sizes!>', sizes.join(','))
 
-        if (sk.bundle_mode === 'deep') fs.writeFileSync(deepGroupsRoot + '/sk_soft_backend_bundle_group_' + this.id + '.h', dataEntryTemplate_deep)
+        if (sk.bundle_mode === 'deep'){
+            fs.writeFileSync(deepGroupsRoot + '/sk_soft_backend_bundle_group_' + this.id + '.h', dataEntryTemplate_deep)
+            fs.writeFileSync(deepGroupsRoot + '/sk_soft_backend_bundle_group_' + this.id + '.cpp', dataEntrySourceTemplate_deep)
+        }
+
         if (sk.bundle_mode === 'shallow') fs.writeFileSync(shallowGroupsRoot + '/sk_soft_backend_bundle_group_' + this.id + '.h', dataEntryTemplate_shallow)
 
         this.headerDef = {
@@ -111,6 +122,12 @@ class FileGroup {
             },
             deep: `#include "./deep/groups/sk_soft_backend_bundle_group_${this.id}.h"`,
             shallow: `#include "./shallow/groups/sk_soft_backend_bundle_group_${this.id}.h"`
+        }
+
+        this.sourceDef = {
+            paths: {
+                deep: deepGroupsRoot + '/sk_soft_backend_bundle_group_' + this.id + '.cpp'
+            }
         }
 
         this.headerClass = `SK_SoftBackend_Bundle_Data_Group_${this.id}`
