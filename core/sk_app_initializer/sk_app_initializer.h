@@ -90,35 +90,19 @@ public:
                 #endif
                 
                 
-                // Dynamically add methods to the observer
-        
-                if (!bypasses.contains("applicationWillFinishLaunching")){
-                    class_addMethod([observer class], @selector(applicationWillFinishLaunching:), (IMP)applicationWillFinishLaunching, "v@:@");
-                }
-        
-                if (!bypasses.contains("applicationDidFinishLaunching")){
-                    class_addMethod([observer class], @selector(applicationDidFinishLaunching:), (IMP)applicationDidFinishLaunching, "v@:@");
-                }
-        
-                if (!bypasses.contains("applicationShouldTerminateAfterLastWindowClosed")){
-                    class_addMethod([observer class], @selector(applicationShouldTerminateAfterLastWindowClosed:), (IMP)applicationShouldTerminateAfterLastWindowClosed, "B@:@");
-                }
-
-                // Observe application lifecycle notifications
-                [[NSNotificationCenter defaultCenter] addObserver:observer
-                                                         selector:@selector(applicationWillFinishLaunching:)
-                                                             name:NSApplicationWillFinishLaunchingNotification
-                                                           object:nil];
-
-                [[NSNotificationCenter defaultCenter] addObserver:observer
-                                                         selector:@selector(applicationDidFinishLaunching:)
-                                                             name:NSApplicationDidFinishLaunchingNotification
-                                                           object:nil];
-
-                [[NSNotificationCenter defaultCenter] addObserver:observer
-                                                         selector:@selector(applicationShouldTerminateAfterLastWindowClosed:)
-                                                             name:NSWindowWillCloseNotification // No direct notification, using window close event
-                                                           object:nil];
+                // NOTE: Do not register NSWindowWillCloseNotification here.
+                // That notification fires for EVERY window in the process (including
+                // DAW windows), not just our plugin window. Registering it causes
+                // our observer callback to fire on every window close in Studio One,
+                // leading to stack corruption (BOOL vs void calling convention mismatch)
+                // and crashes. The applicationShouldTerminateAfterLastWindowClosed body
+                // is commented out anyway — this registration served no purpose.
+                //
+                // Similarly, NSApplicationWillFinishLaunchingNotification /
+                // NSApplicationDidFinishLaunchingNotification have already fired before
+                // any plugin is loaded, so registering for them here is a no-op that
+                // only adds risk (the callbacks use __bridge-cast of NSObject* to
+                // SK_App_Initializer* which is UB). Removed.
             }
 
     

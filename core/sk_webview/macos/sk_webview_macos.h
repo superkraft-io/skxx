@@ -84,6 +84,7 @@ public:
     
     bool isReady = false;
     bool sharedBuffersCanBeShared = false;
+    bool _isShutdown = false;
     
     SK_Communication_Response_Web* _Nullable readyStateWebResponse = nullptr;
     size_t sharedBuffersIdx = 0;
@@ -91,6 +92,14 @@ public:
     SK_Timer* sharedBuffersTimer = nullptr;
     
     ~SK_WebView();
+    
+    /** Tear down the WKWebView (stopLoading, nil delegates, quarantine).
+     *  Safe to call multiple times — subsequent calls are no-ops.
+     *  Called from SK_Window::objcTeardown() to ensure the webview is shut
+     *  down BEFORE the owning window's strong ObjC pointers (wndHandle_strong,
+     *  contentView_strong) are released, which would pull the parent
+     *  NSWindow / NSView from under WebKit while timers are still live. */
+    void shutdown();
     
     void create(bool offsetWhenDebugging);
     void update();

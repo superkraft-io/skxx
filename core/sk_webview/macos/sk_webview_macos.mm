@@ -12,6 +12,31 @@
 
 using namespace SK;
 
+// Keep retired WKWebViews alive permanently.  WebKit's internal
+// NavigationState holds a __weak ref to the WKWebView and fires a
+// CFRunLoop timer (progress tracker) that calls objc_loadWeakRetained.
+// If the WKWebView is deallocated at ANY point while that timer is
+// still scheduled, the weak-ref load crashes.  We cannot reliably
+// cancel or predict the timer's lifetime (_close causes its own
+// crashes, about:blank spawns new timers, and dispatch_after release
+// races the timer arbitrarily).  The only safe solution is to keep
+// the WKWebView alive forever so the weak ref remains valid until the
+// timer naturally drains after stopLoading completes.
+static void SK_QuarantineWKWebView(id webViewToRelease)
+{
+    if (!webViewToRelease) return;
+
+    static NSMutableArray* sReleaseBin = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        sReleaseBin = [[NSMutableArray alloc] init];
+    });
+
+    [sReleaseBin addObject:webViewToRelease];
+    // Intentionally never removed — the WKWebView must stay alive
+    // so WebKit's internal __weak references remain valid.
+}
+
 @class WKContextMenuElementInfo;
 
 @implementation SK_WebView_URLSchemeHandler
@@ -48,6 +73,10 @@ using namespace SK;
         size_t uuid = (size_t)intValue;
         SK_WebView_SharedBuffer* sharedBuffer = webview->getBufferAndRemove(uuid);
         
+        if (!sharedBuffer) {
+            [urlSchemeTask didFailWithError:[NSError errorWithDomain:NSURLErrorDomain code:NSURLErrorResourceUnavailable userInfo:nil]];
+            return;
+        }
         
         SK_Communicaton_Response_Apple res = sharedBuffer->buffer->getWebResponse();
         [urlSchemeTask didReceiveResponse:res.response];
@@ -62,16 +91,19 @@ using namespace SK;
     SK_Communication_Config config{self.tag, SK_Communication_Packet_Type::sk_comm_pt_web, (__bridge void *)urlSchemeTask.request};
     if (!self.skg) return;
     
-    self.skg->onCommunicationRequest(config, NULL, [&](SK_Communication_Packet* packet) -> void* {
+    id<WKURLSchemeTask> capturedTask = urlSchemeTask;
+    SK::SK_Global* capturedSkg = self.skg;
+    SK::SK_String capturedSender = config.sender;
+    self.skg->onCommunicationRequest(config, NULL, [capturedTask, capturedSkg, capturedSender](SK_Communication_Packet* packet) -> void* {
         if (packet == nullptr){
-            return (static_cast<Superkraft*>(self.skg->sk))->comm->packetFromWebRequest(urlSchemeTask.request, config.sender);
+            return (static_cast<Superkraft*>(capturedSkg->sk))->comm->packetFromWebRequest(capturedTask.request, capturedSender);
         }
         
         SK_Communication_Response_Web* responseObj = static_cast<SK_Communication_Response_Web*>(packet->response());
         SK_Communicaton_Response_Apple res = responseObj->getWebResponse();
-        [urlSchemeTask didReceiveResponse:res.response];
-        [urlSchemeTask didReceiveData:res.data];
-        [urlSchemeTask didFinish];
+        [capturedTask didReceiveResponse:res.response];
+        [capturedTask didReceiveData:res.data];
+        [capturedTask didFinish];
         
         return packet;
     });
@@ -157,18 +189,21 @@ using namespace SK;
 
 - (void)willOpenMenu:(NSMenu *)menu withEvent:(NSEvent *)event {
     SK_WebView* sk_webview_parent = static_cast<SK_WebView*>(self.sk_webview_parent);
-    
+    if (!sk_webview_parent) return;
+
     if (!sk_webview_parent->debugEnabled) [menu removeAllItems];
 }
 
 - (void)didCloseMenu:(NSMenu *)menu withEvent:(NSEvent *)event {
     SK_WebView* sk_webview_parent = static_cast<SK_WebView*>(self.sk_webview_parent);
-    
+    if (!sk_webview_parent) return;
+
     if (!sk_webview_parent->debugEnabled) [super didCloseMenu:menu withEvent:event];
 }
 
 - (void)keyDown:(NSEvent *)event {
     SK_WebView* sk_webview_parent = static_cast<SK_WebView*>(self.sk_webview_parent);
+    if (!sk_webview_parent) { [super keyDown:event]; return; }
 
     UInt16 code = event.keyCode; // F12 == 111
     NSEventModifierFlags flags =
@@ -191,31 +226,110 @@ using namespace SK;
 
 BEGIN_SK_NAMESPACE
 
-SK_WebView::~SK_WebView(){
+// ---------------------------------------------------------------------------
+// shutdown() — safe to call repeatedly; second+ calls are no-ops.
+// ---------------------------------------------------------------------------
+void SK_WebView::shutdown() {
+    if (_isShutdown) return;
+    _isShutdown = true;
+
     if (!webview) return;
-        
-    
-    [webview.configuration.userContentController removeScriptMessageHandlerForName:@"SK_IPC_Handler"];
-    [webview.configuration.userContentController removeAllUserScripts];
-    
-    webview.UIDelegate = nil;
-    webview.navigationDelegate = nil;
-    webviewDelegate = nil;
-    
-    [webview removeFromSuperview];
-    
-    messageHandler.webView = nil;
-    messageHandler.skg = nil;
-    
-    urlHandler.webView = nil;
-    urlHandler.skg = nil;
-    
-    [webview.backForwardList performSelector:@selector(_removeAllItems)];
-    
-    webview = nil;
+
+    // All WKWebView teardown must happen on the main thread.
+    auto doTeardown = [this]() {
+        // Immediately nil the handler back-pointers so any pending URL scheme
+        // task cannot reach this already-dying C++ object.
+        messageHandler.webView = nil;
+        messageHandler.skg = nil;
+        urlHandler.webView = nil;
+        urlHandler.skg = nil;
+
+        // stopLoading MUST come first, before niling the navigationDelegate.
+        // Calling it while the delegate is still set causes WebKit to internally
+        // cancel the pending navigation, which stops NavigationState's
+        // m_navigationProgressTimer. If we nil the delegate first, that timer
+        // stays alive and later fires NavigationState::ref() against a
+        // deallocated WKWebView -> objc_loadWeakRetained crash.
+        [webview stopLoading];
+
+        // Nil delegates so no callbacks fire during the rest of teardown.
+        webview.UIDelegate = nil;
+        webview.navigationDelegate = nil;
+        webviewDelegate = nil;
+        webview.sk_webview_parent = nil;
+
+        [webview.configuration.userContentController removeScriptMessageHandlerForName:@"SK_IPC_Handler"];
+        [webview.configuration.userContentController removeAllUserScripts];
+
+        [webview removeFromSuperview];
+
+        // Quarantine: keep the WKWebView alive permanently so WebKit's
+        // internal __weak refs remain valid.
+        SK_WebView_MacOS* _toRelease = webview;
+        webview = nil;
+        SK_QuarantineWKWebView(_toRelease);
+
+        // Invalidate the web page proxy to disconnect the web content
+        // process.  Deferred to the NEXT run loop iteration so that
+        // _close's internal WebKit cleanup cannot corrupt the heap
+        // while our C++ teardown is still running synchronously.  The
+        // WKWebView is permanently quarantined so it will still be
+        // alive when this fires.
+        if (_toRelease) {
+          __strong SK_WebView_MacOS* captured = _toRelease;
+          dispatch_async(dispatch_get_main_queue(), ^{
+            SEL closeSelector = NSSelectorFromString(@"_close");
+            if ([captured respondsToSelector:closeSelector]) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
+              [captured performSelector:closeSelector];
+#pragma clang diagnostic pop
+            }
+          });
+        }
+    };
+
+    if (!NSThread.isMainThread) {
+        dispatch_sync(dispatch_get_main_queue(), ^{ doTeardown(); });
+    } else {
+        doTeardown();
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Destructor — delegates to shutdown() if not already called.
+// ---------------------------------------------------------------------------
+SK_WebView::~SK_WebView(){
+    shutdown();
 }
 
 void SK_WebView::create(bool offsetWhenDebugging) {
+    // WKWebView must be created on the main thread. SK_WebView::create() is
+    // called from the module system's native action handler which runs on a
+    // background URL-scheme thread. Creating WKWebView off the main thread
+    // corrupts PageClientImpl's internal __weak ref, causing commitLayerTree
+    // IPC to crash via objc_loadWeakRetained.
+    if (!NSThread.isMainThread) {
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            create(offsetWhenDebugging);
+        });
+        return;
+    }
+
+    // If a WKWebView already exists, tear it down cleanly before creating a
+    // new one. Without this, repeated create() calls (e.g. DAW re-shows the
+    // window) leak the old WKWebView along with its NavigationState progress
+    // timer, which accumulates in CFRunLoop and crashes via objc_loadWeakRetained.
+    if (webview) {
+        // Already on the main thread — shutdown() handles all teardown.
+        shutdown();
+        delete readyStateWebResponse;
+        readyStateWebResponse = nullptr;
+    }
+
+    // Reset the shutdown flag since we are (re-)creating.
+    _isShutdown = false;
+
     readyStateWebResponse = new SK_Communication_Response_Web(SK_Base_URL + "/__sk_sharedBuffer?setReadyState=true");
     readyStateWebResponse->headers["Content-Type"] = "text/text";
     readyStateWebResponse->setAsOK();
@@ -237,12 +351,15 @@ void SK_WebView::create(bool offsetWhenDebugging) {
     WKWebViewConfiguration* config = [[WKWebViewConfiguration alloc] init];
     WKPreferences* preferences = [[WKPreferences alloc] init];
 
-    // Enable Developer Extras (DevTools)
-    [preferences setValue:@YES forKey:@"developerExtrasEnabled"];
-    
-    // Enable clipboard access
-    [preferences setValue:@YES forKey:@"DOMPasteAllowed"];
-    [preferences setValue:@YES forKey:@"javaScriptCanAccessClipboard"];
+    // "developerExtrasEnabled" is a private KVC key removed in newer WebKit.
+    // WKWebView.inspectable is the public replacement (applied after view creation below).
+
+    // Enable clipboard access — guard private KVC keys with respondsToSelector:
+    // so a future removal cannot cause EXC_BAD_ACCESS inside NSKeyValueAccessorIsEqual.
+    if ([preferences respondsToSelector:NSSelectorFromString(@"setDOMPasteAllowed:")])
+        [preferences setValue:@YES forKey:@"DOMPasteAllowed"];
+    if ([preferences respondsToSelector:NSSelectorFromString(@"setJavaScriptCanAccessClipboard:")])
+        [preferences setValue:@YES forKey:@"javaScriptCanAccessClipboard"];
 
     preferences.javaScriptEnabled = YES;
     
@@ -278,6 +395,11 @@ void SK_WebView::create(bool offsetWhenDebugging) {
     
     webview.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
     [webview setValue:@NO forKey:@"drawsBackground"];
+
+    // Enable dev tools using the public API — must be set on the view instance.
+    if (@available(macOS 13.3, *)) {
+        webview.inspectable = debugEnabled ? YES : NO;
+    }
     
 
     // Disable magnification
@@ -376,9 +498,32 @@ void SK_WebView::evaluateScript(const SK_String& src, SK_WebView_EvaluationCompl
     }
 
     WKWebView* _webview = webview;
-    
-    skg->threadPool->queueOnMainThread([this, src, cb, _webview]() {
-        evaluateScript_mainThread(_webview, src, cb);
+    if (!_webview) return;
+
+    // Capture _webview as a strong ObjC ref (ARC keeps it alive) instead of 'this'
+    // to avoid use-after-free if SK_WebView is destroyed before the lambda runs.
+    skg->threadPool->queueOnMainThread([src, cb, _webview]() {
+        [_webview evaluateJavaScript: src
+             completionHandler:^(id result, NSError *error) {
+            if (error) {
+                NSLog(@"JS exception: %@ (%@:%@:%@)\n%@",
+                       error.userInfo[@"WKJavaScriptExceptionMessage"],
+                       error.userInfo[@"WKJavaScriptExceptionSourceURL"],
+                       error.userInfo[@"WKJavaScriptExceptionLineNumber"],
+                       error.userInfo[@"WKJavaScriptExceptionColumnNumber"],
+                       error.userInfo[NSLocalizedDescriptionKey]
+                );
+            } else {
+                if (cb != nullptr) {
+                    if ([result isKindOfClass:[NSString class]]) {
+                        SK_String resAsStr = (NSString*)result;
+                        cb(resAsStr);
+                    } else {
+                        cb("");
+                    }
+                }
+            }
+        }];
     });
 }
 

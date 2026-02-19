@@ -21,15 +21,21 @@ public:
 
     // Constructor to initialize the thread pool with a specific size
     explicit SK_Thread_Pool(size_t threadCount = std::thread::hardware_concurrency()) : stop(false) {
+        // Reserve up front so emplace_back never reallocates while worker threads
+        // are already running and holding &threads[i] pointers.
+        threads.reserve(threadCount);
+
         for (size_t i = 0; i < threadCount; ++i) {
             threads.emplace_back([this, i]() {
-                std::thread* currentThread;
+                // Initialize to nullptr; assigned below once the vector is stable.
+                std::thread* currentThread = nullptr;
 
                 try {
-                    currentThread = &threads[i]; // Capture pointer to this thread
+                    currentThread = &threads[i]; // Safe: reserve() guarantees no realloc
                 }
-                catch (int err) {
-                    //int x = 0;
+                catch (...) {
+                    // If this ever throws the thread will run with currentThread == nullptr,
+                    // which tasks must tolerate, but in practice this should never throw.
                 };
 
                 while (true) {

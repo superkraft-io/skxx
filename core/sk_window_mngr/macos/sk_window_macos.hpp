@@ -49,10 +49,24 @@ public:
 
     #ifdef __OBJC__
     void objcTeardown() {
-        @autoreleasepool {            // 1) Stop monitors/observers FIRST
-            /*if (mouseDownToken) {
-                mouseDownToken = nil; //causes crash. since it's a __strong reference, ARC should handle it. (But will it handle it???)
-            }*/
+        @autoreleasepool {
+            // 1) Remove the local event monitor FIRST. It captures `this`
+            // implicitly (via wndHandle / lastMouseDownEvent member access).
+            // If left registered, macOS will fire the block after the C++
+            // object is destroyed -> dangling-pointer crash.
+            if (mouseDownToken) {
+                [NSEvent removeMonitor:mouseDownToken];
+                mouseDownToken = nil;
+            }
+            
+            // 1b) Tear down the webview BEFORE the strong ObjC pointers
+            // (wndHandle_strong, contentView_strong) are released by ARC
+            // during member destruction.  `webview` is declared in the base
+            // class SK_Window_Root, so its destructor would normally run
+            // AFTER SK_Window's members are already gone.  Shutting it down
+            // now ensures WebKit teardown completes while the parent
+            // NSWindow / NSView hierarchy is still alive.
+            webview.shutdown();
             
             // 2) Detach delegate before closing to avoid callbacks into half-dead C++.
             if (wndHandle) {
