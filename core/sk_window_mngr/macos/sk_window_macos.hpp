@@ -203,7 +203,7 @@ public:
             webview.tag = tag;
             webview.parentWndHandle = wndHandle;
             webview.parentContentView = contentView;
-            webview.create(config.data["mainWindow"]);
+            if (webview.parentWnd) webview.create(config.data["mainWindow"]);
         #endif
     }
 

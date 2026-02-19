@@ -366,7 +366,12 @@ public:
                 
                 #if defined(SK_APP_TYPE_vst3)
                     IPlugVST3* _instance = static_cast<IPlugVST3*>(instance);
-                    _instance->GetView()->Resize(w, h);
+                    if (_instance) {
+                        auto* view = _instance->GetView();
+                        if (view) {
+                            view->Resize(w, h);
+                        }
+                    }
                 #elif defined(SK_APP_TYPE_au2)
                     IPlugAU* plugin = static_cast<IPlugAU*>(instance); // cast directly to your plugin class
                     plugin->Resize(w, h);
