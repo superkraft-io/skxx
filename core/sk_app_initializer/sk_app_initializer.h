@@ -115,10 +115,9 @@ public:
                                                              name:NSApplicationDidFinishLaunchingNotification
                                                            object:nil];
 
-                [[NSNotificationCenter defaultCenter] addObserver:observer
-                                                         selector:@selector(applicationShouldTerminateAfterLastWindowClosed:)
-                                                             name:NSWindowWillCloseNotification // No direct notification, using window close event
-                                                           object:nil];
+                // NOTE: Do NOT observe NSWindowWillCloseNotification here.
+                // applicationShouldTerminateAfterLastWindowClosed: returns bool, but
+                // NSNotificationCenter observers must return void — ABI mismatch crashes.
             }
 
     

@@ -50,6 +50,9 @@ public:
     #ifdef __OBJC__
     void objcTeardown() {
         @autoreleasepool {            // 1) Stop monitors/observers FIRST
+            __closed = true;
+            isClosed = true;
+
             /*if (mouseDownToken) {
                 mouseDownToken = nil; //causes crash. since it's a __strong reference, ARC should handle it. (But will it handle it???)
             }*/

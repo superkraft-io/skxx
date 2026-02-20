@@ -15,6 +15,13 @@ using namespace SK;
 @class WKContextMenuElementInfo;
 
 @implementation SK_WebView_URLSchemeHandler
+
+- (void)dealloc {
+#if defined(SK_MODE_DEBUG)
+    NSLog(@"[SK_WebView][DEALLOC] URLSchemeHandler self=%p webView=%p skg=%p", self, self.webView, self.skg);
+#endif
+}
+
 - (void)webView:(WKWebView *)webView startURLSchemeTask:(id <WKURLSchemeTask>)urlSchemeTask {
     SK_String url = urlSchemeTask.request.URL.absoluteString;
     SK_String path = urlSchemeTask.request.URL.path;
@@ -113,6 +120,12 @@ using namespace SK;
 
 @implementation SK_Webview_MacOS_Delegate
 
+- (void)dealloc {
+#if defined(SK_MODE_DEBUG)
+    NSLog(@"[SK_WebView][DEALLOC] UIDelegate self=%p window=%p", self, self.windowHandle);
+#endif
+}
+
 - (void)webView:(WKWebView *)webView runOpenPanelWithParameters:(WKOpenPanelParameters *)parameters initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(NSArray<NSURL *> * _Nullable))completionHandler {
     // Ensure the window handle is valid
     if (!self.windowHandle) {
@@ -150,6 +163,12 @@ using namespace SK;
 @end
 
 @implementation SK_WebView_MacOS
+
+- (void)dealloc {
+#if defined(SK_MODE_DEBUG)
+    NSLog(@"[SK_WebView][DEALLOC] WKWebView self=%p parent=%p", self, self.sk_webview_parent);
+#endif
+}
 
 - (BOOL)acceptsFirstResponder {
     return YES;
@@ -191,28 +210,108 @@ using namespace SK;
 
 BEGIN_SK_NAMESPACE
 
-SK_WebView::~SK_WebView(){
-    if (!webview) return;
-        
-    
-    [webview.configuration.userContentController removeScriptMessageHandlerForName:@"SK_IPC_Handler"];
-    [webview.configuration.userContentController removeAllUserScripts];
-    
-    webview.UIDelegate = nil;
-    webview.navigationDelegate = nil;
-    webviewDelegate = nil;
-    
-    [webview removeFromSuperview];
-    
-    messageHandler.webView = nil;
-    messageHandler.skg = nil;
-    
-    urlHandler.webView = nil;
-    urlHandler.skg = nil;
-    
-    [webview.backForwardList performSelector:@selector(_removeAllItems)];
-    
+void SK_WebView::shutdown(){
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+
+    isReady = false;
+    sharedBuffersCanBeShared = false;
+
+    if (sharedBuffersTimer) {
+        if (sharedBuffersTimerCallbackId != 0) {
+            sharedBuffersTimer->off(sharedBuffersTimerCallbackId);
+            sharedBuffersTimerCallbackId = 0;
+        }
+        sharedBuffersTimer->stop();
+    }
+
+    if (debugActivatorTimer) {
+        if (debugActivatorTimerCallbackId != 0) {
+            debugActivatorTimer->off(debugActivatorTimerCallbackId);
+            debugActivatorTimerCallbackId = 0;
+        }
+        debugActivatorTimer->stop();
+    }
+
+    WKWebView* localWebView = webview;
+    SK_WebView_URLSchemeHandler* localMessageHandler = messageHandler;
+    SK_WebView_URLSchemeHandler* localURLHandler = urlHandler;
+
+    // CFRetain immediately — in MRC, this is a bare pointer with no implicit retain.
+    // The host may release the parent view hierarchy (removing us from the superview)
+    // before teardownBlock runs, dropping the retain count to 0. We must hold our
+    // own retain from this point forward, before anything can release the object.
+    CFTypeRef drainView       = localWebView      ? CFRetain((__bridge CFTypeRef)localWebView)      : NULL;
+    CFTypeRef drainMsgHandler = localMessageHandler ? CFRetain((__bridge CFTypeRef)localMessageHandler) : NULL;
+    CFTypeRef drainURLHandler = localURLHandler   ? CFRetain((__bridge CFTypeRef)localURLHandler)   : NULL;
+
+#if defined(SK_MODE_DEBUG)
+    NSLog(@"[SK_WebView] dtor begin wk=%p main=%d", localWebView, [NSThread isMainThread]);
+#endif
+
     webview = nil;
+    webviewDelegate = nil;
+    messageHandler = nil;
+    urlHandler = nil;
+
+    if (!localWebView) {
+        // Balance any retains taken above before early-returning.
+        if (drainMsgHandler) CFRelease(drainMsgHandler);
+        if (drainURLHandler) CFRelease(drainURLHandler);
+        return;
+    }
+
+    auto teardownBlock = ^{
+#if defined(SK_MODE_DEBUG)
+        NSLog(@"[SK_WebView] dtor teardown wk=%p main=%d", localWebView, [NSThread isMainThread]);
+#endif
+        if (localMessageHandler) {
+            localMessageHandler.webView = nil;
+            localMessageHandler.skg = nil;
+        }
+
+        if (localURLHandler) {
+            localURLHandler.webView = nil;
+            localURLHandler.skg = nil;
+        }
+
+        localWebView.UIDelegate = nil;
+        localWebView.navigationDelegate = nil;
+        [localWebView setHidden:YES];
+
+        // Detach from the window so the display link stops and WKWindowVisibility
+        // Observer deregisters cleanly (no new window = no resignKey crash).
+        [localWebView removeFromSuperview];
+
+        [localWebView.configuration.userContentController removeScriptMessageHandlerForName:@"SK_IPC_Handler"];
+        [localWebView.configuration.userContentController removeAllUserScripts];
+
+        // CFRetain was called at shutdown() entry. Release after 3 main-queue hops:
+        // each hop is one CFRunLoop pass, which drains any WTF::RunLoop::performWork()
+        // source0 callbacks that were already queued when teardown began.
+        dispatch_async(dispatch_get_main_queue(), ^{
+            dispatch_async(dispatch_get_main_queue(), ^{
+                dispatch_async(dispatch_get_main_queue(), ^{
+#if defined(SK_MODE_DEBUG)
+                    NSLog(@"[SK_WebView] dtor drain complete wk=%p", localWebView);
+#endif
+                    if (drainView)       CFRelease(drainView);
+                    if (drainMsgHandler) CFRelease(drainMsgHandler);
+                    if (drainURLHandler) CFRelease(drainURLHandler);
+                });
+            });
+        });
+    };
+
+    if ([NSThread isMainThread]) {
+        teardownBlock();
+    } else {
+        dispatch_sync(dispatch_get_main_queue(), teardownBlock);
+    }
+}
+
+SK_WebView::~SK_WebView(){
+    shutdown();
 }
 
 void SK_WebView::create(bool offsetWhenDebugging) {
@@ -236,13 +335,6 @@ void SK_WebView::create(bool offsetWhenDebugging) {
     // Create WKWebViewConfiguration and set preferences
     WKWebViewConfiguration* config = [[WKWebViewConfiguration alloc] init];
     WKPreferences* preferences = [[WKPreferences alloc] init];
-
-    // Enable Developer Extras (DevTools)
-    [preferences setValue:@YES forKey:@"developerExtrasEnabled"];
-    
-    // Enable clipboard access
-    [preferences setValue:@YES forKey:@"DOMPasteAllowed"];
-    [preferences setValue:@YES forKey:@"javaScriptCanAccessClipboard"];
 
     preferences.javaScriptEnabled = YES;
     
@@ -270,6 +362,13 @@ void SK_WebView::create(bool offsetWhenDebugging) {
     // Create the WKWebView
     webview = [[SK_WebView_MacOS  alloc] initWithFrame:frame configuration:config];
     webview.sk_webview_parent = this;
+#if defined(SK_MODE_DEBUG)
+    NSLog(@"[SK_WebView] create wk=%p main=%d", webview, [NSThread isMainThread]);
+#endif
+
+    if (@available(macOS 13.3, *)) {
+        webview.inspectable = (debugEnabled ? YES : NO);
+    }
    
     
     webviewDelegate = [[SK_Webview_MacOS_Delegate alloc] init];
@@ -277,7 +376,8 @@ void SK_WebView::create(bool offsetWhenDebugging) {
     [webview setUIDelegate:webviewDelegate];
     
     webview.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
-    [webview setValue:@NO forKey:@"drawsBackground"];
+    [webview setWantsLayer:YES];
+    webview.layer.backgroundColor = [NSColor clearColor].CGColor;
     
 
     // Disable magnification
@@ -375,10 +475,12 @@ void SK_WebView::evaluateScript(const SK_String& src, SK_WebView_EvaluationCompl
         return;
     }
 
-    WKWebView* _webview = webview;
-    
-    skg->threadPool->queueOnMainThread([this, src, cb, _webview]() {
-        evaluateScript_mainThread(_webview, src, cb);
+    WKWebView* __strong webviewStrong = webview;
+    if (!webviewStrong) return;
+
+    SK_String srcCopy = src;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        evaluateScript_mainThread(webviewStrong, srcCopy, cb);
     });
 }
 
@@ -448,7 +550,7 @@ void SK_WebView::tryStartingSharedBuffersTimer(){
     
     sharedBuffersTimer = skg->timerMngr->add(1);
     
-    sharedBuffersTimer->on([this](){
+    sharedBuffersTimerCallbackId = sharedBuffersTimer->on([this](){
         if (sharedBuffersQueue.size() == 0){
             sharedBuffersTimer->stop();
             return;
@@ -470,7 +572,7 @@ void SK_WebView::tryStartingSharedBuffersTimer(){
 
 void SK_WebView::configDebugging() {
     debugActivatorTimer = skg->timerMngr->add(10000);
-    debugActivatorTimer->on([&]() {
+    debugActivatorTimerCallbackId = debugActivatorTimer->on([&]() {
         debugKeyPressCount = 0;
         enableDebug(false);
         debugActivatorTimer->stop();

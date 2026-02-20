@@ -68,11 +68,11 @@ public:
         #ifdef __OBJC__
             NSWindow* _Nullable parentWndHandle;
             NSView* _Nullable parentContentView;
-            SK_WebView_MacOS* _Nullable webview;
+            __strong SK_WebView_MacOS* _Nullable webview;
             __strong SK_Webview_MacOS_Delegate* _Nullable webviewDelegate;
     
-            SK_WebView_URLSchemeHandler* messageHandler;
-            SK_WebView_URLSchemeHandler* urlHandler;
+            __strong SK_WebView_URLSchemeHandler* _Nullable messageHandler;
+            __strong SK_WebView_URLSchemeHandler* _Nullable urlHandler;
         #endif
     #endif
     
@@ -83,14 +83,18 @@ public:
     SK_WebView_Simple_Callback notifyReadyToShow;
     
     bool isReady = false;
+    bool isShuttingDown = false;
     bool sharedBuffersCanBeShared = false;
     
     SK_Communication_Response_Web* _Nullable readyStateWebResponse = nullptr;
     size_t sharedBuffersIdx = 0;
     std::unordered_map<size_t, SK_WebView_SharedBuffer*> sharedBuffersQueue;
     SK_Timer* sharedBuffersTimer = nullptr;
+    SK_Timer::CallbackId sharedBuffersTimerCallbackId = 0;
+    SK_Timer::CallbackId debugActivatorTimerCallbackId = 0;
     
     ~SK_WebView();
+    void shutdown();
     
     void create(bool offsetWhenDebugging);
     void update();
