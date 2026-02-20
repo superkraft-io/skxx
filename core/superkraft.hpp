@@ -113,6 +113,7 @@ public:
 
 		delete machine;
         skg->machine = nullptr;
+        machine = nullptr;
         
         delete wvinit;
         wvinit = nullptr;
@@ -133,6 +134,10 @@ public:
             delete bundle_library;
             bundle_library = nullptr;
         #endif
+
+        fpsWatcher->stop();
+        delete fpsWatcher;
+        fpsWatcher = nullptr;
 	}
 };
 
